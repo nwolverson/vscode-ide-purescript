@@ -62,6 +62,21 @@ export class PscIde {
 			}
 		}).catch(() => "");
 	}
+	
+	getCompletion(text : string, modulePrefix?: string, moduleCompletion?: any) {
+		var filters = [{
+			filter: "prefix",
+			params: {
+				search: text
+			}
+		}];
+		//filters.push @modulesFilter(modulePrefix) if !moduleCompletion
+		return this.runCmd({
+			command: "complete",
+			params: { filters: filters }
+		});
+	}
+	
   
   	abbrevType(type: string) {
 		return type.replace(/(?:\w+\.)+(\w+)/g, "$1");
