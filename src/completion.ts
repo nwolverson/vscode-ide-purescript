@@ -9,7 +9,7 @@ interface CompletionResult {
 }
 
 export class PscCompletionProvider implements  vscode.CompletionItemProvider {
-  pscIde = new PscIde();
+  constructor(private pscIde : PscIde) {}
   
 	provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
     const wordRange = document.getWordRangeAtPosition(position);

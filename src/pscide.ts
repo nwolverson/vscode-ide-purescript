@@ -7,20 +7,37 @@ interface PscIdeResult {
 }
 
 export class PscIde {
+	serverProcess : cp.ChildProcess
+	path = vscode.workspace.rootPath
+	
 	startServer() {
-		// // vscode.window.showInformationMessage('Starting psc-ide');
-		
-		// // this.proc = cp.spawn("psc-ide", [], { cwd: path });
-		
-		// this.proc.stderr.on('data', (data) => {
-			
-		// });
+		this.getWorkingDir().then((output: string) => {
+			output = output.trim();
+			if (output === this.path) {
+				vscode.window.showInformationMessage("Found existing psc-ide-server with correct path");
+			} else {
+          		vscode.window.showErrorMessage(`Found existing psc-ide-server with wrong path: ${output}. Correct, kill or configure a different port, and restart.`);
+			}
+		}).catch((err) => {
+			vscode.window.showInformationMessage('Starting psc-ide-server');
+			this.serverProcess = cp.spawn("psc-ide-server", [], { cwd: this.path });
+			this.serverProcess.on('exit', (code) => {
+				if (code !== 0) {
+					vscode.window.showErrorMessage("Could not start psc-ide-server process. Check the configured port number is valid.");
+				}
+			})
+		})
+	}
+	
+	dispose() {
+		if (this.serverProcess) {
+			this.serverProcess.kill();
+		}
 	}
 	
 	runCmd(cmd : { command: string, params?: Object }) {
-		const path = vscode.workspace.rootPath;
 		return new Promise<any>((resolve, reject) => {
-			const proc = cp.spawn("psc-ide", [], { cwd: path });
+			const proc = cp.spawn("psc-ide", []);
 		
 			let result = "";
 			proc.stdout.on('data', (data) => {
@@ -45,6 +62,10 @@ export class PscIde {
 			});
 			proc.stdin.write(JSON.stringify(cmd) + "\n");
 		});
+	}
+	
+	getWorkingDir() {
+		return this.runCmd({command: "cwd"});
 	}
 	
 	getType(text: string, modulePrefix: string) {

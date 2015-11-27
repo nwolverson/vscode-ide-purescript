@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { PscIde } from './pscIde';
 
 export class PscHoverProvider implements vscode.HoverProvider {
-	pscIde = new PscIde();
+	constructor(private pscIde : PscIde) {}
 	
 	provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
 		const wordRange = document.getWordRangeAtPosition(position);
