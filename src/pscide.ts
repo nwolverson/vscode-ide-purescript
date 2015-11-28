@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
+import { EditorContext } from './editor-context';
 
 interface PscIdeResult {
 	resultType : string
@@ -10,8 +11,20 @@ export class PscIde {
 	serverProcess : cp.ChildProcess
 	path = vscode.workspace.rootPath
 	
+	constructor(private editorContext : EditorContext) {
+		
+	}
+	
+	activate() {
+		this.startServer().then(() => {
+			global.setTimeout(() => {
+				this.editorContext.activate(this);
+			}, 100);
+		})
+	}
+	
 	startServer() {
-		this.getWorkingDir().then((output: string) => {
+		return this.getWorkingDir().then((output: string) => {
 			output = output.trim();
 			if (output === this.path) {
 				vscode.window.showInformationMessage("Found existing psc-ide-server with correct path");
@@ -51,6 +64,7 @@ export class PscIde {
 				if (code === 0) {
 					var response : PscIdeResult = JSON.parse(result);
 					if (response.resultType === "success") {
+						console.log(`Command ${JSON.stringify(cmd)} exited with results: ${JSON.stringify(response.result)}`);
 						resolve(response.result);
 					} else {
 						reject(response.result);
@@ -64,8 +78,28 @@ export class PscIde {
 		});
 	}
 	
+	getLoadedModules() {
+		return this.runCmd({ command: "list", params: { type: "module" } });
+	}
+
+	getImports(file: string){
+    	return this.runCmd({ command: "list", params: { type: "import", file: file } });
+	}
+	
 	getWorkingDir() {
 		return this.runCmd({command: "cwd"});
+	}
+
+	loadDeps(module: string) {
+		if (!module) {
+			return Promise.resolve();
+		}
+		return this.runCmd({
+			command: "load",
+			params: {
+				dependencies: [ module ]
+			}
+		})
 	}
 	
 	getType(text: string, modulePrefix: string) {

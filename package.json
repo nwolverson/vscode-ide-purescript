@@ -30,5 +30,7 @@
     "typescript": "^1.6.2",
     "vscode": "0.10.x"
   },
-  "dependencies": {}
+  "dependencies": {
+    "xregexp": "^3.0.0"
+  }
 }
