@@ -1,16 +1,14 @@
-# ide-purescript package for Atom
+# ide-purescript package for VS Code
 
-This package provides editor support for PureScript projects in Visual Studio Code (very much based
-on the corresponding [atom plugin](https://github.com/nwolverson/atom-ide-purescript). Basic 
-syntax highlighting support is provided by the separate package [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript)
-which should be installed automatically as a dependency. 
+This package provides editor support for PureScript projects in Visual Studio Code (very much based on the corresponding [atom plugin](https://github.com/nwolverson/atom-ide-purescript). Basic syntax highlighting support is provided by the separate package [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript) which should be installed automatically as a dependency. 
 
 This extension relies heavily on the separate tool [psc-ide](https://github.com/kRITZCREEK/psc-ide) (see below).
 
 This package provides:
-  [] Build and error reporting (TODO)
-  [x] Autocompletion
-  [x] Type info tooltips
+
+- [ ] Build and error reporting (TODO)
+- [x] Autocompletion
+- [x] Type info tooltips
 
 Package should trigger on opening a `.purs` file.
 
