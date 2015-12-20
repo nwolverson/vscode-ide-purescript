@@ -16,6 +16,10 @@
   "main": "./out/src/extension",
   "contributes": {
     "commands": [
+      {
+        "command": "purescript.build",
+        "title": "PureScript: Build"
+      }
     ]
   },
   "scripts": {
@@ -27,7 +31,7 @@
   ],
   "devDependencies": {
     "typescript": "^1.6.2",
-    "vscode": "0.10.x"
+    "vscode": "^0.10.6"
   },
   "dependencies": {
     "xregexp": "^3.0.0"
