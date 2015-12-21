@@ -20,7 +20,14 @@ interface PscResults {
     errors: PscError[]
 }
 
-function runPsc() {
+function printError(output : vscode.OutputChannel, error : PscError, errorType: string) {
+    output.appendLine(`${errorType} in module ${error.moduleName}:`);
+    var p = error.position;
+    output.appendLine(`at ${error.filename} line ${p.startLine}, column ${p.startColumn} - line ${p.endLine}, column ${p.endColumn}`)
+    output.appendLine(error.message);
+}
+
+function runPsc(output : vscode.OutputChannel) {
     return new Promise<PscResults>((resolve, reject) => {
         console.log("CWD: " + vscode.workspace.rootPath);
         const proc = cp.spawn("pulp", ["build", "--json-errors"], {
@@ -49,10 +56,15 @@ function runPsc() {
                 if (line.startsWith('{"warnings":')) {
                     try {
                         const errors : PscResults = JSON.parse(line);
+                        errors.errors.forEach(e => printError(output, e, "Error"));
+                        errors.warnings.forEach(e => printError(output, e, "Warning"));
                         resolve(errors);
                     } catch (e) {
+                        output.appendLine("Error parsing JSON: " + e);
                         reject(e);
                     }
+                } else {
+                    output.appendLine(line);
                 }
             });
             reject("Unable to parse error output");
@@ -71,9 +83,13 @@ function toDiagnostic(error : PscError, isError : boolean) : [vscode.Uri, vscode
 }
 
 export function build() {
+    // TODO: create output window with full text
+    const output = vscode.window.createOutputChannel("PureScript build");
+    output.clear();
+    output.show(vscode.ViewColumn.Two);
     const diagnosticCollection = vscode.languages.createDiagnosticCollection("purescript");
     
-	return runPsc().then((result) => {
+	return runPsc(output).then((result) => {
         const diagnostics = result.errors.map(e => toDiagnostic(e, true))
             .concat(result.warnings.map(e => toDiagnostic(e, false)))
         
