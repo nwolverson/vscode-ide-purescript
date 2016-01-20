@@ -2,20 +2,24 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import { PscIde } from './pscide';
 
-interface PscPosition {
+export interface PscPosition {
     startLine: number;
     endLine: number;
     startColumn: number;
     endColumn: number;
 }
-interface PscError {
+export interface PscError {
     moduleName: string;
     errorCode: string;
     message: string;
     filename: string;
     position: PscPosition;
+    suggestion?: PscErrorSuggestion
 }
-interface PscResults {
+export interface PscErrorSuggestion {
+    replacement: string
+}
+export interface PscResults {
     warnings: PscError[],
     errors: PscError[]
 }
@@ -73,20 +77,22 @@ function runPsc(output : vscode.OutputChannel) {
     });
 }
 
+export function pscPositionToRange(p: PscPosition) : vscode.Range {
+    return new vscode.Range(p.startLine-1, p.startColumn-1, p.endLine-1, p.endColumn-1)
+}
+
 function toDiagnostic(error : PscError, isError : boolean) : [vscode.Uri, vscode.Diagnostic] {
-    var p = error.position;
-    var diagnostic = new vscode.Diagnostic(new vscode.Range(p.startLine-1, p.startColumn-1, p.endLine-1, p.endColumn-1), 
+    var diagnostic = new vscode.Diagnostic(pscPositionToRange(error.position), 
         error.message, 
         isError ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning);
     diagnostic.code = error.errorCode;
+    (<any>diagnostic).error = error
     return [vscode.Uri.file(error.filename), diagnostic];
 }
 
-export function build() {
-    // TODO: create output window with full text
+export function build() : Promise<PscResults> {
     const output = vscode.window.createOutputChannel("PureScript build");
     output.clear();
-    output.show(vscode.ViewColumn.Two);
     const diagnosticCollection = vscode.languages.createDiagnosticCollection("purescript");
     
 	return runPsc(output).then((result) => {
@@ -100,7 +106,9 @@ export function build() {
             map.set(d[0], entries);
         });
         
-        diagnosticCollection.set(Array.from(map.entries()));                
+        diagnosticCollection.set(Array.from(map.entries()));
+        
+        return result;
     });
 }
 
