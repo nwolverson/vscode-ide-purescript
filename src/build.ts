@@ -34,7 +34,7 @@ function printError(output : vscode.OutputChannel, error : PscError, errorType: 
 function runPsc(output : vscode.OutputChannel) {
     return new Promise<PscResults>((resolve, reject) => {
         console.log("CWD: " + vscode.workspace.rootPath);
-        const proc = cp.spawn("pulp", ["build", "--json-errors"], {
+        const proc = cp.spawn("pulp", ["build", "--no-psa", "--json-errors"], {
             cwd: vscode.workspace.rootPath 
         });
 		

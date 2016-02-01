@@ -6,7 +6,7 @@ This extension relies heavily on the separate tool [psc-ide](https://github.com/
 
 This package provides:
 
-- [ ] Build and error reporting (TODO)
+- [x] Build and error reporting
 - [x] Autocompletion
 - [x] Type info tooltips
 
@@ -15,8 +15,8 @@ Package should trigger on opening a `.purs` file.
 ## Installation and General Use
 
 This package relies on having [psc-ide](https://github.com/kRITZCREEK/psc-ide) installed.
-For use with PureScript compiler version *0.7.5* you should use [version 0.4.0](https://github.com/kRITZCREEK/psc-ide/releases/tag/0.4.0),
-for earlier compiler versions you instead need [0.3.0.0](https://github.com/kRITZCREEK/psc-ide/releases/tag/0.3.0.0).
+For use with PureScript compiler version *0.8.0* you should use [version 0.6.0](https://github.com/kRITZCREEK/psc-ide/releases/tag/0.6.0),
+for earlier compiler versions consult the `psc-ide` documentation.
 This runs a server process, `psc-ide-server`, to provide type information, completions,
 etc. This package will automatically start `psc-ide-server` in your project
 directory (port is configurable) and kill it when closing, if for some reason
@@ -27,8 +27,15 @@ For all functions provided by `psc-ide` you will need to build your project firs
 Dependencies will automatically be loaded via `dependencies Current.File` as
 required.
 
-You *must* install the extension [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript)
-(should be installed automatically). The package will start on opening a `.purs` file.
+The extension [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript)
+is required but should be installed automatically. The package will start on opening a `.purs` file.
+
+## Build
+
+'PureScript Build' command will build your project using the command line `pulp build --no-psa --json-errors`.
+Version 0.8.0 of the PureScript compiler is required, as well as version 8.0.0 of `pulp`.
+
+Error suggestions are provided for some compiler errors, try alt/cmd and `.`.
 
 ## Autocomplete
 
@@ -51,10 +58,3 @@ TODO
 ## PSCI
 
 TODO
-
-## Build
-
-TODO
-
-(I did look at the built in task support, but I think we want explicit build support in this plugin, for flexible error parsing,
-particularly when psc starts to produce JSON errors in a future version, as well as easy setup.)
