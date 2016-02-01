@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'; 
 
 import { PscIde } from './pscide';
+import { getWord } from './utils'; 
 
 interface CompletionResult {
   module: string;
@@ -12,10 +13,9 @@ export class PscCompletionProvider implements  vscode.CompletionItemProvider {
   constructor(private pscIde : PscIde) {}
   
 	provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
-    const wordRange = document.getWordRangeAtPosition(position);
-		const word = document.getText(wordRange);
+    const info = getWord(document, position);
     
-    return this.pscIde.getCompletion(word).then((result: CompletionResult[]) => {
+    return this.pscIde.getCompletion(info.word, info.module).then((result: CompletionResult[]) => {
       return result.map((c) => {
         var item = new vscode.CompletionItem(c.identifier);
         item.detail = c.type;
@@ -32,5 +32,5 @@ export class PscCompletionProvider implements  vscode.CompletionItemProvider {
         return item;
       });
     });
-	}
+  }
 }

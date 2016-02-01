@@ -119,22 +119,39 @@ export class PscIde {
 	}
 	
 	getCompletion(text : string, modulePrefix?: string, moduleCompletion?: any) {
-		var filters = [{
+		var filters : {filter: string, params: {} }[] = [{
 			filter: "prefix",
 			params: {
 				search: text
 			}
 		}];
-		//filters.push @modulesFilter(modulePrefix) if !moduleCompletion
+		filters.push(this.modulesFilter(modulePrefix));// if !moduleCompletion
 		return this.runCmd({
 			command: "complete",
 			params: { filters: filters }
 		});
 	}
 	
+	modulesFilter(modulePrefix: string) {
+		var mods : string[] = [];
+		if (modulePrefix) {
+			// Prefix may be explicit module or a qualified import
+			mods = this.editorContext.getQualifiedModules(modulePrefix);
+			if (mods.length === 0) {
+				mods = [modulePrefix];
+			}
+		} else {
+			mods = this.editorContext.getUnqualifiedModules();
+		}
+		return {
+			filter: "modules",
+			params: {
+				modules: mods
+			}
+		}
+	}
   
   	abbrevType(type: string) {
 		return type.replace(/(?:\w+\.)+(\w+)/g, "$1");
 	}
-	
 }
