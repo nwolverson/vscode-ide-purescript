@@ -38,8 +38,9 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
-    "compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
+    "vscode:prepublish": "npm run -s psc && node ./node_modules/vscode/bin/compile",
+    "compile": "npm run -s psc && node ./node_modules/vscode/bin/compile -watch -p ./",
+    "psc": "pulp build --to out/src/bundle.js --skip-entry-point && echo 'module.exports = PS.Main.main' >> out/src/bundle.js"
   },
   "extensionDependencies": [
     "nwolverson.language-purescript"
