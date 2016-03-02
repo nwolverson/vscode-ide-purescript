@@ -33,7 +33,8 @@ export class PscIde {
 			}
 		}).catch((err) => {
 			vscode.window.showInformationMessage('Starting psc-ide-server');
-			this.serverProcess = cp.spawn("psc-ide-server", [], { cwd: this.path });
+            const config = vscode.workspace.getConfiguration("purescript");
+			this.serverProcess = cp.spawn(config.get<string>('pscIdeServerExe'), [], { cwd: this.path });
 			this.serverProcess.on('exit', (code) => {
 				if (code !== 0) {
 					vscode.window.showErrorMessage("Could not start psc-ide-server process. Check the configured port number is valid.");
@@ -50,7 +51,8 @@ export class PscIde {
 	
 	runCmd(cmd : { command: string, params?: Object }) {
 		return new Promise<any>((resolve, reject) => {
-			const proc = cp.spawn("psc-ide", []);
+            const config = vscode.workspace.getConfiguration("purescript");
+			const proc = cp.spawn(config.get<string>('pscIdeClientExe'), []);
 		
 			let result = "";
 			proc.stdout.on('data', (data) => {

@@ -51,6 +51,15 @@ Hovering over an identifier will show a tooltip with its type.
 This is really stupid, and only cares that you hover over a word regardless of context, you will get some false positives
 (eg doesn't see local definitions, just the globals that should be visible in a given module).
 
+## Settings
+
+Settings available via user/workspace settings:
+
+```
+    "purescript.pscIdeClientExe": "psc-ide-client",
+    "purescript.pscIdeServerExe": "psc-ide-server"
+```
+
 ## Pursuit lookup
 
 TODO

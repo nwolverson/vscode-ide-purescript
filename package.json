@@ -20,7 +20,22 @@
         "command": "purescript.build",
         "title": "PureScript: Build"
       }
-    ]
+    ],
+    "configuration": {
+        "title": "PureScript configuration",
+        "properties": {
+            "purescript.pscIdeClientExe": {
+                "type": "string",
+                "default": "psc-ide-client",
+                "description": "Location of psc-ide client executable (resolved wrt PATH)"
+            },
+            "purescript.pscIdeServerExe": {
+                "type": "string",
+                "default": "psc-ide-server",
+                "description": "Location of psc-ide server executable (resolved wrt PATH)"
+            }
+        }
+    }
   },
   "scripts": {
     "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
