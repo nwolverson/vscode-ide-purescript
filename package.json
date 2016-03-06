@@ -2,13 +2,13 @@
   "name": "ide-purescript",
   "displayName": "PureScript IDE",
   "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "publisher": "nwolverson",
   "repository": {
       "url": "git@github.com:nwolverson/vscode-ide-purescript.git"
   },
   "engines": {
-    "vscode": "^0.10.9"
+    "vscode": "^0.10.8"
   },
   "categories": [
     "Other"
