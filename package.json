@@ -2,8 +2,11 @@
   "name": "ide-purescript",
   "displayName": "PureScript IDE",
   "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "publisher": "nwolverson",
+  "repository": {
+      "url": "git@github.com:nwolverson/vscode-ide-purescript.git"
+  },
   "engines": {
     "vscode": "^0.10.9"
   },
@@ -24,11 +27,6 @@
     "configuration": {
       "title": "PureScript configuration",
       "properties": {
-        "purescript.pscIdeClientExe": {
-          "type": "string",
-          "default": "psc-ide-client",
-          "description": "Location of psc-ide client executable (resolved wrt PATH)"
-        },
         "purescript.pscIdeServerExe": {
           "type": "string",
           "default": "psc-ide-server",
@@ -50,7 +48,7 @@
   "scripts": {
     "vscode:prepublish": "npm run -s psc && node ./node_modules/vscode/bin/compile",
     "compile": "npm run -s psc && node ./node_modules/vscode/bin/compile -watch -p ./",
-    "psc": "pulp build --to out/src/bundle.js --skip-entry-point && echo 'module.exports = PS.Main.main' >> out/src/bundle.js",
+    "psc": "mkdir -p out/src && pulp build --to out/src/bundle.js --skip-entry-point && echo 'module.exports = PS.Main.main' >> out/src/bundle.js",
     "postinstall": "node ./node_modules/vscode/bin/install"
   },
   "extensionDependencies": [

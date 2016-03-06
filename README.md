@@ -1,12 +1,17 @@
 # ide-purescript package for VS Code
 
-This package provides editor support for PureScript projects in Visual Studio Code (very much based on the corresponding [atom plugin](https://github.com/nwolverson/atom-ide-purescript). Basic syntax highlighting support is provided by the separate package [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript) which should be installed automatically as a dependency. 
+This package provides editor support for PureScript projects in Visual Studio Code, similar to the corresponding
+ [atom plugin](https://github.com/nwolverson/atom-ide-purescript). Now based on a common
+ [PureScript based core](https://github.com/nwolverson/purescript-ide-purescript-core)! Basic syntax highlighting support
+ is provided by the separate package [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript) 
+ which should be installed automatically as a dependency. 
 
 This extension relies heavily on the separate tool [psc-ide](https://github.com/kRITZCREEK/psc-ide) (see below).
 
 This package provides:
 
 - [x] Build and error reporting
+- [x] Quick-fix support for certain warnings
 - [x] Autocompletion
 - [x] Type info tooltips
 
@@ -15,13 +20,14 @@ Package should trigger on opening a `.purs` file.
 ## Installation and General Use
 
 This package relies on having [psc-ide](https://github.com/kRITZCREEK/psc-ide) installed.
-For use with PureScript compiler version *0.8.0* you should use [version 0.6.0](https://github.com/kRITZCREEK/psc-ide/releases/tag/0.6.0),
-for earlier compiler versions consult the `psc-ide` documentation.
+As of PureScript compiler version *0.8.2* this is now bundled with the compiler, and things
+should "just work"; for earlier compiler versions consult the [`psc-ide` documentation](https://github.com/kRITZCREEK/psc-ide).
 This runs a server process, `psc-ide-server`, to provide type information, completions,
 etc. This package will automatically start `psc-ide-server` in your project
 directory (port is configurable) and kill it when closing, if for some reason
 you want a longer running server process you should be able to start that before
-starting code. *Multiple projects currently not supported!*
+starting code. *Multiple projects currently not supported!* `psc-ide-client` is not used,
+communication is via direct socket connection.
 
 For all functions provided by `psc-ide` you will need to build your project first!
 Dependencies will automatically be loaded via `dependencies Current.File` as
@@ -33,7 +39,7 @@ is required but should be installed automatically. The package will start on ope
 ## Build
 
 'PureScript Build' command will build your project using the command line `pulp build --no-psa --json-errors`.
-Version 0.8.0 of the PureScript compiler is required, as well as version 8.0.0 of `pulp`.
+Version 0.8.0+ of the PureScript compiler is required, as well as version 8.0.0 of `pulp` (for the `--no-psa` flag...).
 
 Error suggestions are provided for some compiler errors, try alt/cmd and `.`.
 
@@ -56,8 +62,16 @@ This is really stupid, and only cares that you hover over a word regardless of c
 Settings available via user/workspace settings:
 
 ```
-    "purescript.pscIdeClientExe": "psc-ide-client",
-    "purescript.pscIdeServerExe": "psc-ide-server"
+{
+	// Location of psc-ide server executable (resolved wrt PATH)
+	"purescript.pscIdeServerExe": "psc-ide-server",
+
+	// Port to use for psc-ide
+	"purescript.pscIdePort": 4242,
+
+	// Build command to use with arguments. Not passed to shell. eg `pulp build --json-errors`
+	"purescript.buildCommand": "pulp build --no-psa --json-errors"
+}
 ```
 
 ## Pursuit lookup
