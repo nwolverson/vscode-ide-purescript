@@ -5,7 +5,7 @@
   "version": "0.0.5",
   "publisher": "nwolverson",
   "engines": {
-    "vscode": "^0.10.1"
+    "vscode": "^0.10.9"
   },
   "categories": [
     "Other"
@@ -22,44 +22,43 @@
       }
     ],
     "configuration": {
-        "title": "PureScript configuration",
-        "properties": {
-            "purescript.pscIdeClientExe": {
-                "type": "string",
-                "default": "psc-ide-client",
-                "description": "Location of psc-ide client executable (resolved wrt PATH)"
-            },
-            "purescript.pscIdeServerExe": {
-                "type": "string",
-                "default": "psc-ide-server",
-                "description": "Location of psc-ide server executable (resolved wrt PATH)"
-            },
-            "purescript.pscIdePort": {
-                "type": "integer",
-                "default": 4242,
-                "description": "Port to use for psc-ide"
-            },
-            "purescript.buildCommand": {
-                "type": "string",
-                "default": "pulp build --no-psa --json-errors",
-                "description": "Build command to use with arguments. Not passed to shell. eg `pulp build --json-errors`"
-            }
+      "title": "PureScript configuration",
+      "properties": {
+        "purescript.pscIdeClientExe": {
+          "type": "string",
+          "default": "psc-ide-client",
+          "description": "Location of psc-ide client executable (resolved wrt PATH)"
+        },
+        "purescript.pscIdeServerExe": {
+          "type": "string",
+          "default": "psc-ide-server",
+          "description": "Location of psc-ide server executable (resolved wrt PATH)"
+        },
+        "purescript.pscIdePort": {
+          "type": "integer",
+          "default": 4242,
+          "description": "Port to use for psc-ide"
+        },
+        "purescript.buildCommand": {
+          "type": "string",
+          "default": "pulp build --no-psa --json-errors",
+          "description": "Build command to use with arguments. Not passed to shell. eg `pulp build --json-errors`"
         }
+      }
     }
   },
   "scripts": {
     "vscode:prepublish": "npm run -s psc && node ./node_modules/vscode/bin/compile",
     "compile": "npm run -s psc && node ./node_modules/vscode/bin/compile -watch -p ./",
-    "psc": "pulp build --to out/src/bundle.js --skip-entry-point && echo 'module.exports = PS.Main.main' >> out/src/bundle.js"
+    "psc": "pulp build --to out/src/bundle.js --skip-entry-point && echo 'module.exports = PS.Main.main' >> out/src/bundle.js",
+    "postinstall": "node ./node_modules/vscode/bin/install"
   },
   "extensionDependencies": [
     "nwolverson.language-purescript"
   ],
   "devDependencies": {
-    "typescript": "^1.6.2",
-    "vscode": "^0.10.6"
+    "typescript": "^1.8.7",
+    "vscode": "^0.11.x"
   },
-  "dependencies": {
-    "xregexp": "^3.0.0"
-  }
+  "dependencies": {}
 }

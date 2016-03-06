@@ -29,13 +29,12 @@ export class BuildActionProvider implements CodeActionProvider {
         return context.diagnostics
             .filter(d => d.range.contains(range))
             .map(d => {
-                let code : number;
-                if (typeof d.code === "number") {
-                    code = <number>d.code;
+                const code = d.code;
+                if (typeof code === "number") {
+                    return this.buildResults.get(code);
                 } else {
-                    code = parseInt(<string>d.code, 10);
+                    return this.buildResults.get(parseInt(code, 10));
                 }
-                return this.buildResults.get(code);
             })
             .filter(d => d !== undefined && d.quickfix.suggest)
             .map(d => {
