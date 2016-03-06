@@ -20,7 +20,8 @@ export function activate(context: vscode.ExtensionContext) {
         });
     const buildProvider = new BuildActionProvider();
     context.subscriptions.push(
-        vscode.window.onDidChangeActiveTextEditor((editor) => useDoc(editor.document))
+        new vscode.Disposable(ps.deactivate)
+      , vscode.window.onDidChangeActiveTextEditor((editor) => useDoc(editor.document))
       , vscode.workspace.onDidSaveTextDocument(useDoc)
       , vscode.languages.registerHoverProvider('purescript', { 
         provideHover: (doc, pos, tok) => 
