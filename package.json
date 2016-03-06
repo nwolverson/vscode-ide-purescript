@@ -33,6 +33,16 @@
                 "type": "string",
                 "default": "psc-ide-server",
                 "description": "Location of psc-ide server executable (resolved wrt PATH)"
+            },
+            "purescript.pscIdePort": {
+                "type": "integer",
+                "default": 4242,
+                "description": "Port to use for psc-ide"
+            },
+            "purescript.buildCommand": {
+                "type": "string",
+                "default": "pulp build --no-psa --json-errors",
+                "description": "Build command to use with arguments. Not passed to shell. eg `pulp build --json-errors`"
             }
         }
     }
