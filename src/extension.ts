@@ -18,7 +18,6 @@ export function activate(context: vscode.ExtensionContext) {
                 useDoc(vscode.window.activeTextEditor.document)
             }
         });
-        
     const buildProvider = new BuildActionProvider();
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor((editor) => useDoc(editor.document))

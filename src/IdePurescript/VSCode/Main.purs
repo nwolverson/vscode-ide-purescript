@@ -2,7 +2,7 @@ module IdePurescript.VSCode.Main where
 
 import Prelude
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log, error)
+import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
 import Control.Monad.Eff.Class (liftEff)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, runEffFn4, mkEffFn3, mkEffFn2)
@@ -32,6 +32,7 @@ import IdePurescript.PscIdeServer (ServerStartResult(StartError, Closed, Started
 import VSCode.Position (mkPosition)
 import VSCode.Range (mkRange)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
+import VSCode.Notifications as Notify
 
 type MainEff =
   ( console :: CONSOLE
@@ -39,6 +40,7 @@ type MainEff =
   , ref :: REF
   , avar :: AVAR
   , cp :: CHILD_PROCESS
+  , notify :: Notify.NOTIFY
   )
 
 ignoreError :: forall a eff. a -> Eff eff Unit
@@ -173,21 +175,22 @@ main = do
   let deactivate :: Eff MainEff Unit
       deactivate = join (readRef deactivateRef)
 
-  let logError level str = case level of
-                            Success -> log str
-                            Info -> log str
-                            Warning -> log str
-                            Error -> error str
+  let showError :: Notify
+      showError level str = case level of
+                             Success -> Notify.showInfo str
+                             Info -> Notify.showInfo str
+                             Warning -> Notify.showWarning str
+                             Error -> Notify.showError str
 
   let initialise server port root = fromAff do
-        deact <- startServer' server port root logError
+        deact <- startServer' server port root showError
         liftEff $ writeRef deactivateRef deact
 
   pure
     {
       activate: mkEffFn3 initialise
     , deactivate: deactivate
-    , build: mkEffFn2 $ build' logError
+    , build: mkEffFn2 $ build' showError
     , updateFile: mkEffFn2 $ \fname text -> useEditor modulesState fname text
     , getTooltips: mkEffFn3 $ \line char getText -> do
         state <- readRef modulesState
