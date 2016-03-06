@@ -68,7 +68,6 @@ export function activate(context: vscode.ExtensionContext) {
               } else {
                   vscode.window.showErrorMessage("Build error :(");
               }
-              console.info(res);
           });
       })
       , vscode.languages.registerCodeActionsProvider('purescript', buildProvider)
