@@ -12,7 +12,7 @@
   ],
   "dependencies": {
     "purescript-console": "^0.1.0",
-    "purescript-ide-purescript-core": "git@github.com:nwolverson/purescript-ide-purescript-core.git",
+    "purescript-ide-purescript-core": "^0.0.1",
     "purescript-eff-functions": "^0.1.1",
     "purescript-aff-promise": "^0.0.1"
   }
