@@ -1,5 +1,6 @@
 module IdePurescript.VSCode.Main where
 
+
 import Prelude
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
@@ -11,20 +12,17 @@ import Control.Monad.Aff.AVar (AVAR)
 import Data.Functor ((<$))
 import Control.Bind (join)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
-import Data.String.Regex (Regex, match, noFlags, regex)
-import Data.String (null)
-import Control.Monad.Aff (runAff)
 import PscIde (NET)
 import Control.Promise (Promise, fromAff)
 import Data.String.Regex (Regex, noFlags, regex, split, match)
-import Data.String (trim)
+import Data.String (trim, null)
 import Data.Posix.Signal (Signal(SIGKILL))
 import Data.Array (uncons)
 
 import Node.ChildProcess (kill, CHILD_PROCESS)
 
 import IdePurescript.Build (Command(Command), build)
-import IdePurescript.PscErrors (PscError)
+import IdePurescript.PscErrors (PscError(PscError))
 import IdePurescript.Modules (State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscIde (getType, getCompletion, loadDeps)
 import IdePurescript.PscIdeServer (ServerStartResult(StartError, Closed, Started, WrongPath, CorrectPath), startServer)
@@ -46,13 +44,13 @@ type MainEff =
 ignoreError :: forall a eff. a -> Eff eff Unit
 ignoreError _ = pure unit
 
-useEditor :: forall eff. (Ref State) -> String -> String -> Eff (net :: NET, ref :: REF | eff) Unit
-useEditor modulesStateRef path text = do
+useEditor :: forall eff. Int -> (Ref State) -> String -> String -> Eff (net :: NET, ref :: REF | eff) Unit
+useEditor port modulesStateRef path text = do
   let mainModule = getMainModule text
   case mainModule of
     Just m -> runAff ignoreError ignoreError $ do
-      loadDeps m
-      state <- getModulesForFile path text
+      loadDeps port m
+      state <- getModulesForFile port path text
       liftEff $ writeRef modulesStateRef state
       pure unit
     Nothing -> pure unit
@@ -66,14 +64,14 @@ moduleRegex = regex """(?:^|[^A-Za-z_.])(?:((?:[A-Z][A-Za-z0-9]*\.)*(?:[A-Z][A-Z
 type Completion =
   { type:: String
   , identifier :: String
+  , "module" :: String
   }
 
-getCompletions :: State -> Int -> Int -> GetText MainEff
+getCompletions :: Int -> State -> Int -> Int -> GetText MainEff
   -> Eff MainEff (Promise (Array Completion))
-getCompletions state line char getTextInRange = do
+getCompletions port state line char getTextInRange = do
   line <- getTextInRange line 0 line char
-  let modules = getUnqualActiveModules state
-      getQualifiedModule = (flip getQualModule) state
+  let getQualifiedModule = (flip getQualModule) state
   let parsed =
       case match moduleRegex line of
         Just [ Just _, mod, tok ] | mod /= Nothing || tok /= Nothing ->
@@ -83,12 +81,12 @@ getCompletions state line char getTextInRange = do
   log $ line
   case parsed of
     Just { mod, token } -> fromAff $ do
-      getCompletion token mod moduleCompletion modules getQualifiedModule
+      getCompletion port token mod moduleCompletion (getUnqualActiveModules state $ Just token) getQualifiedModule
     _ -> fromAff $ pure []
 
-getTooltips :: State -> Int -> Int -> GetText MainEff
+getTooltips :: Int -> State -> Int -> Int -> GetText MainEff
   -> Eff MainEff (Promise String)
-getTooltips state line char getTextInRange = do
+getTooltips port state line char getTextInRange = do
     let beforeRegex = regex "[a-zA-Z_0-9']*$" noFlags
         afterRegex = regex "^[a-zA-Z_0-9']*" noFlags
     textBefore <- getTextInRange line 0    line char
@@ -98,7 +96,7 @@ getTooltips state line char getTextInRange = do
                 _ -> ""
     let prefix = ""
     fromAff do
-      ty <- getType word prefix (getUnqualActiveModules state) (flip getQualModule $ state)
+      ty <- getType port word prefix (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
       pure $ if null ty then "" else "**" ++ word ++ "** :: " ++ ty
 
 data ErrorLevel = Success | Info | Warning | Error
@@ -118,7 +116,7 @@ startServer' server port root cb = do
     Just cp -> pure $ void $ kill SIGKILL cp
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
-toDiagnostic isError (pscerr@{ message, filename, position, suggestion }) =
+toDiagnostic isError (PscError { message, filename, position, suggestion }) =
   { filename: fromMaybe "" filename
   , diagnostic: mkDiagnostic (range position) message (if isError then 0 else 1)
   , quickfix: conv suggestion
@@ -170,6 +168,7 @@ main :: Eff MainEff
 main = do
   modulesState <- newRef (initialModulesState)
   deactivateRef <- newRef (pure unit :: Eff MainEff Unit)
+  portRef <- newRef 0
 
 
   let deactivate :: Eff MainEff Unit
@@ -184,18 +183,24 @@ main = do
 
   let initialise server port root = fromAff do
         deact <- startServer' server port root showError
-        liftEff $ writeRef deactivateRef deact
+        liftEff $ do 
+          writeRef deactivateRef deact
+          writeRef portRef port
 
   pure
     {
       activate: mkEffFn3 initialise
     , deactivate: deactivate
     , build: mkEffFn2 $ build' showError
-    , updateFile: mkEffFn2 $ \fname text -> useEditor modulesState fname text
+    , updateFile: mkEffFn2 $ \fname text -> do
+        port <- readRef portRef
+        useEditor port modulesState fname text
     , getTooltips: mkEffFn3 $ \line char getText -> do
         state <- readRef modulesState
-        getTooltips state line char (runEffFn4 getText)
+        port <- readRef portRef
+        getTooltips port state line char (runEffFn4 getText)
     , getCompletions: mkEffFn3 $ \line char getText -> do
         state <- readRef modulesState
-        getCompletions state line char (runEffFn4 getText)
+        port <- readRef portRef
+        getCompletions port state line char (runEffFn4 getText)
     }
