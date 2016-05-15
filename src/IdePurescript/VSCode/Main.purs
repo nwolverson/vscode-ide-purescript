@@ -2,6 +2,7 @@ module IdePurescript.VSCode.Main where
 
 
 import Prelude
+import Control.Monad (when)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
@@ -13,13 +14,19 @@ import Data.Functor ((<$))
 import Control.Bind (join)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import PscIde (NET)
+
+import Node.Process (PROCESS, lookupEnv)
 import Control.Promise (Promise, fromAff)
 import Data.String.Regex (Regex, noFlags, regex, split, match)
 import Data.String (trim, null)
 import Data.Posix.Signal (Signal(SIGKILL))
-import Data.Array (uncons)
+import Data.Array (uncons, head, length)
 
+import PscIde.Server (findBins, Executable(Executable))
 import Node.ChildProcess (kill, CHILD_PROCESS)
+import Node.Buffer (BUFFER)
+import Node.FS (FS)
+import Data.Foldable (traverse_)
 
 import IdePurescript.Build (Command(Command), build)
 import IdePurescript.PscErrors (PscError(PscError))
@@ -33,12 +40,15 @@ import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
 import VSCode.Notifications as Notify
 
 type MainEff =
-  ( console :: CONSOLE
+  ( buffer :: BUFFER
+  , fs :: FS
+  , console :: CONSOLE
   , net :: NET
   , ref :: REF
   , avar :: AVAR
   , cp :: CHILD_PROCESS
   , notify :: Notify.NOTIFY
+  , process :: PROCESS
   )
 
 ignoreError :: forall a eff. a -> Eff eff Unit
@@ -104,16 +114,33 @@ type Notify = ErrorLevel -> String -> Eff MainEff Unit
 
 startServer' :: String -> Int -> String -> Notify -> Aff MainEff (Eff MainEff Unit)
 startServer' server port root cb = do
-  res <- startServer server port root
-  childProc <- liftEff $ case res of
-    CorrectPath -> Nothing <$ cb Info "Found existing psc-ide-server with correct path"
-    WrongPath wrongPath -> Nothing <$ (cb Error $ "Found existing psc-ide-server with wrong path: '" ++wrongPath++"'. Correct, kill or configure a different port, and restart.")
-    Started cp -> Just cp <$ cb Success "Started psc-ide-server"
-    Closed -> Nothing <$ cb Info "psc-ide-server exited with success code"
-    StartError err -> Nothing <$ (cb Error $ "Could not start psc-ide-server process. Check the configured port number is valid.\n" ++err)
-  case childProc of
-    Nothing -> pure $ pure unit
-    Just cp -> pure $ void $ kill SIGKILL cp
+  serverBins <- findBins server
+  case head serverBins of 
+    Nothing -> do
+      processPath <- liftEffS $ lookupEnv "PATH"
+      liftEffS $ cb Info $ "Couldn't find psc-ide-server, check PATH. Looked for: "
+        ++ server ++ " in PATH: " ++ fromMaybe "" processPath
+      pure $ pure unit
+    Just (Executable bin _) -> do
+      res <- startServer bin port root
+      liftEff $ log $ "Resolved psc-ide-server:"
+      traverse_ (\(Executable x vv) -> do
+        liftEff $ log $ x ++ ": " ++ fromMaybe "ERROR" vv) serverBins
+      liftEff $ when (length serverBins > 1) $ cb Warning $ "Found multiple psc-ide-server executables; using " ++ bin
+          
+      childProc <- liftEff $ case res of
+        CorrectPath -> Nothing <$ cb Info "Found existing psc-ide-server with correct path"
+        WrongPath wrongPath -> Nothing <$ (cb Error $ "Found existing psc-ide-server with wrong path: '" ++wrongPath++"'. Correct, kill or configure a different port, and restart.")
+        Started cp -> Just cp <$ cb Success "Started psc-ide-server"
+        Closed -> Nothing <$ cb Info "psc-ide-server exited with success code"
+        StartError err -> Nothing <$ (cb Error $ "Could not start psc-ide-server process. Check the configured port number is valid.\n" ++err)
+      case childProc of
+        Nothing -> pure $ pure unit
+        Just cp -> pure $ void $ kill SIGKILL cp
+    
+  where 
+    liftEffS :: forall a. Eff MainEff a -> Aff MainEff a
+    liftEffS = liftEff
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
 toDiagnostic isError (PscError { message, filename, position, suggestion }) =

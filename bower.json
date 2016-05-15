@@ -18,5 +18,8 @@
   },
   "resolutions": {
     "purescript-aff": ">= 0.13.1 < 0.17.0"
+  },
+  "devDependencies": {
+    "purescript-node-process": "^0.5.0"
   }
 }
