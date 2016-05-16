@@ -18,11 +18,50 @@ export function activate(context: vscode.ExtensionContext) {
                 useDoc(vscode.window.activeTextEditor.document)
             }
         });
+        
+    
+    const diagnosticCollection = vscode.languages.createDiagnosticCollection("purescript");
     const buildProvider = new BuildActionProvider();
+    const onBuildResult = (notifySuccess : boolean) =>  (res : BuildResult) => {
+        if (res.success) {
+            if (notifySuccess) {
+                vscode.window.showInformationMessage("Build success!");
+            }
+            let code = 0;
+            const map = new Map<string, vscode.Diagnostic[]>();
+            
+            const actionMap = new Map<number, FileDiagnostic>();
+            res.diagnostics.forEach(d => {
+                ++code;
+                d.diagnostic.code = code;
+                actionMap.set(code, d);
+                const entries = map.get(d.filename) || [];
+                entries.push(d.diagnostic);
+                map.set(d.filename, entries);
+            });
+            const diags = <[vscode.Uri, vscode.Diagnostic[]][]><Object> Array.from(map.entries()).map(([url, diags]) => [vscode.Uri.file(url), diags]);
+            
+            // If I don't clear before set, last error remains when fixed
+            diagnosticCollection.clear();
+            
+            diagnosticCollection.set(diags);
+            
+            buildProvider.setBuildResults(actionMap);
+        } else {
+            vscode.window.showErrorMessage("Build error :(");
+        }
+    };
+    
+    
     context.subscriptions.push(
         new vscode.Disposable(ps.deactivate)
       , vscode.window.onDidChangeActiveTextEditor((editor) => useDoc(editor.document))
-      , vscode.workspace.onDidSaveTextDocument(useDoc)
+      , vscode.workspace.onDidSaveTextDocument(doc => {
+          if (config.get<boolean>('fastRebuild')) {
+              ps.quickBuild(doc.fileName).then(onBuildResult(false));
+          }
+          useDoc(doc);
+        })
       , vscode.languages.registerHoverProvider('purescript', { 
         provideHover: (doc, pos, tok) => 
             ps.getTooltips(pos.line, pos.character, getText(doc))
@@ -46,30 +85,7 @@ export function activate(context: vscode.ExtensionContext) {
         })
       , vscode.commands.registerCommand("purescript.build", function() {
           const config = vscode.workspace.getConfiguration("purescript");
-          ps.build(config.get<string>("buildCommand"), vscode.workspace.rootPath).then((res : BuildResult) => {
-              if (res.success) {
-                  vscode.window.showInformationMessage("Build success!");
-                  let code = 0;
-                  const map = new Map<vscode.Uri, vscode.Diagnostic[]>();
-                  
-                  const actionMap = new Map<number, FileDiagnostic>();
-                  res.diagnostics.forEach(d => {
-                      ++code;
-                      d.diagnostic.code = code;
-                      actionMap.set(code, d);
-                      const uri = vscode.Uri.file(d.filename);
-                      const entries = map.get(uri) || [];
-                      entries.push(d.diagnostic);
-                      map.set(uri, entries);
-                  });
-                  const diagnosticCollection = vscode.languages.createDiagnosticCollection("purescript");
-                  diagnosticCollection.set(Array.from(map.entries()));
-                  
-                  buildProvider.setBuildResults(actionMap);
-              } else {
-                  vscode.window.showErrorMessage("Build error :(");
-              }
-          });
+          ps.build(config.get<string>("buildCommand"), vscode.workspace.rootPath).then(onBuildResult(true));
       })
       , vscode.languages.registerCodeActionsProvider('purescript', buildProvider)
       , vscode.Disposable.from(new CodeActionCommands())

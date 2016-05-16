@@ -7,7 +7,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
 import Control.Monad.Eff.Class (liftEff)
-import Data.Function.Eff (EffFn4, EffFn3, EffFn2, runEffFn4, mkEffFn3, mkEffFn2)
+import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Control.Monad.Aff (Aff, runAff)
 import Control.Monad.Aff.AVar (AVAR)
 import Data.Functor ((<$))
@@ -38,6 +38,10 @@ import VSCode.Position (mkPosition)
 import VSCode.Range (mkRange)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
 import VSCode.Notifications as Notify
+
+import IdePurescript.Build (BuildResult, rebuild)
+
+import PscIde as P
 
 type MainEff =
   ( buffer :: BUFFER
@@ -88,7 +92,7 @@ getCompletions port state line char getTextInRange = do
           Just { mod: fromMaybe "" mod , token: fromMaybe "" tok}
         _ -> Nothing
   let moduleCompletion = false
-  log $ line
+  log $ "Completion: " ++ line
   case parsed of
     Just { mod, token } -> fromAff $ do
       getCompletion port token mod moduleCompletion (getUnqualActiveModules state $ Just token) getQualifiedModule
@@ -167,9 +171,18 @@ type VSBuildResult =
   { success:: Boolean
   , diagnostics :: Array FileDiagnostic
   }
+  
+quickBuild :: Int -> String -> Eff MainEff (Promise VSBuildResult)
+quickBuild port filename = fromAff $ do
+  { errors, success } <- rebuild port filename
+  liftEff $  log $ "Quick build done: " <> show success
+  pure $ { success, diagnostics: toDiagnostic' errors }
+
+toDiagnostic' :: { warnings :: Array PscError, errors :: Array PscError } -> Array FileDiagnostic
+toDiagnostic' { warnings, errors } = map (toDiagnostic true) errors ++ map (toDiagnostic false) warnings
 
 build' :: Notify -> String -> String -> Eff MainEff (Promise VSBuildResult)
-build' notify command directory  = fromAff $ do
+build' notify command directory = fromAff $ do
   liftEff $ log "Building"
   let buildCommand = (split (regex "\\s+" noFlags) <<< trim) command
   case uncons buildCommand of
@@ -179,7 +192,7 @@ build' notify command directory  = fromAff $ do
       res <- build { command: Command cmd args, directory }
       liftEff $ if res.success then notify Success "PureScript build succeeded"
                 else notify Warning "PureScript build completed with errors"
-      pure $ { success: true, diagnostics: map (toDiagnostic true) res.errors.errors ++ map (toDiagnostic false) res.errors.warnings }
+      pure $ { success: true, diagnostics: toDiagnostic' res.errors }
     Nothing -> do
       liftEff $ notify Error "Error parsing PureScript build command"
       pure { success: false, diagnostics: [] }
@@ -188,6 +201,7 @@ main :: Eff MainEff
   { activate :: EffFn3 MainEff String Int String (Promise Unit)
   , deactivate :: Eff MainEff Unit
   , build :: EffFn2 MainEff String String (Promise VSBuildResult)
+  , quickBuild :: EffFn1 MainEff String (Promise VSBuildResult)
   , updateFile :: EffFn2 MainEff String String Unit
   , getTooltips :: EffFn3 MainEff Int Int (EffFn4 MainEff Int Int Int Int String) (Promise String)
   , getCompletions :: EffFn3 MainEff Int Int (EffFn4 MainEff Int Int Int Int String) (Promise (Array Completion))
@@ -210,7 +224,8 @@ main = do
 
   let initialise server port root = fromAff do
         deact <- startServer' server port root showError
-        liftEff $ do 
+        P.load port [] []
+        liftEff $ do
           writeRef deactivateRef deact
           writeRef portRef port
 
@@ -219,6 +234,9 @@ main = do
       activate: mkEffFn3 initialise
     , deactivate: deactivate
     , build: mkEffFn2 $ build' showError
+    , quickBuild: mkEffFn1 \fname -> do
+        port <- readRef portRef
+        quickBuild port fname
     , updateFile: mkEffFn2 $ \fname text -> do
         port <- readRef portRef
         useEditor port modulesState fname text

@@ -41,6 +41,11 @@
           "type": "string",
           "default": "pulp build --no-psa --json-errors",
           "description": "Build command to use with arguments. Not passed to shell. eg `pulp build --json-errors`"
+        },
+        "purescript.fastRebuild": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable psc-ide fast rebuild"
         }
       }
     }
@@ -48,6 +53,7 @@
   "scripts": {
     "vscode:prepublish": "npm run -s psc && node ./node_modules/vscode/bin/compile",
     "compile": "npm run -s psc && node ./node_modules/vscode/bin/compile -watch -p ./",
+    "build": "npm run psc",
     "psc": "mkdir -p out/src && pulp build --to out/src/bundle.js --skip-entry-point && echo 'module.exports = PS.Main.main' >> out/src/bundle.js",
     "postinstall": "node ./node_modules/vscode/bin/install"
   },
