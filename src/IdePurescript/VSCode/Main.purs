@@ -28,7 +28,7 @@ import Node.Buffer (BUFFER)
 import Node.FS (FS)
 import Data.Foldable (traverse_)
 
-import IdePurescript.Build (Command(Command), build)
+import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.PscErrors (PscError(PscError))
 import IdePurescript.Modules (State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscIde (getType, getCompletion, loadDeps)
@@ -38,8 +38,6 @@ import VSCode.Position (mkPosition)
 import VSCode.Range (mkRange)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
 import VSCode.Notifications as Notify
-
-import IdePurescript.Build (BuildResult, rebuild)
 
 import PscIde as P
 
@@ -92,7 +90,6 @@ getCompletions port state line char getTextInRange = do
           Just { mod: fromMaybe "" mod , token: fromMaybe "" tok}
         _ -> Nothing
   let moduleCompletion = false
-  log $ "Completion: " ++ line
   case parsed of
     Just { mod, token } -> fromAff $ do
       getCompletion port token mod moduleCompletion (getUnqualActiveModules state $ Just token) getQualifiedModule
@@ -211,7 +208,7 @@ main = do
   deactivateRef <- newRef (pure unit :: Eff MainEff Unit)
   portRef <- newRef 0
 
-
+ 
   let deactivate :: Eff MainEff Unit
       deactivate = join (readRef deactivateRef)
 

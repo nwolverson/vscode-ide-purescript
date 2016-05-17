@@ -1,21 +1,11 @@
 // module VSCode.Diagnostic
-
-exports.mkDiagnostic = function(range) {
-    return function(message) {
-        return function(severity) {
-            return new (require('vscode').Diagnostic)(range,message,severity);
-        };
-    };
-};
-
-exports.mkDiagnosticWithInfo = function(range) {
-    return function(message) {
-        return function(severity) {
-            return function (x) {
-              var diagnostic = new (require('vscode').Diagnostic)(range,message,severity);
-              diagnostic.info = x;
-              return diagnostic;
-            }
-        };
-    };
-};
+"use strict";
+var vscode_1 = require('vscode');
+exports.mkDiagnostic = function (range) { return function (message) { return function (severity) {
+    return new vscode_1.Diagnostic(range, message, severity);
+}; }; };
+exports.mkDiagnosticWithInfo = function (range) { return function (message) { return function (severity) { return function (x) {
+    var diagnostic = new vscode_1.Diagnostic(range, message, severity);
+    diagnostic.info = x;
+    return diagnostic;
+}; }; }; };

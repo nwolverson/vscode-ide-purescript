@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
                 useDoc(vscode.window.activeTextEditor.document)
             }
         });
-        
+
     
     const diagnosticCollection = vscode.languages.createDiagnosticCollection("purescript");
     const buildProvider = new BuildActionProvider();
@@ -52,7 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
     
-    
+    // vscode.workspace.onDidChangeTextDocument(e => console.log(e.contentChanges));
     context.subscriptions.push(
         new vscode.Disposable(ps.deactivate)
       , vscode.window.onDidChangeActiveTextEditor((editor) => useDoc(editor.document))
