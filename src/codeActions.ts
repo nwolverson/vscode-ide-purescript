@@ -24,7 +24,6 @@ export class BuildActionProvider implements CodeActionProvider {
     
     provideCodeActions(document: TextDocument, range: Range, context: CodeActionContext, token: CancellationToken)
         : Command[] {
-            console.log(`Asked for code actions for range: ${range.start.line}-${range.end.line}`)
            
         return context.diagnostics
             .filter(d => d.range.contains(range))

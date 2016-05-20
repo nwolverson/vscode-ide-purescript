@@ -4,18 +4,17 @@ module IdePurescript.VSCode.Main where
 import Prelude
 import Control.Monad (when)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
+import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
 import Control.Monad.Eff.Class (liftEff)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Control.Monad.Aff (Aff, runAff)
-import Control.Monad.Aff.AVar (AVAR)
 import Data.Functor ((<$))
 import Control.Bind (join)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import PscIde (NET)
 
-import Node.Process (PROCESS, lookupEnv)
+import Node.Process (lookupEnv)
 import Control.Promise (Promise, fromAff)
 import Data.String.Regex (Regex, noFlags, regex, split, match)
 import Data.String (trim, null)
@@ -23,9 +22,7 @@ import Data.Posix.Signal (Signal(SIGKILL))
 import Data.Array (uncons, head, length)
 
 import PscIde.Server (findBins, Executable(Executable))
-import Node.ChildProcess (kill, CHILD_PROCESS)
-import Node.Buffer (BUFFER)
-import Node.FS (FS)
+import Node.ChildProcess (kill)
 import Data.Foldable (traverse_)
 
 import IdePurescript.Build (Command(Command), build, rebuild)
@@ -38,20 +35,12 @@ import VSCode.Position (mkPosition)
 import VSCode.Range (mkRange)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
 import VSCode.Notifications as Notify
+import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
 
 import PscIde as P
 
-type MainEff =
-  ( buffer :: BUFFER
-  , fs :: FS
-  , console :: CONSOLE
-  , net :: NET
-  , ref :: REF
-  , avar :: AVAR
-  , cp :: CHILD_PROCESS
-  , notify :: Notify.NOTIFY
-  , process :: PROCESS
-  )
+import VSCode.Command (register)
+import IdePurescript.VSCode.Types (MainEff)
 
 ignoreError :: forall a eff. a -> Eff eff Unit
 ignoreError _ = pure unit
@@ -79,8 +68,8 @@ type Completion =
   , "module" :: String
   }
 
-getCompletions :: Int -> State -> Int -> Int -> GetText MainEff
-  -> Eff MainEff (Promise (Array Completion))
+getCompletions :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
+  -> Eff (MainEff eff) (Promise (Array Completion))
 getCompletions port state line char getTextInRange = do
   line <- getTextInRange line 0 line char
   let getQualifiedModule = (flip getQualModule) state
@@ -95,8 +84,8 @@ getCompletions port state line char getTextInRange = do
       getCompletion port token mod moduleCompletion (getUnqualActiveModules state $ Just token) getQualifiedModule
     _ -> fromAff $ pure []
 
-getTooltips :: Int -> State -> Int -> Int -> GetText MainEff
-  -> Eff MainEff (Promise String)
+getTooltips :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
+  -> Eff (MainEff eff) (Promise String)
 getTooltips port state line char getTextInRange = do
     let beforeRegex = regex "[a-zA-Z_0-9']*$" noFlags
         afterRegex = regex "^[a-zA-Z_0-9']*" noFlags
@@ -111,12 +100,12 @@ getTooltips port state line char getTextInRange = do
       pure $ if null ty then "" else "**" ++ word ++ "** :: " ++ ty
 
 data ErrorLevel = Success | Info | Warning | Error
-type Notify = ErrorLevel -> String -> Eff MainEff Unit
+type Notify eff = ErrorLevel -> String -> Eff (MainEff eff) Unit
 
-startServer' :: String -> Int -> String -> Notify -> Aff MainEff (Eff MainEff Unit)
+startServer' :: forall eff. String -> Int -> String -> Notify eff -> Aff (MainEff eff) (Eff (MainEff eff) Unit)
 startServer' server port root cb = do
   serverBins <- findBins server
-  case head serverBins of 
+  case head serverBins of
     Nothing -> do
       processPath <- liftEffS $ lookupEnv "PATH"
       liftEffS $ cb Info $ "Couldn't find psc-ide-server, check PATH. Looked for: "
@@ -128,7 +117,7 @@ startServer' server port root cb = do
       traverse_ (\(Executable x vv) -> do
         liftEff $ log $ x ++ ": " ++ fromMaybe "ERROR" vv) serverBins
       liftEff $ when (length serverBins > 1) $ cb Warning $ "Found multiple psc-ide-server executables; using " ++ bin
-          
+
       childProc <- liftEff $ case res of
         CorrectPath -> Nothing <$ cb Info "Found existing psc-ide-server with correct path"
         WrongPath wrongPath -> Nothing <$ (cb Error $ "Found existing psc-ide-server with wrong path: '" ++wrongPath++"'. Correct, kill or configure a different port, and restart.")
@@ -138,9 +127,9 @@ startServer' server port root cb = do
       case childProc of
         Nothing -> pure $ pure unit
         Just cp -> pure $ void $ kill SIGKILL cp
-    
-  where 
-    liftEffS :: forall a. Eff MainEff a -> Aff MainEff a
+
+  where
+    liftEffS :: forall a. Eff (MainEff eff) a -> Aff (MainEff eff) a
     liftEffS = liftEff
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
@@ -168,8 +157,8 @@ type VSBuildResult =
   { success:: Boolean
   , diagnostics :: Array FileDiagnostic
   }
-  
-quickBuild :: Int -> String -> Eff MainEff (Promise VSBuildResult)
+
+quickBuild :: forall eff. Int -> String -> Eff (MainEff eff) (Promise VSBuildResult)
 quickBuild port filename = fromAff $ do
   { errors, success } <- rebuild port filename
   liftEff $  log $ "Quick build done: " <> show success
@@ -178,7 +167,7 @@ quickBuild port filename = fromAff $ do
 toDiagnostic' :: { warnings :: Array PscError, errors :: Array PscError } -> Array FileDiagnostic
 toDiagnostic' { warnings, errors } = map (toDiagnostic true) errors ++ map (toDiagnostic false) warnings
 
-build' :: Notify -> String -> String -> Eff MainEff (Promise VSBuildResult)
+build' :: forall eff. Notify eff -> String -> String -> Eff (MainEff eff) (Promise VSBuildResult)
 build' notify command directory = fromAff $ do
   liftEff $ log "Building"
   let buildCommand = (split (regex "\\s+" noFlags) <<< trim) command
@@ -194,35 +183,40 @@ build' notify command directory = fromAff $ do
       liftEff $ notify Error "Error parsing PureScript build command"
       pure { success: false, diagnostics: [] }
 
-main :: Eff MainEff
-  { activate :: EffFn3 MainEff String Int String (Promise Unit)
-  , deactivate :: Eff MainEff Unit
-  , build :: EffFn2 MainEff String String (Promise VSBuildResult)
-  , quickBuild :: EffFn1 MainEff String (Promise VSBuildResult)
-  , updateFile :: EffFn2 MainEff String String Unit
-  , getTooltips :: EffFn3 MainEff Int Int (EffFn4 MainEff Int Int Int Int String) (Promise String)
-  , getCompletions :: EffFn3 MainEff Int Int (EffFn4 MainEff Int Int Int Int String) (Promise (Array Completion))
+main :: forall eff. Eff (MainEff eff)
+  { activate :: EffFn3 (MainEff eff) String Int String (Promise Unit)
+  , deactivate :: Eff (MainEff eff) Unit
+  , build :: EffFn2 (MainEff eff) String String (Promise VSBuildResult)
+  , quickBuild :: EffFn1 (MainEff eff) String (Promise VSBuildResult)
+  , updateFile :: EffFn2 (MainEff eff) String String Unit
+  , getTooltips :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise String)
+  , getCompletions :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Array Completion))
   }
 main = do
   modulesState <- newRef (initialModulesState)
-  deactivateRef <- newRef (pure unit :: Eff MainEff Unit)
+  deactivateRef <- newRef (pure unit :: Eff (MainEff eff) Unit)
   portRef <- newRef 0
 
- 
-  let deactivate :: Eff MainEff Unit
+  let cmd s f = register ("purescript." <> s) f
+
+  let deactivate :: Eff (MainEff eff) Unit
       deactivate = join (readRef deactivateRef)
 
-  let showError :: Notify
+  let showError :: Notify eff
       showError level str = case level of
                              Success -> Notify.showInfo str
                              Info -> Notify.showInfo str
                              Warning -> Notify.showWarning str
                              Error -> Notify.showError str
 
+  let liftEffMM :: forall a. Eff (MainEff eff) a -> Aff (MainEff eff) a
+      liftEffMM = liftEff
   let initialise server port root = fromAff do
         deact <- startServer' server port root showError
         P.load port [] []
-        liftEff $ do
+        liftEffMM $ do
+          cmd "addImport" $ readRef portRef >>= addModuleImportCmd modulesState
+          cmd "addExplicitImport" $ readRef portRef >>= addIdentImportCmd modulesState
           writeRef deactivateRef deact
           writeRef portRef port
 
