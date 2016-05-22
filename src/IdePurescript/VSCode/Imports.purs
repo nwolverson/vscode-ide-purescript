@@ -4,14 +4,17 @@ import Prelude
 import IdePurescript.VSCode.Types
 import VSCode.Input
 import VSCode.Window
+import VSCode.Range
+
 import Control.Monad.Eff.Console (log)
 import Control.Monad.Aff (runAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (readRef, writeRef, Ref)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toNullable)
 import IdePurescript.Modules (State, ImportResult(AmbiguousImport, UpdatedImports), addModuleImport, addExplicitImport)
 import IdePurescript.PscIde (getAvailableModules)
+import IdePurescript.VSCode.Editor
 import PscIde.Command as C
 
 launchAffSilent = runAff (const $ pure unit) (const $ pure unit)
@@ -22,7 +25,9 @@ addIdentImportCmd modulesState port = do
   state <- readRef modulesState
   case ed of 
     Just ed' -> launchAffSilent $ do
-      ident <- getInput (defaultInputOptions { prompt = toNullable $ Just "Identifier" })
+      atCursor <- liftEffM $ identifierAtCursor ed'
+      let defaultIdent = maybe "" _.word atCursor
+      ident <- getInput (defaultInputOptions { prompt = toNullable $ Just "Identifier", value = toNullable $ Just defaultIdent })
       path <- liftEffM $ getPath ed'
       text <- liftEffM $ getText ed'
       addIdentImport state ed' path text Nothing ident

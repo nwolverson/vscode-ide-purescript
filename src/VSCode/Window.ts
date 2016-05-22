@@ -15,3 +15,13 @@ export const getText = (ed : TextEditor) => () =>
 export const setTextImpl = (ed : TextEditor) => (text : string) => (cb: (success: boolean) => () => {}) => () =>
     ed.edit(builder => builder.replace(new Range(0, 0, ed.document.lineCount, 0), text))
         .then(s => cb(s)());
+
+export const getCursorBufferPosition = (ed : TextEditor) => () : Position => 
+    ed.selection.active;
+
+export const getSelectionRange = (ed : TextEditor) => () : Range => 
+    ed.selection;
+
+export const getTextInRange = (ed : TextEditor) => (range : Range) => () => ed.document.getText(range);
+
+export const lineAtPosition = (ed: TextEditor) => (pos : Position) => () : string => ed.document.lineAt(pos).text;
