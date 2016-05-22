@@ -17,13 +17,11 @@ import IdePurescript.PscIde (getAvailableModules)
 import IdePurescript.VSCode.Editor
 import PscIde.Command as C
 
-launchAffSilent = runAff (const $ pure unit) (const $ pure unit)
-
 addIdentImportCmd :: forall eff. Ref State -> Int -> Eff (MainEff eff) Unit
 addIdentImportCmd modulesState port = do
   ed <- getActiveTextEditor
   state <- readRef modulesState
-  case ed of 
+  case ed of
     Just ed' -> launchAffSilent $ do
       atCursor <- liftEffM $ identifierAtCursor ed'
       let defaultIdent = maybe "" _.word atCursor

@@ -1,4 +1,4 @@
-module VSCode.Window (getActiveTextEditor, TextEditor, EDITOR, getPath, getText, setText, getCursorBufferPosition, getSelectionRange, getTextInRange, lineAtPosition) where
+module VSCode.Window (getActiveTextEditor, TextEditor, EDITOR, getPath, getText, setText, setTextInRange, getCursorBufferPosition, getSelectionRange, getTextInRange, lineAtPosition) where
 
 import Prelude
 import Control.Monad.Aff (makeAff, Aff)
@@ -24,6 +24,11 @@ foreign import setTextImpl :: forall eff. TextEditor -> String -> (Boolean -> Ef
 
 setText :: forall eff. TextEditor -> String -> Aff (editor :: EDITOR | eff) Boolean
 setText ed s = makeAff $ \_ succ -> setTextImpl ed s succ
+
+foreign import setTextInRangeImpl :: forall eff. TextEditor -> String -> Range -> (Boolean -> Eff (editor :: EDITOR | eff) Unit) -> Eff (editor :: EDITOR | eff) Unit
+
+setTextInRange :: forall eff. TextEditor -> String -> Range -> Aff (editor :: EDITOR | eff) Boolean
+setTextInRange ed s range = makeAff $ \_ succ -> setTextInRangeImpl ed s range succ
 
 foreign import getCursorBufferPosition :: forall eff. TextEditor -> Eff (editor :: EDITOR | eff) Position
 

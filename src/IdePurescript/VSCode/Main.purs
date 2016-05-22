@@ -30,6 +30,7 @@ import IdePurescript.PscErrors (PscError(PscError))
 import IdePurescript.Modules (State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscIde (getType, getCompletion, loadDeps)
 import IdePurescript.PscIdeServer (ServerStartResult(StartError, Closed, Started, WrongPath, CorrectPath), startServer)
+import IdePurescript.VSCode.Assist
 
 import VSCode.Position (mkPosition)
 import VSCode.Range (mkRange)
@@ -217,6 +218,8 @@ main = do
         liftEffMM $ do
           cmd "addImport" $ readRef portRef >>= addModuleImportCmd modulesState
           cmd "addExplicitImport" $ readRef portRef >>= addIdentImportCmd modulesState
+          cmd "caseSplit" $ readRef portRef >>= caseSplit
+          cmd "addClause" $ readRef portRef >>= addClause          
           writeRef deactivateRef deact
           writeRef portRef port
 
