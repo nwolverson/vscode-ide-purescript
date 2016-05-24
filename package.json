@@ -79,8 +79,9 @@
   ],
   "devDependencies": {
     "typescript": "^1.8.7",
-    "vscode": "^0.11.x",
-    "which": "^1.2.8"
+    "vscode": "^0.11.x"
   },
-  "dependencies": {}
+  "dependencies": {
+    "which": "^1.2.9"
+  }
 }
