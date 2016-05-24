@@ -24,14 +24,13 @@ import Data.Array (uncons, head, length)
 import PscIde.Server (findBins, Executable(Executable))
 import Node.ChildProcess (kill)
 import Data.Foldable (traverse_)
-
+ 
 import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.PscErrors (PscError(PscError))
 import IdePurescript.Modules (State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscIde (getType, getCompletion, loadDeps)
 import IdePurescript.PscIdeServer (ServerStartResult(StartError, Closed, Started, WrongPath, CorrectPath), startServer)
-import IdePurescript.VSCode.Assist
-
+import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import VSCode.Position (mkPosition)
 import VSCode.Range (mkRange)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
