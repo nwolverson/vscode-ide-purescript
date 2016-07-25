@@ -9,7 +9,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (readRef, writeRef, Ref)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toNullable)
-import IdePurescript.Modules (State, ImportResult(AmbiguousImport, UpdatedImports), addModuleImport, addExplicitImport)
+import IdePurescript.Modules (State, ImportResult(..), addModuleImport, addExplicitImport)
 import IdePurescript.PscIde (getAvailableModules)
 import IdePurescript.VSCode.Editor (identifierAtCursor)
 import PscIde.Command as C
@@ -32,6 +32,7 @@ addIdentImportCmd modulesState port = do
       { state: newState, result: output} <- addExplicitImport state port path text moduleName ident
       liftEffM $ writeRef modulesState newState
       case output of
+        FailedImport -> liftEffM $ log $ "Failed to add import"
         UpdatedImports out -> do
           void $ setText editor out
         AmbiguousImport opts -> do

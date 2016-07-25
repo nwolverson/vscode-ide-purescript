@@ -1,5 +1,6 @@
 module IdePurescript.VSCode.Types where
 
+import Prelude
 import Control.Monad.Aff (runAff, Aff)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
@@ -10,15 +11,18 @@ import Node.Buffer (BUFFER)
 import Node.ChildProcess (CHILD_PROCESS)
 import Node.FS (FS)
 import Node.Process (PROCESS)
-import Prelude (unit, pure, const, ($))
 import PscIde (NET)
 import VSCode.Command (COMMAND)
 import VSCode.Input (DIALOG)
 import VSCode.Notifications (NOTIFY)
 import VSCode.Window (EDITOR)
+import Control.Monad.Eff.Exception (EXCEPTION)
+import Control.Monad.Eff.Random (RANDOM)
 
 type MainEff a =
-  ( buffer :: BUFFER
+  ( err :: EXCEPTION
+  , random :: RANDOM
+  , buffer :: BUFFER
   , fs :: FS
   , console :: CONSOLE
   , net :: NET
@@ -36,6 +40,8 @@ type MainEff a =
 liftEffM :: forall a eff. Eff (MainEff eff) a -> Aff (MainEff eff) a
 liftEffM = liftEff
 
-launchAffSilent = runAff (const $ pure unit) (const $ pure unit)
+launchAffSilent :: forall a b. Aff a b -> Eff a Unit
+launchAffSilent = void <<< (runAff (const $ pure unit) (const $ pure unit))
 
+launchAffAndRaise :: forall a b. Aff a b -> Eff a Unit
 launchAffAndRaise = launchAffSilent
