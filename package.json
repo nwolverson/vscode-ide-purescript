@@ -2,7 +2,7 @@
   "name": "ide-purescript",
   "displayName": "PureScript IDE",
   "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "nwolverson",
   "repository": {
     "url": "git@github.com:nwolverson/vscode-ide-purescript.git"
@@ -67,7 +67,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run -s build && node ./node_modules/vscode/bin/compile",
+    "vscode:prepublish": "npm run -s compile",
     "compile": "npm run -s build && tsc -p ./",
     "build": "npm run ffi && npm run psc",
     "psc": "mkdir -p out/src && pulp build --to out/src/bundle.js --skip-entry-point && echo 'module.exports = PS.Main.main' >> out/src/bundle.js",
