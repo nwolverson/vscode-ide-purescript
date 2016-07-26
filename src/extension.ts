@@ -55,7 +55,11 @@ export function activate(context: vscode.ExtensionContext) {
     // vscode.workspace.onDidChangeTextDocument(e => console.log(e.contentChanges));
     context.subscriptions.push(
         new vscode.Disposable(ps.deactivate)
-      , vscode.window.onDidChangeActiveTextEditor((editor) => useDoc(editor.document))
+      , vscode.window.onDidChangeActiveTextEditor((editor) => {
+          if (editor) {
+            useDoc(editor.document);
+          }
+      })
       , vscode.workspace.onDidSaveTextDocument(doc => {
           if (config.get<boolean>('fastRebuild')) {
               ps.quickBuild(doc.fileName).then(onBuildResult(false));
