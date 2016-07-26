@@ -18,6 +18,7 @@ import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.Posix.Signal (Signal(SIGKILL))
 import Data.String (trim, null)
 import Data.String.Regex (Regex, noFlags, regex, split)
+import Data.Nullable (toNullable, Nullable)
 import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.Modules (State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscErrors (PscError(PscError))
@@ -77,8 +78,14 @@ getCompletions port state line char getTextInRange = do
       getCompletion port token Nothing mod moduleCompletion (getUnqualActiveModules state $ Just token) getQualifiedModule
     _ -> fromAff $ pure []
 
+
+type MarkedString = { language :: String, value :: String }
+
+markedString :: String -> MarkedString
+markedString s = { language: "purescript", value: s }
+
 getTooltips :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
-  -> Eff (MainEff eff) (Promise String)
+  -> Eff (MainEff eff) (Promise (Nullable MarkedString))
 getTooltips port state line char getTextInRange = do
     let beforeRegex = regex "[a-zA-Z_0-9']*$" noFlags
         afterRegex = regex "^[a-zA-Z_0-9']*" noFlags
@@ -91,7 +98,8 @@ getTooltips port state line char getTextInRange = do
     fromAff do
       -- TODO current module for opened idents
       ty <- getType port word Nothing prefix (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
-      pure $ if null ty then "" else "**" <> word <> "** :: " <> ty
+      let marked = if null ty then Nothing else Just $ markedString $ word <> " :: " <> ty
+      pure $ toNullable marked
 
 data ErrorLevel = Success | Info | Warning | Error
 type Notify eff = ErrorLevel -> String -> Eff (MainEff eff) Unit
@@ -183,7 +191,7 @@ main :: forall eff. Eff (MainEff eff)
   , build :: EffFn2 (MainEff eff) String String (Promise VSBuildResult)
   , quickBuild :: EffFn1 (MainEff eff) String (Promise VSBuildResult)
   , updateFile :: EffFn2 (MainEff eff) String String Unit
-  , getTooltips :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise String)
+  , getTooltips :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable MarkedString))
   , getCompletions :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Array Completion))
   }
 main = do

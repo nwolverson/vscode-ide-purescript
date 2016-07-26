@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'; 
+import * as vscode from 'vscode';
 
 import { BuildActionProvider, CodeActionCommands } from './codeActions';
 import { PscError, PscPosition, PscErrorSuggestion, PscResults, QuickFix, FileDiagnostic, BuildResult } from './build';
@@ -8,10 +8,10 @@ const getText = doc => (a,b,c,d) => doc.getText(new vscode.Range(new vscode.Posi
 export function activate(context: vscode.ExtensionContext) {
     const ps = require('./bundle')();
     const config = vscode.workspace.getConfiguration("purescript");
-    
+
     const useDoc = (doc : vscode.TextDocument) =>
         ps.updateFile(doc.fileName, doc.getText());
-    
+
     ps.activate(config.get<string>('pscIdeServerExe'), config.get<number>('pscIdePort'), vscode.workspace.rootPath)
         .then(() => {
             if (vscode.window.activeTextEditor) {
@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
         });
 
-    
+
     const diagnosticCollection = vscode.languages.createDiagnosticCollection("purescript");
     const buildProvider = new BuildActionProvider();
     const onBuildResult = (notifySuccess : boolean) =>  (res : BuildResult) => {
@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
             let code = 0;
             const map = new Map<string, vscode.Diagnostic[]>();
-            
+
             const actionMap = new Map<number, FileDiagnostic>();
             res.diagnostics.forEach(d => {
                 ++code;
@@ -40,18 +40,18 @@ export function activate(context: vscode.ExtensionContext) {
                 map.set(d.filename, entries);
             });
             const diags = <[vscode.Uri, vscode.Diagnostic[]][]><Object> Array.from(map.entries()).map(([url, diags]) => [vscode.Uri.file(url), diags]);
-            
+
             // If I don't clear before set, last error remains when fixed
             diagnosticCollection.clear();
-            
+
             diagnosticCollection.set(diags);
-            
+
             buildProvider.setBuildResults(actionMap);
         } else {
             vscode.window.showErrorMessage("Build error :(");
         }
     };
-    
+
     // vscode.workspace.onDidChangeTextDocument(e => console.log(e.contentChanges));
     context.subscriptions.push(
         new vscode.Disposable(ps.deactivate)
@@ -62,10 +62,10 @@ export function activate(context: vscode.ExtensionContext) {
           }
           useDoc(doc);
         })
-      , vscode.languages.registerHoverProvider('purescript', { 
-        provideHover: (doc, pos, tok) => 
+      , vscode.languages.registerHoverProvider('purescript', {
+        provideHover: (doc, pos, tok) =>
             ps.getTooltips(pos.line, pos.character, getText(doc))
-                .then(result => result.length ? new vscode.Hover(result) : null)
+                .then(result => result !== null ? new vscode.Hover(result) : null)
         })
       , vscode.languages.registerCompletionItemProvider('purescript', {
             provideCompletionItems: (doc, pos, _) => ps.getCompletions(pos.line, pos.character, getText(doc)).
@@ -79,7 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
                     } else {
                         item.kind = vscode.CompletionItemKind.Value;
                     }
-                    
+
                     return item;
                 }))
         })
@@ -90,5 +90,5 @@ export function activate(context: vscode.ExtensionContext) {
       , vscode.languages.registerCodeActionsProvider('purescript', buildProvider)
       , vscode.Disposable.from(new CodeActionCommands())
     );
-      
+
 }
