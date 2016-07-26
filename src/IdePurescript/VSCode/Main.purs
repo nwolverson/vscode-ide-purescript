@@ -15,14 +15,14 @@ import Data.Foldable (traverse_)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Data.Functor ((<$))
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
+import Data.Nullable (toNullable, Nullable)
 import Data.Posix.Signal (Signal(SIGKILL))
 import Data.String (trim, null)
 import Data.String.Regex (Regex, noFlags, regex, split)
-import Data.Nullable (toNullable, Nullable)
 import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.Modules (State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscErrors (PscError(PscError))
-import IdePurescript.PscIde (getType, getCompletion, loadDeps)
+import IdePurescript.PscIde (getType, getTypeInfo, getCompletion, loadDeps)
 import IdePurescript.PscIdeServer (ServerStartResult(..), startServer)
 import IdePurescript.Regex (match')
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
@@ -31,11 +31,13 @@ import IdePurescript.VSCode.Types (MainEff)
 import Node.ChildProcess (kill)
 import Node.Process (lookupEnv)
 import PscIde (NET)
+import PscIde.Command as Command
 import PscIde.Server (findBins, Executable(Executable))
 import VSCode.Command (register)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
-import VSCode.Position (mkPosition)
+import VSCode.Position (mkPosition, Position)
 import VSCode.Range (mkRange)
+import VSCode.Location (Location, mkLocation)
 
 ignoreError :: forall a eff. a -> Eff eff Unit
 ignoreError _ = pure unit
@@ -78,6 +80,25 @@ getCompletions port state line char getTextInRange = do
       getCompletion port token Nothing mod moduleCompletion (getUnqualActiveModules state $ Just token) getQualifiedModule
     _ -> fromAff $ pure []
 
+convPosition :: Command.Position -> Position
+convPosition { line, column } = mkPosition (line-1) (column-1)
+
+getDefinition :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
+  -> Eff (MainEff eff) (Promise (Nullable Location))
+getDefinition port state line char getTextInRange = do
+  let beforeRegex = regex "[a-zA-Z_0-9']*$" noFlags
+      afterRegex = regex "^[a-zA-Z_0-9']*" noFlags
+  textBefore <- getTextInRange line 0    line char
+  textAfter  <- getTextInRange line char line (char + 100)
+  let word = case { before: match' beforeRegex textBefore, after: match' afterRegex textAfter } of
+              { before: Just [Just s], after: Just [Just s'] } -> s<>s'
+              _ -> ""
+  let prefix = ""
+  fromAff $ do
+    info <- getTypeInfo port word Nothing prefix (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
+    pure $ toNullable $ case info of
+      Just { position: Just (Command.TypePosition { name, start }) } -> Just $ mkLocation name $ convPosition start
+      _ -> Nothing
 
 type MarkedString = { language :: String, value :: String }
 
@@ -193,6 +214,7 @@ main :: forall eff. Eff (MainEff eff)
   , updateFile :: EffFn2 (MainEff eff) String String Unit
   , getTooltips :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable MarkedString))
   , getCompletions :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Array Completion))
+  , provideDefinition :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable Location))
   }
 main = do
   modulesState <- newRef (initialModulesState)
@@ -247,4 +269,8 @@ main = do
         state <- readRef modulesState
         port <- readRef portRef
         getCompletions port state line char (runEffFn4 getText)
+    , provideDefinition: mkEffFn3 $ \line char getText -> do
+        state <- readRef modulesState
+        port <- readRef portRef
+        getDefinition port state line char (runEffFn4 getText)
     }

@@ -87,6 +87,10 @@ export function activate(context: vscode.ExtensionContext) {
                     return item;
                 }))
         })
+      , vscode.languages.registerDefinitionProvider('purescript', {
+          provideDefinition: (doc, pos, tok) =>
+            ps.provideDefinition(pos.line, pos.character, getText(doc))
+      }) 
       , vscode.commands.registerCommand("purescript.build", function() {
           const config = vscode.workspace.getConfiguration("purescript");
           ps.build(config.get<string>("buildCommand"), vscode.workspace.rootPath).then(onBuildResult(true));
