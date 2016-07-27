@@ -16,19 +16,17 @@ import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, m
 import Data.Functor ((<$))
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.Nullable (toNullable, Nullable)
-import Data.Posix.Signal (Signal(SIGKILL))
 import Data.String (trim, null)
 import Data.String.Regex (Regex, noFlags, regex, split)
 import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.Modules (State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscErrors (PscError(PscError))
 import IdePurescript.PscIde (getType, getTypeInfo, getCompletion, loadDeps)
-import IdePurescript.PscIdeServer (ServerStartResult(..), startServer)
+import IdePurescript.PscIdeServer (ServerStartResult(..), startServer, stopServer)
 import IdePurescript.Regex (match')
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
 import IdePurescript.VSCode.Types (MainEff)
-import Node.ChildProcess (kill)
 import Node.Process (lookupEnv)
 import PscIde (NET)
 import PscIde.Command as Command
@@ -146,7 +144,9 @@ startServer' server port root cb = do
       liftEff $ case res of
         CorrectPath port -> Just { port, quit: pure unit } <$ cb Info "Found existing psc-ide-server with correct path"
         WrongPath port wrongPath -> Nothing <$ (cb Error $ "Found existing psc-ide-server with wrong path: '" <>wrongPath<>"'. Correct, kill or configure a different port, and restart.")
-        Started port cp -> Just { port, quit: void $ kill SIGKILL cp } <$ cb Success ("Started psc-ide-server on " <> show port)
+        Started port cp -> do
+          cb Success ("Started psc-ide-server on " <> show port)
+          pure $ Just { port, quit: void $ runAff (\_ -> pure unit) (\_ -> pure unit) $ stopServer port root cp }
         Closed -> Nothing <$ cb Info "psc-ide-server exited with success code"
         StartError err -> Nothing <$ (cb Error $ "Could not start psc-ide-server process. Check the configured port number is valid.\n" <>err)
 
