@@ -3,7 +3,10 @@ module IdePurescript.VSCode.Imports where
 import Prelude
 import IdePurescript.VSCode.Types (MainEff, liftEffM, launchAffSilent)
 import VSCode.Input (showQuickPick, defaultInputOptions, getInput)
-import VSCode.Window (setText, getText, getPath, getActiveTextEditor)
+import VSCode.Window (getActiveTextEditor)
+
+import VSCode.TextEditor (setText, getDocument)
+import VSCode.TextDocument (getText, getPath)
 import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (readRef, writeRef, Ref)
@@ -23,8 +26,8 @@ addIdentImportCmd modulesState port = do
       atCursor <- liftEffM $ identifierAtCursor ed'
       let defaultIdent = maybe "" _.word atCursor
       ident <- getInput (defaultInputOptions { prompt = toNullable $ Just "Identifier", value = toNullable $ Just defaultIdent })
-      path <- liftEffM $ getPath ed'
-      text <- liftEffM $ getText ed'
+      path <- liftEffM $ getPath $ getDocument $ ed'
+      text <- liftEffM $ getText $ getDocument $ ed'
       addIdentImport state ed' path text Nothing ident
     Nothing -> pure unit
   where
@@ -51,8 +54,8 @@ addModuleImportCmd modulesState port =
     ed <- liftEffM $ getActiveTextEditor
     case mod, ed of
       Just moduleName, Just ed' -> do
-        path <- liftEffM $ getPath ed'
-        text <- liftEffM $ getText ed'
+        path <- liftEffM $ getPath $ getDocument $ ed'
+        text <- liftEffM $ getText $ getDocument $ ed'
         do
           output <- addModuleImport state port path text moduleName
           case output of

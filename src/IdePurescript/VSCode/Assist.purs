@@ -15,7 +15,9 @@ import IdePurescript.VSCode.Types (MainEff, liftEffM, launchAffAndRaise)
 import VSCode.Input (defaultInputOptions, getInput)
 import VSCode.Position (Position, mkPosition, getLine)
 import VSCode.Range (Range, mkRange)
-import VSCode.Window (setTextInRange, lineAtPosition, getSelectionRange, getCursorBufferPosition, getActiveTextEditor)
+import VSCode.Window (getSelectionRange, getCursorBufferPosition, getActiveTextEditor)
+import VSCode.TextDocument (lineAtPosition)
+import VSCode.TextEditor (setTextInRange, getDocument)
 
 lineRange :: Position -> String -> Range
 lineRange pos line =
@@ -32,7 +34,7 @@ caseSplit port = do
   body = do
     ed <- MaybeT $ liftEffM getActiveTextEditor
     pos <- lift $ liftEffM $ getCursorBufferPosition ed
-    line <- lift $ liftEffM $ lineAtPosition ed pos
+    line <- lift $ liftEffM $ lineAtPosition (getDocument ed) pos
     { range: { left, right } } <- MaybeT $ liftEffM $ identifierAtCursor ed
     ty <- lift $ getInput (defaultInputOptions { prompt = toNullable $ Just "Parameter type" })
     lines <- lift $ eitherToErr $ P.caseSplit port line left right true ty
@@ -45,7 +47,7 @@ addClause port = do
     Just ed -> launchAffAndRaise $ do
       pos <- liftEffM $ getCursorBufferPosition ed
       range <- liftEffM $ getSelectionRange ed
-      line <- liftEffM $ lineAtPosition ed pos
+      line <- liftEffM $ lineAtPosition (getDocument ed) pos
       lines <- eitherToErr $ P.addClause port line true
       void $ setTextInRange ed (intercalate "\n" lines) (lineRange pos line)
     _ -> pure unit

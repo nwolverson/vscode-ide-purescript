@@ -1,5 +1,3 @@
-// module VSCode.Diagnostic
-
 import { Diagnostic, Range, DiagnosticSeverity } from 'vscode';
 
 export const mkDiagnostic = (range: Range) => (message: string) => (severity: DiagnosticSeverity) =>

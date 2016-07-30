@@ -24,6 +24,7 @@ export interface PscResults {
 export interface QuickFix {
     suggest: boolean;
     replacement: string;
+    range: vscode.Range;
 }
 export interface FileDiagnostic {
     filename: string;

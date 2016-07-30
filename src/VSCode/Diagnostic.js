@@ -1,4 +1,3 @@
-// module VSCode.Diagnostic
 "use strict";
 var vscode_1 = require('vscode');
 exports.mkDiagnostic = function (range) { return function (message) { return function (severity) {

@@ -1,7 +1,9 @@
 module IdePurescript.VSCode.Editor where
 
 import Prelude
-import VSCode.Window (EDITOR, TextEditor, lineAtPosition, getCursorBufferPosition)
+import VSCode.Window (getCursorBufferPosition)
+import VSCode.TextDocument (EDITOR, lineAtPosition)
+import VSCode.TextEditor (TextEditor, getDocument)
 import VSCode.Position (getCharacter)
 import Control.Monad.Eff (Eff)
 import Data.Maybe (Maybe)
@@ -9,6 +11,7 @@ import IdePurescript.Tokens (WordRange, identifierAtPoint)
 
 identifierAtCursor :: forall eff. TextEditor -> Eff (editor :: EDITOR | eff) (Maybe { word :: String, range :: WordRange, qualifier :: Maybe String })
 identifierAtCursor editor = do
+    let doc = getDocument editor
     pos <- getCursorBufferPosition editor
-    line <- lineAtPosition editor pos
+    line <- lineAtPosition doc pos
     pure $ identifierAtPoint line (getCharacter pos)

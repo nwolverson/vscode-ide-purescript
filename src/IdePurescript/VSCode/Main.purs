@@ -34,7 +34,7 @@ import PscIde.Server (findBins, Executable(Executable))
 import VSCode.Command (register)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
 import VSCode.Position (mkPosition, Position)
-import VSCode.Range (mkRange)
+import VSCode.Range (mkRange, Range)
 import VSCode.Location (Location, mkLocation)
 
 ignoreError :: forall a eff. a -> Eff eff Unit
@@ -167,14 +167,13 @@ toDiagnostic isError (PscError { message, filename, position, suggestion }) =
       (mkPosition (endLine-1) (endColumn-1))
   range _ = mkRange (mkPosition 0 0) (mkPosition 0 0)
 
-  -- TODO: Handle suggestion ranges (_)
-  conv (Just { replacement }) = { suggest: true, replacement }
-  conv _ = { suggest: false, replacement: "" }
+  conv (Just { replacement, replaceRange }) = { suggest: true, replacement, range: range replaceRange }
+  conv _ = { suggest: false, replacement: "", range: range Nothing }
 
 type FileDiagnostic =
   { filename :: String
   , diagnostic :: Diagnostic
-  , quickfix :: { suggest :: Boolean, replacement :: String }
+  , quickfix :: { suggest :: Boolean, replacement :: String, range :: Range }
   }
 type VSBuildResult =
   { success:: Boolean

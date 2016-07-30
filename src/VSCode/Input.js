@@ -1,4 +1,3 @@
-// module VSCode.Input
 "use strict";
 var vscode_1 = require('vscode');
 exports.showInputBox = function (options) { return function (cb) { return function () {

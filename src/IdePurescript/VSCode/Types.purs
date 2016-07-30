@@ -15,7 +15,7 @@ import PscIde (NET)
 import VSCode.Command (COMMAND)
 import VSCode.Input (DIALOG)
 import VSCode.Notifications (NOTIFY)
-import VSCode.Window (EDITOR)
+import VSCode.TextDocument (EDITOR)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
 
