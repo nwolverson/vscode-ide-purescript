@@ -61,10 +61,12 @@ export function activate(context: vscode.ExtensionContext) {
           }
       })
       , vscode.workspace.onDidSaveTextDocument(doc => {
-          if (config.get<boolean>('fastRebuild')) {
-              ps.quickBuild(doc.fileName).then(onBuildResult(false));
+          if (doc.fileName.endsWith(".purs")) {
+            if (config.get<boolean>('fastRebuild')) {
+                ps.quickBuild(doc.fileName).then(onBuildResult(false));
+            }
+            useDoc(doc);
           }
-          useDoc(doc);
         })
       , vscode.languages.registerHoverProvider('purescript', {
         provideHover: (doc, pos, tok) =>
