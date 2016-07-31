@@ -76,7 +76,7 @@ getCompletions port state line char getTextInRange = do
   case parsed of
     Just { mod, token } -> fromAff $ do
       -- TODO currentModule
-      getCompletion port token Nothing mod moduleCompletion (getUnqualActiveModules state $ Just token) getQualifiedModule
+      getCompletion port token state.main mod moduleCompletion (getUnqualActiveModules state $ Just token) getQualifiedModule
     _ -> fromAff $ pure []
 
 convPosition :: Command.Position -> Position
@@ -117,7 +117,7 @@ getTooltips port state line char getTextInRange = do
     let prefix = ""
     fromAff do
       -- TODO current module for opened idents
-      ty <- getType port word Nothing prefix (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
+      ty <- getType port word state.main prefix (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
       let marked = if null ty then Nothing else Just $ markedString $ word <> " :: " <> ty
       pure $ toNullable marked
 
