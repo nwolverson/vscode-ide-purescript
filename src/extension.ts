@@ -22,11 +22,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     const diagnosticCollection = vscode.languages.createDiagnosticCollection("purescript");
     const buildProvider = new BuildActionProvider();
-    const onBuildResult = (notifySuccess : boolean) =>  (res : BuildResult) => {
+    const onBuildResult = (res : BuildResult) => {
         if (res.success) {
-            if (notifySuccess) {
-                vscode.window.showInformationMessage("Build success!");
-            }
             let code = 0;
             const map = new Map<string, vscode.Diagnostic[]>();
 
@@ -63,7 +60,12 @@ export function activate(context: vscode.ExtensionContext) {
       , vscode.workspace.onDidSaveTextDocument(doc => {
           if (doc.fileName.endsWith(".purs")) {
             if (config.get<boolean>('fastRebuild')) {
-                ps.quickBuild(doc.fileName).then(onBuildResult(false));
+                ps.quickBuild(doc.fileName)
+                    .then(onBuildResult)
+                    .catch(err => {
+                        console.error(err);
+                        vscode.window.showErrorMessage("Rebuild error");
+                    })
             }
             useDoc(doc);
           }
@@ -95,7 +97,7 @@ export function activate(context: vscode.ExtensionContext) {
       }) 
       , vscode.commands.registerCommand("purescript.build", function() {
           const config = vscode.workspace.getConfiguration("purescript");
-          ps.build(config.get<string>("buildCommand"), vscode.workspace.rootPath).then(onBuildResult(true));
+          ps.build(config.get<string>("buildCommand"), vscode.workspace.rootPath).then(onBuildResult);
       })
       , vscode.languages.registerCodeActionsProvider('purescript', buildProvider)
       , vscode.Disposable.from(new CodeActionCommands())

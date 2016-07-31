@@ -8,3 +8,5 @@ export const getCursorBufferPosition = (ed : TextEditor) => () : Position =>
 
 export const getSelectionRange = (ed : TextEditor) => () : Range => 
     ed.selection;
+
+export const setStatusBarMessage = (message : string) => () => window.setStatusBarMessage(message);

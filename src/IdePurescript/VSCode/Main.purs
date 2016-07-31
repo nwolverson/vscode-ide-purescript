@@ -36,6 +36,7 @@ import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
 import VSCode.Position (mkPosition, Position)
 import VSCode.Range (mkRange, Range)
 import VSCode.Location (Location, mkLocation)
+import VSCode.Window (setStatusBarMessage, WINDOW)
 
 ignoreError :: forall a eff. a -> Eff eff Unit
 ignoreError _ = pure unit
@@ -142,8 +143,8 @@ startServer' server port root cb = do
       liftEff $ when (length serverBins > 1) $ cb Warning $ "Found multiple psc-ide-server executables; using " <> bin
 
       liftEff $ case res of
-        CorrectPath port -> Just { port, quit: pure unit } <$ cb Info "Found existing psc-ide-server with correct path"
-        WrongPath port wrongPath -> Nothing <$ (cb Error $ "Found existing psc-ide-server with wrong path: '" <>wrongPath<>"'. Correct, kill or configure a different port, and restart.")
+        CorrectPath port -> Just { port, quit: pure unit } <$ cb Info ("Found existing psc-ide-server with correct path on port " <> show port)
+        WrongPath port wrongPath -> Nothing <$ (cb Error $ "Found existing psc-ide-server on port " <> show port <> " with wrong path: '" <>wrongPath<>"'. Correct, kill or configure a different port, and restart.")
         Started port cp -> do
           cb Success ("Started psc-ide-server on " <> show port)
           pure $ Just { port, quit: void $ runAff (\_ -> pure unit) (\_ -> pure unit) $ stopServer port root cp }
@@ -180,10 +181,23 @@ type VSBuildResult =
   , diagnostics :: Array FileDiagnostic
   }
 
+
+data Status = Building | BuildFailure | BuildErrors | BuildSuccess
+
+showStatus :: forall eff. Status -> Eff (window :: WINDOW | eff) Unit
+showStatus status = do
+  let icon = case status of
+              Building -> "$(beaker)"
+              BuildFailure -> "$(bug)"
+              BuildErrors -> "$(check)"
+              BuildSuccess -> "$(check)"
+  setStatusBarMessage $ icon <> " PureScript"
+
 quickBuild :: forall eff. Int -> String -> Eff (MainEff eff) (Promise VSBuildResult)
 quickBuild port filename = fromAff $ do
+  liftEff $ showStatus Building
   { errors, success } <- rebuild port filename
-  liftEff $  log $ "Quick build done: " <> show success
+  liftEff $ showStatus BuildSuccess
   pure $ { success, diagnostics: toDiagnostic' errors }
 
 toDiagnostic' :: { warnings :: Array PscError, errors :: Array PscError } -> Array FileDiagnostic
@@ -196,13 +210,14 @@ build' notify command directory = fromAff $ do
   case uncons buildCommand of
     Just { head: cmd, tail: args } -> do
       liftEff $ log "Parsed build command"
-      liftEff $ notify Info "Building PureScript"
+      liftEff $ showStatus Building
       res <- build { command: Command cmd args, directory }
-      liftEff $ if res.success then notify Success "PureScript build succeeded"
-                else notify Warning "PureScript build completed with errors"
+      liftEff $ if res.success then showStatus BuildSuccess
+                else showStatus BuildErrors
       pure $ { success: true, diagnostics: toDiagnostic' res.errors }
     Nothing -> do
       liftEff $ notify Error "Error parsing PureScript build command"
+      liftEff $ showStatus BuildFailure 
       pure { success: false, diagnostics: [] }
 
 main :: forall eff. Eff (MainEff eff)

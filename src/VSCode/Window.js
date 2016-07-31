@@ -9,4 +9,4 @@ exports.getCursorBufferPosition = function (ed) { return function () {
 exports.getSelectionRange = function (ed) { return function () {
     return ed.selection;
 }; };
-
+exports.setStatusBarMessage = function (message) { return function () { return vscode_1.window.setStatusBarMessage(message); }; };

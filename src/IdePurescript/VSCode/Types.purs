@@ -16,6 +16,7 @@ import VSCode.Command (COMMAND)
 import VSCode.Input (DIALOG)
 import VSCode.Notifications (NOTIFY)
 import VSCode.TextDocument (EDITOR)
+import VSCode.Window (WINDOW)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
 
@@ -34,6 +35,7 @@ type MainEff a =
   , command :: COMMAND
   , dialog :: DIALOG
   , editor :: EDITOR
+  , window :: WINDOW
   | a
   )
 
