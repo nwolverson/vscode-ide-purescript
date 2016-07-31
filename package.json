@@ -64,7 +64,15 @@
           "description": "Enable psc-ide fast rebuild"
         }
       }
-    }
+    },
+    "keybindings": [
+      {
+        "command": "purescript.build",
+        "key": "shift+ctrl+b",
+        "mac": "shift+cmd+b",
+        "when": "editorTextFocus && editorLangId == 'purescript'"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run -s compile",
