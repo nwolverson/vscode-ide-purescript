@@ -9,3 +9,4 @@ exports.getCursorBufferPosition = function (ed) { return function () {
 exports.getSelectionRange = function (ed) { return function () {
     return ed.selection;
 }; };
+

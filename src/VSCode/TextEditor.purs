@@ -1,15 +1,11 @@
 module VSCode.TextEditor where
 
 import Prelude
-import VSCode.TextDocument
-
-import Data.Maybe (Maybe(Just, Nothing))
-import VSCode.Range
-import VSCode.Position
-
+import VSCode.TextDocument (TextDocument, EDITOR)
+import VSCode.Range (Range)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Aff
-
+import Control.Monad.Aff (Aff, makeAff)
+    
 foreign import data TextEditor :: *
 
 foreign import setTextImpl :: forall eff. TextEditor -> String -> (Boolean -> Eff (editor :: EDITOR | eff) Unit) -> Eff (editor :: EDITOR | eff) Unit

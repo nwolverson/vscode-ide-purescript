@@ -2,10 +2,8 @@ module VSCode.TextDocument where
 
 import Prelude
 import Control.Monad.Eff (Eff)
-
-import Data.Maybe (Maybe(Just, Nothing))
-import VSCode.Range
-import VSCode.Position
+import VSCode.Range (Range)
+import VSCode.Position (Position)
 
 foreign import data TextDocument :: *
 
