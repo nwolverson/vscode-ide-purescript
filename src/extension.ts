@@ -22,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const diagnosticCollection = vscode.languages.createDiagnosticCollection("purescript");
     const buildProvider = new BuildActionProvider();
-    const onBuildResult = (res : BuildResult) => {
+    const onBuildResult = (notify : boolean) => (res : BuildResult) => {
         if (res.success) {
             let code = 0;
             const map = new Map<string, vscode.Diagnostic[]>();
@@ -44,6 +44,15 @@ export function activate(context: vscode.ExtensionContext) {
             diagnosticCollection.set(diags);
 
             buildProvider.setBuildResults(actionMap);
+
+            if (notify) {
+                if (res.diagnostics.some(x => x.diagnostic.severity == vscode.DiagnosticSeverity.Error)) {
+                    vscode.window.showWarningMessage("Build completed with errors");
+                } else {
+                    vscode.window.showInformationMessage("Build succeeded");
+                }
+            }
+            
         } else {
             vscode.window.showErrorMessage("Build error :(");
         }
@@ -61,7 +70,7 @@ export function activate(context: vscode.ExtensionContext) {
           if (doc.fileName.endsWith(".purs")) {
             if (config.get<boolean>('fastRebuild')) {
                 ps.quickBuild(doc.fileName)
-                    .then(onBuildResult)
+                    .then(onBuildResult(false))
                     .catch(err => {
                         console.error(err);
                         vscode.window.showErrorMessage("Rebuild error");
@@ -97,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
       }) 
       , vscode.commands.registerCommand("purescript.build", function() {
           const config = vscode.workspace.getConfiguration("purescript");
-          ps.build(config.get<string>("buildCommand"), vscode.workspace.rootPath).then(onBuildResult);
+          ps.build(config.get<string>("buildCommand"), vscode.workspace.rootPath).then(onBuildResult(true));
       })
       , vscode.languages.registerCodeActionsProvider('purescript', buildProvider)
       , vscode.Disposable.from(new CodeActionCommands())
