@@ -1,7 +1,7 @@
 module IdePurescript.VSCode.Main where
 
 import Prelude
-import PscIde as P
+import PscIde (load) as P
 import VSCode.Notifications as Notify
 import Control.Monad.Aff (Aff, runAff)
 import Control.Monad.Eff (Eff)
@@ -9,9 +9,8 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
 import Control.Promise (Promise, fromAff)
-import Data.Array (uncons, head, length)
+import Data.Array (uncons)
 import Data.Either (Either, either)
-import Data.Foldable (traverse_)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Data.Functor ((<$))
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
@@ -22,15 +21,14 @@ import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.Modules (State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscErrors (PscError(PscError))
 import IdePurescript.PscIde (getType, getTypeInfo, getCompletion, loadDeps)
-import IdePurescript.PscIdeServer (ServerStartResult(..), startServer, stopServer)
+import IdePurescript.PscIdeServer (Notify, ErrorLevel(Error, Warning, Info, Success))
+import IdePurescript.PscIdeServer (startServer', QuitCallback, ServerEff) as P
 import IdePurescript.Regex (match')
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
-import IdePurescript.VSCode.Types (MainEff)
-import Node.Process (lookupEnv)
+import IdePurescript.VSCode.Types (MainEff, liftEffM)
 import PscIde (NET)
 import PscIde.Command as Command
-import PscIde.Server (findBins, Executable(Executable))
 import VSCode.Command (register)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
 import VSCode.Position (mkPosition, Position)
@@ -121,39 +119,9 @@ getTooltips port state line char getTextInRange = do
       let marked = if null ty then Nothing else Just $ markedString $ word <> " :: " <> ty
       pure $ toNullable marked
 
-data ErrorLevel = Success | Info | Warning | Error
-type Notify eff = ErrorLevel -> String -> Eff (MainEff eff) Unit
-
-startServer' :: forall eff. String -> Int -> String -> Notify eff -> Aff (MainEff eff) (Maybe { port:: Int, quit:: Eff (MainEff eff) Unit })
-startServer' server port root cb = do
-  serverBins <- findBins server
-  case head serverBins of
-    Nothing -> do
-      processPath <- liftEffS $ lookupEnv "PATH"
-      liftEffS $ cb Info $ "Couldn't find psc-ide-server, check PATH. Looked for: "
-        <> server <> " in PATH: " <> fromMaybe "" processPath
-      pure Nothing
-    Just (Executable bin _) -> do
-      -- TODO: Configure globs
-      -- TODO: add port config override
-      res <- startServer bin root ["src/**/*.purs", "bower_components/purescript-*/src/**/*.purs"]
-      liftEff $ log $ "Resolved psc-ide-server:"
-      traverse_ (\(Executable x vv) -> do
-        liftEff $ log $ x <> ": " <> fromMaybe "ERROR" vv) serverBins
-      liftEff $ when (length serverBins > 1) $ cb Warning $ "Found multiple psc-ide-server executables; using " <> bin
-
-      liftEff $ case res of
-        CorrectPath port -> Just { port, quit: pure unit } <$ cb Info ("Found existing psc-ide-server with correct path on port " <> show port)
-        WrongPath port wrongPath -> Nothing <$ (cb Error $ "Found existing psc-ide-server on port " <> show port <> " with wrong path: '" <>wrongPath<>"'. Correct, kill or configure a different port, and restart.")
-        Started port cp -> do
-          cb Success ("Started psc-ide-server on " <> show port)
-          pure $ Just { port, quit: void $ runAff (\_ -> pure unit) (\_ -> pure unit) $ stopServer port root cp }
-        Closed -> Nothing <$ cb Info "psc-ide-server exited with success code"
-        StartError err -> Nothing <$ (cb Error $ "Could not start psc-ide-server process. Check the configured port number is valid.\n" <>err)
-
-  where
-    liftEffS :: forall a. Eff (MainEff eff) a -> Aff (MainEff eff) a
-    liftEffS = liftEff
+startServer' :: forall eff eff'. String -> Int -> String -> Notify (P.ServerEff eff) -> Aff (P.ServerEff eff) { port:: Maybe Int, quit:: P.QuitCallback eff' }
+startServer' server _port root cb = 
+  P.startServer' root server ["src/**/*.purs", "bower_components/**/*.purs"] cb
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
 toDiagnostic isError (PscError { message, filename, position, suggestion }) =
@@ -203,21 +171,21 @@ quickBuild port filename = fromAff $ do
 toDiagnostic' :: { warnings :: Array PscError, errors :: Array PscError } -> Array FileDiagnostic
 toDiagnostic' { warnings, errors } = map (toDiagnostic true) errors <> map (toDiagnostic false) warnings
 
-build' :: forall eff. Notify eff -> String -> String -> Eff (MainEff eff) (Promise VSBuildResult)
+build' :: forall eff. Notify (MainEff eff) -> String -> String -> Eff (MainEff eff) (Promise VSBuildResult)
 build' notify command directory = fromAff $ do
-  liftEff $ log "Building"
+  liftEffM $ log "Building"
   let buildCommand = either (const []) (\reg -> (split reg <<< trim) command) (regex "\\s+" noFlags)
   case uncons buildCommand of
     Just { head: cmd, tail: args } -> do
-      liftEff $ log "Parsed build command"
-      liftEff $ showStatus Building
+      liftEffM $ log "Parsed build command"
+      liftEffM $ showStatus Building
       res <- build { command: Command cmd args, directory }
-      liftEff $ if res.success then showStatus BuildSuccess
+      liftEffM $ if res.success then showStatus BuildSuccess
                 else showStatus BuildErrors
       pure $ { success: true, diagnostics: toDiagnostic' res.errors }
     Nothing -> do
-      liftEff $ notify Error "Error parsing PureScript build command"
-      liftEff $ showStatus BuildFailure 
+      liftEffM $ notify Error "Error parsing PureScript build command"
+      liftEffM $ showStatus BuildFailure 
       pure { success: false, diagnostics: [] }
 
 main :: forall eff. Eff (MainEff eff)
@@ -240,7 +208,7 @@ main = do
   let deactivate :: Eff (MainEff eff) Unit
       deactivate = join (readRef deactivateRef)
 
-  let showError :: Notify eff
+  let showError :: Notify (MainEff eff)
       showError level str = case level of
                              Success -> Notify.showInfo str
                              Info -> Notify.showInfo str
@@ -249,11 +217,11 @@ main = do
 
   let liftEffMM :: forall a. Eff (MainEff eff) a -> Aff (MainEff eff) a
       liftEffMM = liftEff
-  let initialise server _port root = fromAff do
+  let initialise server _port root = fromAff $ do
         -- TODO pass in port just when explicitly defined
         startRes <- startServer' server _port root showError
         case startRes of
-          Just { port, quit } -> do
+          { port: Just port, quit } -> do
             P.load port [] []
             liftEffMM $ do
               cmd "addImport" $ readRef portRef >>= addModuleImportCmd modulesState
@@ -262,7 +230,7 @@ main = do
               cmd "addClause" $ readRef portRef >>= addClause
               writeRef deactivateRef quit
               writeRef portRef port
-          Nothing -> pure unit
+          _ -> pure unit
 
   pure
     {
