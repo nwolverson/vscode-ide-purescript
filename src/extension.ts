@@ -17,6 +17,10 @@ export function activate(context: vscode.ExtensionContext) {
             if (vscode.window.activeTextEditor) {
                 useDoc(vscode.window.activeTextEditor.document)
             }
+        })
+        .catch((err) => {
+            vscode.window.showErrorMessage("Error starting psc-ide");
+            console.error(err);
         });
 
 
@@ -83,6 +87,9 @@ export function activate(context: vscode.ExtensionContext) {
         provideHover: (doc, pos, tok) =>
             ps.getTooltips(pos.line, pos.character, getText(doc))
                 .then(result => result !== null ? new vscode.Hover(result) : null)
+                .catch((err) => {
+                    console.error("Hover error", err);
+                })
         })
       , vscode.languages.registerCompletionItemProvider('purescript', {
             provideCompletionItems: (doc, pos, _) => ps.getCompletions(pos.line, pos.character, getText(doc)).
@@ -99,6 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                     return item;
                 }))
+            .catch(err => console.error("Completion error", err))
         })
       , vscode.languages.registerDefinitionProvider('purescript', {
           provideDefinition: (doc, pos, tok) =>
@@ -106,7 +114,12 @@ export function activate(context: vscode.ExtensionContext) {
       }) 
       , vscode.commands.registerCommand("purescript.build", function() {
           const config = vscode.workspace.getConfiguration("purescript");
-          ps.build(config.get<string>("buildCommand"), vscode.workspace.rootPath).then(onBuildResult(true));
+          ps.build(config.get<string>("buildCommand"), vscode.workspace.rootPath)
+            .then(onBuildResult(true))
+            .catch(err => {
+                console.error(err);
+                vscode.window.showErrorMessage("Build error");
+            });
       })
       , vscode.languages.registerCodeActionsProvider('purescript', buildProvider)
       , vscode.Disposable.from(new CodeActionCommands())
