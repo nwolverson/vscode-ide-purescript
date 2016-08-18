@@ -12,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
     const useDoc = (doc : vscode.TextDocument) =>
         ps.updateFile(doc.fileName, doc.getText());
 
-    ps.activate(config.get<string>('pscIdeServerExe'), config.get<number>('pscIdePort'), vscode.workspace.rootPath)
+    ps.activate()
         .then(() => {
             if (vscode.window.activeTextEditor) {
                 useDoc(vscode.window.activeTextEditor.document)

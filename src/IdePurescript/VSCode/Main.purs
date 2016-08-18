@@ -13,6 +13,7 @@ import Data.Array (uncons)
 import Data.Either (Either, either)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Data.Functor ((<$))
+import Data.Foreign (readInt, readString)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.Nullable (toNullable, Nullable)
 import Data.String (trim, null)
@@ -35,6 +36,8 @@ import VSCode.Position (mkPosition, Position)
 import VSCode.Range (mkRange, Range)
 import VSCode.Location (Location, mkLocation)
 import VSCode.Window (setStatusBarMessage, WINDOW)
+import VSCode.Workspace (rootPath, getValue, getConfiguration)
+
 
 ignoreError :: forall a eff. a -> Eff eff Unit
 ignoreError _ = pure unit
@@ -189,7 +192,7 @@ build' notify command directory = fromAff $ do
       pure { success: false, diagnostics: [] }
 
 main :: forall eff. Eff (MainEff eff)
-  { activate :: EffFn3 (MainEff eff) String Int String (Promise Unit)
+  { activate :: Eff (MainEff eff) (Promise Unit)
   , deactivate :: Eff (MainEff eff) Unit
   , build :: EffFn2 (MainEff eff) String String (Promise VSBuildResult)
   , quickBuild :: EffFn1 (MainEff eff) String (Promise VSBuildResult)
@@ -208,6 +211,7 @@ main = do
   let deactivate :: Eff (MainEff eff) Unit
       deactivate = join (readRef deactivateRef)
 
+
   let showError :: Notify (MainEff eff)
       showError level str = case level of
                              Success -> Notify.showInfo str
@@ -217,24 +221,41 @@ main = do
 
   let liftEffMM :: forall a. Eff (MainEff eff) a -> Aff (MainEff eff) a
       liftEffMM = liftEff
-  let initialise server _port root = fromAff $ do
-        -- TODO pass in port just when explicitly defined
-        startRes <- startServer' server _port root showError
-        case startRes of
-          { port: Just port, quit } -> do
-            P.load port [] []
-            liftEffMM $ do
-              cmd "addImport" $ readRef portRef >>= addModuleImportCmd modulesState
-              cmd "addExplicitImport" $ readRef portRef >>= addIdentImportCmd modulesState
-              cmd "caseSplit" $ readRef portRef >>= caseSplit
-              cmd "addClause" $ readRef portRef >>= addClause
-              writeRef deactivateRef quit
-              writeRef portRef port
-          _ -> pure unit
 
+  let startPscIdeServer = 
+        do
+          config <- liftEffMM $ getConfiguration "purescript"
+          server <- liftEffMM $ either (const "psc-ide-server") id <<< readString <$> getValue config "pscIdeServerExe" 
+          port' <- liftEffMM $ either (const 4242) id <<< readInt <$> getValue config "pscIdePort"
+          rootPath <- liftEffMM rootPath
+          -- TODO pass in port just when explicitly defined
+          startRes <- startServer' server port' rootPath showError
+          case startRes of
+            { port: Just port, quit } -> do
+              P.load port [] []
+              liftEffMM $ do
+                writeRef deactivateRef quit
+                writeRef portRef port
+            _ -> pure unit
+    
+      restart :: Eff (MainEff eff) Unit
+      restart = do
+        deactivate
+        void $ runAff ignoreError ignoreError $ startPscIdeServer
+
+  let initialise = fromAff $ do
+        startPscIdeServer
+        liftEffMM do
+          cmd "addImport" $ readRef portRef >>= addModuleImportCmd modulesState
+          cmd "addExplicitImport" $ readRef portRef >>= addIdentImportCmd modulesState
+          cmd "caseSplit" $ readRef portRef >>= caseSplit
+          cmd "addClause" $ readRef portRef >>= addClause
+          cmd "restartPscIde" $ restart 
+
+ 
   pure
     {
-      activate: mkEffFn3 initialise
+      activate: initialise
     , deactivate: deactivate
     , build: mkEffFn2 $ build' showError
     , quickBuild: mkEffFn1 \fname -> do

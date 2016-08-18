@@ -38,6 +38,10 @@
       {
         "command": "purescript.addClause",
         "title": "PureScript: Add Clause"
+      },
+      {
+        "command": "purescript.restartPscIde",
+        "title": "PureScript: Restart Psc-Ide-Server"
       }
     ],
     "configuration": {
