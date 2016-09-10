@@ -13,7 +13,7 @@ import Data.Array (uncons)
 import Data.Either (Either, either)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Data.Functor ((<$))
-import Data.Foreign (readInt, readString)
+import Data.Foreign (readInt, readString, readBoolean)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.Nullable (toNullable, Nullable)
 import Data.String (trim, null)
@@ -36,7 +36,7 @@ import VSCode.Position (mkPosition, Position)
 import VSCode.Range (mkRange, Range)
 import VSCode.Location (Location, mkLocation)
 import VSCode.Window (setStatusBarMessage, WINDOW)
-import VSCode.Workspace (rootPath, getValue, getConfiguration)
+import VSCode.Workspace (rootPath, getValue, getConfiguration, WORKSPACE)
 
 
 ignoreError :: forall a eff. a -> Eff eff Unit
@@ -122,9 +122,11 @@ getTooltips port state line char getTextInRange = do
       let marked = if null ty then Nothing else Just $ markedString $ word <> " :: " <> ty
       pure $ toNullable marked
 
-startServer' :: forall eff eff'. String -> Int -> String -> Notify (P.ServerEff eff) -> Aff (P.ServerEff eff) { port:: Maybe Int, quit:: P.QuitCallback eff' }
-startServer' server _port root cb = 
-  P.startServer' root server ["src/**/*.purs", "bower_components/**/*.purs"] cb
+startServer' :: forall eff eff'. String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
+startServer' server _port root cb = do
+  config <- liftEff $ getConfiguration "purescript"
+  useNpmPath <- liftEff $ either (const false) id <<< readBoolean <$> getValue config "addNpmPath"   
+  P.startServer' root server useNpmPath ["src/**/*.purs", "bower_components/**/*.purs"] cb
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
 toDiagnostic isError (PscError { message, filename, position, suggestion }) =
@@ -182,7 +184,9 @@ build' notify command directory = fromAff $ do
     Just { head: cmd, tail: args } -> do
       liftEffM $ log "Parsed build command"
       liftEffM $ showStatus Building
-      res <- build { command: Command cmd args, directory }
+      config <- liftEff $ getConfiguration "purescript"
+      useNpmDir <- liftEff $ either (const false) id <<< readBoolean <$> getValue config "addNpmPath"   
+      res <- build { command: Command cmd args, directory, useNpmDir }
       liftEffM $ if res.success then showStatus BuildSuccess
                 else showStatus BuildErrors
       pure $ { success: true, diagnostics: toDiagnostic' res.errors }
