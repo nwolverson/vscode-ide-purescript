@@ -103,6 +103,12 @@ export function activate(context: vscode.ExtensionContext) {
                     } else {
                         item.kind = vscode.CompletionItemKind.Value;
                     }
+                    
+                    item.command = { 
+                        command: "purescript.addCompletionImport", 
+                        title: "Add completion import", 
+                        arguments: [ pos.line, pos.character, it ] 
+                    };
 
                     return item;
                 }))

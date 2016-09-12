@@ -1,7 +1,7 @@
 module IdePurescript.VSCode.Main where
 
 import Prelude
-import PscIde (load) as P
+import PscIde.Command as Command
 import VSCode.Notifications as Notify
 import Control.Monad.Aff (Aff, runAff)
 import Control.Monad.Eff (Eff)
@@ -10,32 +10,35 @@ import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
 import Control.Promise (Promise, fromAff)
 import Data.Array (uncons)
-import Data.Either (Either, either)
+import Data.Either (Either(..), either)
+import Data.Foreign (readInt, readString, readBoolean, Foreign)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Data.Functor ((<$))
-import Data.Foreign (readInt, readString, readBoolean)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.Nullable (toNullable, Nullable)
 import Data.String (trim, null)
 import Data.String.Regex (Regex, noFlags, regex, split)
 import IdePurescript.Build (Command(Command), build, rebuild)
-import IdePurescript.Modules (State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
+import IdePurescript.Modules (ImportResult(FailedImport, AmbiguousImport, UpdatedImports), addExplicitImport, State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscErrors (PscError(PscError))
-import IdePurescript.PscIde (getType, getTypeInfo, getCompletion, loadDeps)
+import IdePurescript.PscIde (getLoadedModules, getType, getTypeInfo, getCompletion, loadDeps)
 import IdePurescript.PscIdeServer (Notify, ErrorLevel(Error, Warning, Info, Success))
 import IdePurescript.PscIdeServer (startServer', QuitCallback, ServerEff) as P
 import IdePurescript.Regex (match')
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
 import IdePurescript.VSCode.Types (MainEff, liftEffM)
+import PscIde (load) as P
 import PscIde (NET)
-import PscIde.Command as Command
+import Unsafe.Coerce (unsafeCoerce)
 import VSCode.Command (register)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
+import VSCode.Location (Location, mkLocation)
 import VSCode.Position (mkPosition, Position)
 import VSCode.Range (mkRange, Range)
-import VSCode.Location (Location, mkLocation)
-import VSCode.Window (setStatusBarMessage, WINDOW)
+import VSCode.TextDocument (getPath, getText)
+import VSCode.TextEditor (setText, setTextViaDiff, getDocument)
+import VSCode.Window (getActiveTextEditor, setStatusBarMessage, WINDOW)
 import VSCode.Workspace (rootPath, getValue, getConfiguration, WORKSPACE)
 
 
@@ -74,10 +77,12 @@ getCompletions port state line char getTextInRange = do
           Just { mod: fromMaybe "" mod , token: fromMaybe "" tok}
         _ -> Nothing
   let moduleCompletion = false
+  config <- getConfiguration "purescript"
+  autoCompleteAllModules <- either (const true) id <<< readBoolean <$> getValue config "autocompleteAllModules"
   case parsed of
     Just { mod, token } -> fromAff $ do
-      -- TODO currentModule
-      getCompletion port token state.main mod moduleCompletion (getUnqualActiveModules state $ Just token) getQualifiedModule
+      modules <- if autoCompleteAllModules then getLoadedModules port else pure $ getUnqualActiveModules state Nothing
+      getCompletion port token state.main mod moduleCompletion modules getQualifiedModule
     _ -> fromAff $ pure []
 
 convPosition :: Command.Position -> Position
@@ -125,7 +130,7 @@ getTooltips port state line char getTextInRange = do
 startServer' :: forall eff eff'. String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
 startServer' server _port root cb = do
   config <- liftEff $ getConfiguration "purescript"
-  useNpmPath <- liftEff $ either (const false) id <<< readBoolean <$> getValue config "addNpmPath"   
+  useNpmPath <- liftEff $ either (const false) id <<< readBoolean <$> getValue config "addNpmPath"
   P.startServer' root server useNpmPath ["src/**/*.purs", "bower_components/**/*.purs"] cb
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
@@ -185,15 +190,39 @@ build' notify command directory = fromAff $ do
       liftEffM $ log "Parsed build command"
       liftEffM $ showStatus Building
       config <- liftEff $ getConfiguration "purescript"
-      useNpmDir <- liftEff $ either (const false) id <<< readBoolean <$> getValue config "addNpmPath"   
+      useNpmDir <- liftEff $ either (const false) id <<< readBoolean <$> getValue config "addNpmPath"
       res <- build { command: Command cmd args, directory, useNpmDir }
       liftEffM $ if res.success then showStatus BuildSuccess
                 else showStatus BuildErrors
       pure $ { success: true, diagnostics: toDiagnostic' res.errors }
     Nothing -> do
       liftEffM $ notify Error "Error parsing PureScript build command"
-      liftEffM $ showStatus BuildFailure 
+      liftEffM $ showStatus BuildFailure
       pure { success: false, diagnostics: [] }
+
+addCompletionImport :: forall eff. (Ref State) -> Int -> Array Foreign -> Aff (MainEff eff) Unit
+addCompletionImport stateRef port args = case args of
+  [ line, char, item ] -> case readInt line, readInt char of
+    Right line', Right char' -> do
+      let item' = (unsafeCoerce item) :: Completion
+      ed <- liftEffM $ getActiveTextEditor
+      case ed of
+        Just ed' -> do
+          let doc = getDocument ed'
+          text <- liftEffM $ getText doc
+          path <- liftEffM $ getPath doc
+          state <- liftEffM $ readRef stateRef
+          { state: newState, result: output} <- addExplicitImport state port path text (Just item'."module") item'.identifier
+          liftEffM $ writeRef stateRef newState
+          case output of
+            UpdatedImports out -> void $ setTextViaDiff ed' out
+            AmbiguousImport opts -> liftEffM $ log "Found ambiguous imports"
+            FailedImport -> liftEffM $ log "Failed to import"
+          pure unit
+        Nothing -> pure unit
+      pure unit
+    _, _ -> liftEffM $ log "Wrong argument type"
+  _ -> liftEffM $ log "Wrong command arguments"
 
 main :: forall eff. Eff (MainEff eff)
   { activate :: Eff (MainEff eff) (Promise Unit)
@@ -210,7 +239,8 @@ main = do
   deactivateRef <- newRef (pure unit :: Eff (MainEff eff) Unit)
   portRef <- newRef 0
 
-  let cmd s f = register ("purescript." <> s) f
+  let cmd s f = register ("purescript." <> s) (\_ -> f)
+      cmdWithArgs s f = register ("purescript." <> s) f
 
   let deactivate :: Eff (MainEff eff) Unit
       deactivate = join (readRef deactivateRef)
@@ -226,10 +256,10 @@ main = do
   let liftEffMM :: forall a. Eff (MainEff eff) a -> Aff (MainEff eff) a
       liftEffMM = liftEff
 
-  let startPscIdeServer = 
+  let startPscIdeServer =
         do
           config <- liftEffMM $ getConfiguration "purescript"
-          server <- liftEffMM $ either (const "psc-ide-server") id <<< readString <$> getValue config "pscIdeServerExe" 
+          server <- liftEffMM $ either (const "psc-ide-server") id <<< readString <$> getValue config "pscIdeServerExe"
           port' <- liftEffMM $ either (const 4242) id <<< readInt <$> getValue config "pscIdePort"
           rootPath <- liftEffMM rootPath
           -- TODO pass in port just when explicitly defined
@@ -241,7 +271,7 @@ main = do
                 writeRef deactivateRef quit
                 writeRef portRef port
             _ -> pure unit
-    
+
       restart :: Eff (MainEff eff) Unit
       restart = do
         deactivate
@@ -254,9 +284,14 @@ main = do
           cmd "addExplicitImport" $ readRef portRef >>= addIdentImportCmd modulesState
           cmd "caseSplit" $ readRef portRef >>= caseSplit
           cmd "addClause" $ readRef portRef >>= addClause
-          cmd "restartPscIde" $ restart 
+          cmd "restartPscIde" $ restart
+          cmdWithArgs "addCompletionImport" $ \args -> do
+            port <- readRef portRef
+            config <- getConfiguration "purescript"
+            autocompleteAddImport <- either (const true) id <<< readBoolean <$> getValue config "autocompleteAddImport"
+            when autocompleteAddImport $
+              void $ runAff ignoreError ignoreError $ addCompletionImport modulesState port args
 
- 
   pure
     {
       activate: initialise

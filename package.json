@@ -8,7 +8,7 @@
     "url": "git@github.com:nwolverson/vscode-ide-purescript.git"
   },
   "engines": {
-    "vscode": "^0.10.8"
+    "vscode": "^1.5.0"
   },
   "categories": [
     "Other"
@@ -66,6 +66,16 @@
           "type": "boolean",
           "default": true,
           "description": "Enable psc-ide fast rebuild"
+        },
+        "purescript.autocompleteAllModules": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to always autocomplete from all built modules, or just those imported in the file. Suggestions from all modules always available by explicitly triggering autocomplete."
+        },
+        "purescript.autocompleteAddImport": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to automatically add imported identifiers when accepting autocomplete result."
         }
       }
     },
@@ -90,8 +100,8 @@
     "nwolverson.language-purescript"
   ],
   "devDependencies": {
-    "typescript": "^1.8.7",
-    "vscode": "^0.11.x"
+    "typescript": "^1.8.10",
+    "vscode": "^0.11.18"
   },
   "dependencies": {
     "which": "^1.2.9"
