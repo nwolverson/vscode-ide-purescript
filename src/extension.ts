@@ -5,6 +5,19 @@ import { PscError, PscPosition, PscErrorSuggestion, PscResults, QuickFix, FileDi
 
 const getText = doc => (a,b,c,d) => doc.getText(new vscode.Range(new vscode.Position(a,b), new vscode.Position(c,d)));
 
+const convSymbolInformation = it => {
+    let kind;
+    if (/^[A-Z]/.test(it.identifier)) {
+        kind = vscode.SymbolKind.Class;
+    } else if (/->/.test(it.identType)) {
+        kind = vscode.SymbolKind.Function;
+    } else {
+        kind = vscode.SymbolKind.Property;
+    }
+    return new vscode.SymbolInformation(it.identifier, kind, it.moduleName,
+        new vscode.Location(vscode.Uri.file(it.fileName), it.range))
+};
+
 export function activate(context: vscode.ExtensionContext) {
     const ps = require('./bundle')();
     const config = vscode.workspace.getConfiguration("purescript");
@@ -120,16 +133,11 @@ export function activate(context: vscode.ExtensionContext) {
       }) 
       , vscode.languages.registerWorkspaceSymbolProvider({ 
           provideWorkspaceSymbols: (query: string) => 
-            ps.getSymbols(query).then(result => result.map(it => 
-                new vscode.SymbolInformation(it.identifier, vscode.SymbolKind.Function, it.moduleName,
-                    new vscode.Location(vscode.Uri.file(it.fileName), it.range))
-            ))                  
+            ps.getSymbols(query).then(result => result.map(convSymbolInformation))                  
       })
       , vscode.languages.registerDocumentSymbolProvider('purescript', {
           provideDocumentSymbols: (document: vscode.TextDocument, token: vscode.CancellationToken) =>
-            ps.getSymbolsForDoc(document).then(result => result.map(it => 
-                new vscode.SymbolInformation(it.identifier, vscode.SymbolKind.Function, it.moduleName,
-                    new vscode.Location(vscode.Uri.file(it.fileName), it.range))))
+            ps.getSymbolsForDoc(document).then(result => result.map(convSymbolInformation))
       })
       , vscode.commands.registerCommand("purescript.build", function() {
           const config = vscode.workspace.getConfiguration("purescript");

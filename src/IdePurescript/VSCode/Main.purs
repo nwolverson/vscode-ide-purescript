@@ -9,35 +9,36 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
 import Control.Promise (Promise, fromAff)
-import Data.Array (singleton, mapMaybe, uncons)
+import Data.Array (uncons)
 import Data.Either (Either(..), either)
 import Data.Foreign (readInt, readString, readBoolean, Foreign)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Data.Functor ((<$))
-import Data.Maybe (maybe, Maybe(Just, Nothing), fromMaybe)
+import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.Nullable (toNullable, Nullable)
 import Data.String (trim, null)
 import Data.String.Regex (Regex, noFlags, regex, split)
 import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.Modules (ImportResult(FailedImport, AmbiguousImport, UpdatedImports), addExplicitImport, State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscErrors (PscError(PscError))
-import IdePurescript.PscIde (getLoadedModules, getType, getTypeInfo, getCompletion, loadDeps)
+import IdePurescript.PscIde (getType, getCompletion, getLoadedModules, loadDeps)
 import IdePurescript.PscIdeServer (Notify, ErrorLevel(Error, Warning, Info, Success))
 import IdePurescript.PscIdeServer (startServer', QuitCallback, ServerEff) as P
 import IdePurescript.Regex (match')
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
 import IdePurescript.VSCode.Types (MainEff, liftEffM)
-import IdePurescript.VSCode.Symbols
+import IdePurescript.VSCode.Symbols (SymbolInfo, SymbolQuery(..), getDefinition, getSymbols)
+import IdePurescript.VSCode.Editor (GetText)
 import PscIde (load) as P
 import PscIde (NET)
 import Unsafe.Coerce (unsafeCoerce)
 import VSCode.Command (register)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
-import VSCode.Location (Location, mkLocation)
-import VSCode.Position (mkPosition, Position)
+import VSCode.Location (Location)
+import VSCode.Position (mkPosition)
 import VSCode.Range (mkRange, Range)
-import VSCode.TextDocument (EDITOR, TextDocument, getPath, getText)
+import VSCode.TextDocument (TextDocument, getPath, getText)
 import VSCode.TextEditor (setTextViaDiff, getDocument)
 import VSCode.Window (getActiveTextEditor, setStatusBarMessage, WINDOW)
 import VSCode.Workspace (rootPath, getValue, getConfiguration, WORKSPACE)
@@ -130,7 +131,6 @@ type VSBuildResult =
   { success:: Boolean
   , diagnostics :: Array FileDiagnostic
   }
-
 
 data Status = Building | BuildFailure | BuildErrors | BuildSuccess
 

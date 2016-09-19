@@ -12,7 +12,7 @@
   ],
   "dependencies": {
     "purescript-console": "^1.0.0",
-    "purescript-ide-purescript-core": "^0.5.8",
+    "purescript-ide-purescript-core": "^0.6.0",
     "purescript-eff-functions": "^1.0.0",
     "purescript-aff-promise": "^0.1.0"
   },
