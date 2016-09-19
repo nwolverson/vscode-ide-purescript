@@ -9,12 +9,12 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
 import Control.Promise (Promise, fromAff)
-import Data.Array (uncons)
+import Data.Array (singleton, mapMaybe, uncons)
 import Data.Either (Either(..), either)
 import Data.Foreign (readInt, readString, readBoolean, Foreign)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Data.Functor ((<$))
-import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
+import Data.Maybe (maybe, Maybe(Just, Nothing), fromMaybe)
 import Data.Nullable (toNullable, Nullable)
 import Data.String (trim, null)
 import Data.String.Regex (Regex, noFlags, regex, split)
@@ -28,6 +28,7 @@ import IdePurescript.Regex (match')
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
 import IdePurescript.VSCode.Types (MainEff, liftEffM)
+import IdePurescript.VSCode.Symbols
 import PscIde (load) as P
 import PscIde (NET)
 import Unsafe.Coerce (unsafeCoerce)
@@ -36,11 +37,10 @@ import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
 import VSCode.Location (Location, mkLocation)
 import VSCode.Position (mkPosition, Position)
 import VSCode.Range (mkRange, Range)
-import VSCode.TextDocument (getPath, getText)
-import VSCode.TextEditor (setText, setTextViaDiff, getDocument)
+import VSCode.TextDocument (EDITOR, TextDocument, getPath, getText)
+import VSCode.TextEditor (setTextViaDiff, getDocument)
 import VSCode.Window (getActiveTextEditor, setStatusBarMessage, WINDOW)
 import VSCode.Workspace (rootPath, getValue, getConfiguration, WORKSPACE)
-
 
 ignoreError :: forall a eff. a -> Eff eff Unit
 ignoreError _ = pure unit
@@ -56,19 +56,11 @@ useEditor port modulesStateRef path text = do
       pure unit
     Nothing -> pure unit
 
-type GetText eff = Int -> Int -> Int -> Int -> Eff eff String -- TODO eff
-
 moduleRegex :: Either String Regex
 moduleRegex = regex """(?:^|[^A-Za-z_.])(?:((?:[A-Z][A-Za-z0-9]*\.)*(?:[A-Z][A-Za-z0-9]*))\.)?([a-zA-Z][a-zA-Z0-9_']*)?$""" noFlags
 
-type Completion =
-  { type:: String
-  , identifier :: String
-  , "module" :: String
-  }
-
 getCompletions :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
-  -> Eff (MainEff eff) (Promise (Array Completion))
+  -> Eff (MainEff eff) (Promise (Array Command.TypeInfo))
 getCompletions port state line char getTextInRange = do
   line <- getTextInRange line 0 line char
   let getQualifiedModule = (flip getQualModule) state
@@ -84,26 +76,6 @@ getCompletions port state line char getTextInRange = do
       modules <- if autoCompleteAllModules then getLoadedModules port else pure $ getUnqualActiveModules state Nothing
       getCompletion port token state.main mod moduleCompletion modules getQualifiedModule
     _ -> fromAff $ pure []
-
-convPosition :: Command.Position -> Position
-convPosition { line, column } = mkPosition (line-1) (column-1)
-
-getDefinition :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
-  -> Eff (MainEff eff) (Promise (Nullable Location))
-getDefinition port state line char getTextInRange = do
-  let beforeRegex = regex "[a-zA-Z_0-9']*$" noFlags
-      afterRegex = regex "^[a-zA-Z_0-9']*" noFlags
-  textBefore <- getTextInRange line 0    line char
-  textAfter  <- getTextInRange line char line (char + 100)
-  let word = case { before: match' beforeRegex textBefore, after: match' afterRegex textAfter } of
-              { before: Just [Just s], after: Just [Just s'] } -> s<>s'
-              _ -> ""
-  let prefix = ""
-  fromAff $ do
-    info <- getTypeInfo port word Nothing prefix (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
-    pure $ toNullable $ case info of
-      Just { position: Just (Command.TypePosition { name, start }) } -> Just $ mkLocation name $ convPosition start
-      _ -> Nothing
 
 type MarkedString = { language :: String, value :: String }
 
@@ -204,7 +176,8 @@ addCompletionImport :: forall eff. (Ref State) -> Int -> Array Foreign -> Aff (M
 addCompletionImport stateRef port args = case args of
   [ line, char, item ] -> case readInt line, readInt char of
     Right line', Right char' -> do
-      let item' = (unsafeCoerce item) :: Completion
+      let item' = (unsafeCoerce item) :: Command.TypeInfo
+      Command.TypeInfo { identifier, module' } <- pure item' 
       ed <- liftEffM $ getActiveTextEditor
       case ed of
         Just ed' -> do
@@ -212,7 +185,7 @@ addCompletionImport stateRef port args = case args of
           text <- liftEffM $ getText doc
           path <- liftEffM $ getPath doc
           state <- liftEffM $ readRef stateRef
-          { state: newState, result: output} <- addExplicitImport state port path text (Just item'."module") item'.identifier
+          { state: newState, result: output} <- addExplicitImport state port path text (Just module') identifier
           liftEffM $ writeRef stateRef newState
           case output of
             UpdatedImports out -> void $ setTextViaDiff ed' out
@@ -224,6 +197,7 @@ addCompletionImport stateRef port args = case args of
     _, _ -> liftEffM $ log "Wrong argument type"
   _ -> liftEffM $ log "Wrong command arguments"
 
+
 main :: forall eff. Eff (MainEff eff)
   { activate :: Eff (MainEff eff) (Promise Unit)
   , deactivate :: Eff (MainEff eff) Unit
@@ -231,7 +205,9 @@ main :: forall eff. Eff (MainEff eff)
   , quickBuild :: EffFn1 (MainEff eff) String (Promise VSBuildResult)
   , updateFile :: EffFn2 (MainEff eff) String String Unit
   , getTooltips :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable MarkedString))
-  , getCompletions :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Array Completion))
+  , getCompletions :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Array Command.TypeInfo))
+  , getSymbols :: EffFn1 (MainEff eff) String (Promise (Array SymbolInfo))
+  , getSymbolsForDoc :: EffFn1 (MainEff eff) TextDocument (Promise (Array SymbolInfo))
   , provideDefinition :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable Location))
   }
 main = do
@@ -311,6 +287,8 @@ main = do
         state <- readRef modulesState
         port <- readRef portRef
         getCompletions port state line char (runEffFn4 getText)
+    , getSymbols: mkEffFn1 $ \query -> getSymbols modulesState portRef $ WorkspaceSymbolQuery query
+    , getSymbolsForDoc: mkEffFn1 $ \document -> getSymbols modulesState portRef $ FileSymbolQuery document
     , provideDefinition: mkEffFn3 $ \line char getText -> do
         state <- readRef modulesState
         port <- readRef portRef

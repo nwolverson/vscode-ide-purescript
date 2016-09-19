@@ -39,7 +39,7 @@ addIdentImportCmd modulesState port = do
         UpdatedImports out -> do
           void $ setText editor out
         AmbiguousImport opts -> do
-          mod <- showQuickPick ((\(C.Completion { "module'": mod }) -> mod) <$> opts)
+          mod <- showQuickPick ((\(C.TypeInfo { module' }) -> module') <$> opts)
           liftEffM $ log $ show mod
           case mod of
             Just _ -> addIdentImport state editor path text mod ident

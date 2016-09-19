@@ -118,6 +118,19 @@ export function activate(context: vscode.ExtensionContext) {
           provideDefinition: (doc, pos, tok) =>
             ps.provideDefinition(pos.line, pos.character, getText(doc))
       }) 
+      , vscode.languages.registerWorkspaceSymbolProvider({ 
+          provideWorkspaceSymbols: (query: string) => 
+            ps.getSymbols(query).then(result => result.map(it => 
+                new vscode.SymbolInformation(it.identifier, vscode.SymbolKind.Function, it.moduleName,
+                    new vscode.Location(vscode.Uri.file(it.fileName), it.range))
+            ))                  
+      })
+      , vscode.languages.registerDocumentSymbolProvider('purescript', {
+          provideDocumentSymbols: (document: vscode.TextDocument, token: vscode.CancellationToken) =>
+            ps.getSymbolsForDoc(document).then(result => result.map(it => 
+                new vscode.SymbolInformation(it.identifier, vscode.SymbolKind.Function, it.moduleName,
+                    new vscode.Location(vscode.Uri.file(it.fileName), it.range))))
+      })
       , vscode.commands.registerCommand("purescript.build", function() {
           const config = vscode.workspace.getConfiguration("purescript");
           ps.build(config.get<string>("buildCommand"), vscode.workspace.rootPath)
