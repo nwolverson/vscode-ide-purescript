@@ -108,10 +108,10 @@ export function activate(context: vscode.ExtensionContext) {
             provideCompletionItems: (doc, pos, _) => ps.getCompletions(pos.line, pos.character, getText(doc)).
                 then(result => result.map(it => {
                     const item = new vscode.CompletionItem(it.identifier);
-                    item.detail = it.type;
+                    item.detail = it["type'"];
                     if (/^[A-Z]/.test(it.identifier)) {
                         item.kind = vscode.CompletionItemKind.Class;
-                    } else if (/->/.test(it.type)) {
+                    } else if (/->/.test(it["type'"])) {
                         item.kind = vscode.CompletionItemKind.Function;
                     } else {
                         item.kind = vscode.CompletionItemKind.Value;
