@@ -4,9 +4,19 @@
   "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
   "version": "0.4.1",
   "publisher": "nwolverson",
-  "repository": {
-    "url": "git@github.com:nwolverson/vscode-ide-purescript.git"
+  "author": {
+    "name": "Nicholas Wolverson"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nwolverson/vscode-ide-purescript.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nwolverson/vscode-ide-purescript/issues"
+  },
+  "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
+  "license": "MIT",
+
   "engines": {
     "vscode": "^1.5.0"
   },
