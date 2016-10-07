@@ -1,21 +1,21 @@
 module IdePurescript.VSCode.Imports where
 
 import Prelude
-import IdePurescript.VSCode.Types (MainEff, liftEffM, launchAffSilent)
-import VSCode.Input (showQuickPick, defaultInputOptions, getInput)
-import VSCode.Window (getActiveTextEditor)
-
-import VSCode.TextEditor (setText, getDocument)
-import VSCode.TextDocument (getText, getPath)
-import Control.Monad.Eff.Console (log)
+import PscIde.Command as C
 import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Ref (readRef, writeRef, Ref)
+import Data.Lens.Prism.Either (left)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toNullable)
 import IdePurescript.Modules (State, ImportResult(..), addModuleImport, addExplicitImport)
 import IdePurescript.PscIde (getAvailableModules)
 import IdePurescript.VSCode.Editor (identifierAtCursor)
-import PscIde.Command as C
+import IdePurescript.VSCode.Types (MainEff, liftEffM, launchAffSilent)
+import VSCode.Input (showQuickPick, defaultInputOptions, getInput)
+import VSCode.TextDocument (getText, getPath)
+import VSCode.TextEditor (setText, getDocument)
+import VSCode.Window (getActiveTextEditor)
 
 addIdentImportCmd :: forall eff. Ref State -> Int -> Eff (MainEff eff) Unit
 addIdentImportCmd modulesState port = do

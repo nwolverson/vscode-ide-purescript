@@ -3,7 +3,7 @@ module IdePurescript.VSCode.Main where
 import Prelude
 import PscIde.Command as Command
 import VSCode.Notifications as Notify
-import Control.Monad.Aff (Aff, runAff)
+import Control.Monad.Aff (later', attempt, Aff, runAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)
@@ -26,10 +26,10 @@ import IdePurescript.PscIdeServer (Notify, ErrorLevel(Error, Warning, Info, Succ
 import IdePurescript.PscIdeServer (startServer', QuitCallback, ServerEff) as P
 import IdePurescript.Regex (match')
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
-import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
-import IdePurescript.VSCode.Types (MainEff, liftEffM)
-import IdePurescript.VSCode.Symbols (SymbolInfo, SymbolQuery(..), getDefinition, getSymbols)
 import IdePurescript.VSCode.Editor (GetText)
+import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
+import IdePurescript.VSCode.Symbols (SymbolInfo, SymbolQuery(..), getDefinition, getSymbols)
+import IdePurescript.VSCode.Types (MainEff, liftEffM)
 import PscIde (load) as P
 import PscIde (NET)
 import Unsafe.Coerce (unsafeCoerce)
@@ -240,13 +240,23 @@ main = do
           rootPath <- liftEffMM rootPath
           -- TODO pass in port just when explicitly defined
           startRes <- startServer' server port' rootPath showError
-          case startRes of
+          retry case startRes of
             { port: Just port, quit } -> do
               P.load port [] []
               liftEffMM $ do
                 writeRef deactivateRef quit
                 writeRef portRef port
             _ -> pure unit
+        where
+          retry :: Aff (MainEff eff) Unit -> Aff (MainEff eff) Unit
+          retry a = do
+            res <- attempt a
+            case res of
+              Right r -> pure r
+              Left err -> do
+                liftEff $ log $ "Retrying starting server after 500ms: " <> show err
+                later' 500 a
+
 
       restart :: Eff (MainEff eff) Unit
       restart = do

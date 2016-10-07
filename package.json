@@ -86,6 +86,12 @@
           "default": true,
           "description": "Whether to automatically add imported identifiers when accepting autocomplete result."
         }
+        ,
+        "purescript.addNpmPath": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to add the local npm bin directory to the PATH for psc-ide-server and build command."
+        }
       }
     },
     "keybindings": [
