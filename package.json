@@ -2,7 +2,7 @@
   "name": "ide-purescript",
   "displayName": "PureScript IDE",
   "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "publisher": "nwolverson",
   "author": {
     "name": "Nicholas Wolverson"
@@ -85,8 +85,7 @@
           "type": "boolean",
           "default": true,
           "description": "Whether to automatically add imported identifiers when accepting autocomplete result."
-        }
-        ,
+        },
         "purescript.addNpmPath": {
           "type": "boolean",
           "default": false,
