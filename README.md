@@ -67,6 +67,9 @@ Settings available via user/workspace settings:
 	// Port to use for psc-ide
 	"purescript.pscIdePort": 4242,
 
+	// Location of installed packages
+	"purescript.packagePath": "Path to installed packages",
+
 	// Build command to use with arguments. Not passed to shell. eg `pulp build --json-errors`
 	"purescript.buildCommand": "pulp build --no-psa --json-errors"
 }
