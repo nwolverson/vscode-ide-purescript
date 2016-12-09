@@ -6,8 +6,6 @@ This package provides editor support for PureScript projects in Visual Studio Co
  is provided by the separate package [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript) 
  which should be installed automatically as a dependency. 
 
-This extension relies heavily on the separate tool [psc-ide](https://github.com/kRITZCREEK/psc-ide) (see below).
-
 This package provides:
 
 - [x] Build and error reporting
