@@ -8,16 +8,17 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
+import Control.Monad.Except (runExcept)
 import Control.Promise (Promise, fromAff)
 import Data.Array (uncons)
 import Data.Either (Either(..), either)
 import Data.Foreign (readInt, readString, readBoolean, Foreign)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
-import Data.Functor ((<$))
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.Nullable (toNullable, Nullable)
 import Data.String (trim, null)
-import Data.String.Regex (Regex, noFlags, regex, split)
+import Data.String.Regex (Regex, regex, split)
+import Data.String.Regex.Flags (noFlags)
 import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.Modules (ImportResult(FailedImport, AmbiguousImport, UpdatedImports), addExplicitImport, State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscErrors (PscError(PscError))
@@ -62,8 +63,8 @@ moduleRegex = regex """(?:^|[^A-Za-z_.])(?:((?:[A-Z][A-Za-z0-9]*\.)*(?:[A-Z][A-Z
 
 getCompletions :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
   -> Eff (MainEff eff) (Promise (Array Command.TypeInfo))
-getCompletions port state line char getTextInRange = do
-  line <- getTextInRange line 0 line char
+getCompletions port state line' char getTextInRange = do
+  line <- getTextInRange line' 0 line' char
   let getQualifiedModule = (flip getQualModule) state
   let parsed = case match' moduleRegex line of
         Just [ Just _, mod, tok ] | mod /= Nothing || tok /= Nothing ->
@@ -71,7 +72,7 @@ getCompletions port state line char getTextInRange = do
         _ -> Nothing
   let moduleCompletion = false
   config <- getConfiguration "purescript"
-  autoCompleteAllModules <- either (const true) id <<< readBoolean <$> getValue config "autocompleteAllModules"
+  autoCompleteAllModules <- either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autocompleteAllModules"
   case parsed of
     Just { mod, token } -> fromAff $ do
       modules <- if autoCompleteAllModules then getLoadedModules port else pure $ getUnqualActiveModules state Nothing
@@ -103,8 +104,8 @@ getTooltips port state line char getTextInRange = do
 startServer' :: forall eff eff'. String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
 startServer' server _port root cb = do
   config <- liftEff $ getConfiguration "purescript"
-  useNpmPath <- liftEff $ either (const false) id <<< readBoolean <$> getValue config "addNpmPath"
-  packagePath <- liftEff $ either (const "bower_components") id <<< readString <$> getValue config "packagePath"
+  useNpmPath <- liftEff $ either (const false) id <<< runExcept <<< readBoolean <$> getValue config "addNpmPath"
+  packagePath <- liftEff $ either (const "bower_components") id <<< runExcept <<< readString <$> getValue config "packagePath"
   P.startServer' root server useNpmPath ["src/**/*.purs", packagePath <> "/**/*.purs"] cb
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
@@ -163,7 +164,7 @@ build' notify command directory = fromAff $ do
       liftEffM $ log "Parsed build command"
       liftEffM $ showStatus Building
       config <- liftEff $ getConfiguration "purescript"
-      useNpmDir <- liftEff $ either (const false) id <<< readBoolean <$> getValue config "addNpmPath"
+      useNpmDir <- liftEff $ either (const false) id <<< runExcept <<< readBoolean <$> getValue config "addNpmPath"
       res <- build { command: Command cmd args, directory, useNpmDir }
       liftEffM $ if res.success then showStatus BuildSuccess
                 else showStatus BuildErrors
@@ -175,10 +176,10 @@ build' notify command directory = fromAff $ do
 
 addCompletionImport :: forall eff. (Ref State) -> Int -> Array Foreign -> Aff (MainEff eff) Unit
 addCompletionImport stateRef port args = case args of
-  [ line, char, item ] -> case readInt line, readInt char of
+  [ line, char, item ] -> case runExcept $ readInt line, runExcept $ readInt char of
     Right line', Right char' -> do
       let item' = (unsafeCoerce item) :: Command.TypeInfo
-      Command.TypeInfo { identifier, module' } <- pure item' 
+      Command.TypeInfo { identifier, module' } <- pure item'
       ed <- liftEffM $ getActiveTextEditor
       case ed of
         Just ed' -> do
@@ -236,8 +237,8 @@ main = do
   let startPscIdeServer =
         do
           config <- liftEffMM $ getConfiguration "purescript"
-          server <- liftEffMM $ either (const "psc-ide-server") id <<< readString <$> getValue config "pscIdeServerExe"
-          port' <- liftEffMM $ either (const 4242) id <<< readInt <$> getValue config "pscIdePort"
+          server <- liftEffMM $ either (const "psc-ide-server") id <<< runExcept <<< readString <$> getValue config "pscIdeServerExe"
+          port' <- liftEffMM $ either (const 4242) id <<< runExcept <<< readInt <$> getValue config "pscIdePort"
           rootPath <- liftEffMM rootPath
           -- TODO pass in port just when explicitly defined
           startRes <- startServer' server port' rootPath showError
@@ -275,7 +276,7 @@ main = do
           cmdWithArgs "addCompletionImport" $ \args -> do
             port <- readRef portRef
             config <- getConfiguration "purescript"
-            autocompleteAddImport <- either (const true) id <<< readBoolean <$> getValue config "autocompleteAddImport"
+            autocompleteAddImport <- either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autocompleteAddImport"
             when autocompleteAddImport $
               void $ runAff ignoreError ignoreError $ addCompletionImport modulesState port args
 

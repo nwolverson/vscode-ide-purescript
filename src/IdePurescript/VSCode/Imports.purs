@@ -5,7 +5,6 @@ import PscIde.Command as C
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Ref (readRef, writeRef, Ref)
-import Data.Lens.Prism.Either (left)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toNullable)
 import IdePurescript.Modules (State, ImportResult(..), addModuleImport, addExplicitImport)

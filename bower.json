@@ -11,10 +11,10 @@
     "output"
   ],
   "dependencies": {
-    "purescript-console": "^1.0.0",
-    "purescript-ide-purescript-core": "^0.6.0",
-    "purescript-eff-functions": "^1.0.0",
-    "purescript-aff-promise": "^0.1.0"
+    "purescript-console": "^2.0.0",
+    "purescript-ide-purescript-core": "^0.7.0",
+    "purescript-eff-functions": "^2.0.0",
+    "purescript-aff-promise": "^0.4.0"
   },
   "resolutions": {
     "purescript-aff": "^1.1.0",
@@ -23,6 +23,6 @@
     "purescript-node-child-process": "^2.0.0"
   },
   "devDependencies": {
-    "purescript-node-process": "^1.0.0"
+    "purescript-node-process": "^3.0.0"
   }
 }

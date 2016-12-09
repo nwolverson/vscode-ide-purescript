@@ -7,10 +7,10 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Ref (REF, Ref, readRef)
 import Control.Promise (Promise, fromAff)
 import Data.Array (mapMaybe, singleton)
-import Data.Functor ((<$))
 import Data.Maybe (Maybe(Nothing, Just), maybe)
 import Data.Nullable (toNullable, Nullable)
-import Data.String.Regex (noFlags, regex)
+import Data.String.Regex (regex)
+import Data.String.Regex.Flags (noFlags)
 import IdePurescript.Modules (State, getQualModule, getUnqualActiveModules, getMainModule)
 import IdePurescript.PscIde (getTypeInfo, getCompletion, getLoadedModules)
 import IdePurescript.Regex (match')
@@ -36,7 +36,7 @@ getSymbols modulesState portRef query = do
   state <- readRef modulesState
   port <- readRef portRef
   fromAff $ do
-    let prefix = case query of 
+    let prefix = case query of
                     WorkspaceSymbolQuery pref -> pref
                     FileSymbolQuery _ -> ""
     modules <- case query of
@@ -49,7 +49,7 @@ getSymbols modulesState portRef query = do
     completions <- getCompletion port prefix Nothing "" false modules (const [])
 
     let getInfo (Command.TypeInfo { identifier, definedAt: Just typePos, module', type' }) =
-          Just { identifier, range: convTypePosition typePos, fileName: getName typePos, moduleName: module', identType: type' } 
+          Just { identifier, range: convTypePosition typePos, fileName: getName typePos, moduleName: module', identType: type' }
         getInfo _ = Nothing
         getName (Command.TypePosition { name }) = name
     pure $ mapMaybe getInfo completions
