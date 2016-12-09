@@ -104,7 +104,8 @@ startServer' :: forall eff eff'. String -> Int -> String -> Notify (P.ServerEff 
 startServer' server _port root cb = do
   config <- liftEff $ getConfiguration "purescript"
   useNpmPath <- liftEff $ either (const false) id <<< readBoolean <$> getValue config "addNpmPath"
-  P.startServer' root server useNpmPath ["src/**/*.purs", "bower_components/**/*.purs"] cb
+  packagePath <- liftEff $ either (const "bower_components") id <<< readString <$> getValue config "packagePath"
+  P.startServer' root server useNpmPath ["src/**/*.purs", packagePath <> "/**/*.purs"] cb
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
 toDiagnostic isError (PscError { message, filename, position, suggestion }) =

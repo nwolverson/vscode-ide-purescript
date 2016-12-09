@@ -66,6 +66,11 @@
           "default": 4242,
           "description": "Port to use for psc-ide"
         },
+        "purescript.packagePath": {
+          "type": "string",
+          "default": "bower_components",
+          "description": "Path to installed packages"
+        },
         "purescript.buildCommand": {
           "type": "string",
           "default": "pulp build --no-psa --json-errors",
