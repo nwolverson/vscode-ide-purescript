@@ -105,6 +105,11 @@
         "mac": "shift+cmd+b",
         "when": "editorTextFocus && editorLangId == 'purescript'"
       }
+    ],
+    "breakpoints": [
+      {
+        "language": "purescript"
+      }
     ]
   },
   "scripts": {
