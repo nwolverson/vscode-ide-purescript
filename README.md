@@ -34,6 +34,12 @@ required.
 The extension [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript)
 is required but should be installed automatically. The package will start on opening a `.purs` file.
 
+### Suggested extensions
+
+See [input-assist](https://github.com/freebroccolo/vscode-input-assist) for Unicode input assistance
+on autocomplete which is known to work with this extension, alternatively [unicode-latex](https://github.com/ojsheikh/unicode-latex)
+which offers similar LaTeX based input vi a lookup command.
+
 ## Build
 
 'PureScript Build' command will build your project using the command line `pulp build --no-psa --json-errors`.
