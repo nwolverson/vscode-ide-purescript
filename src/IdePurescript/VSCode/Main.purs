@@ -49,14 +49,9 @@ ignoreError _ = pure unit
 
 useEditor :: forall eff. Int -> (Ref State) -> String -> String -> Eff (net :: NET, ref :: REF | eff) Unit
 useEditor port modulesStateRef path text = do
-  let mainModule = getMainModule text
-  case mainModule of
-    Just m -> void $ runAff ignoreError ignoreError $ do
-      loadDeps port m
-      state <- getModulesForFile port path text
-      liftEff $ writeRef modulesStateRef state
-      pure unit
-    Nothing -> pure unit
+  void $ runAff ignoreError ignoreError $ do
+    state <- getModulesForFile port path text
+    liftEff $ writeRef modulesStateRef state
 
 moduleRegex :: Either String Regex
 moduleRegex = regex """(?:^|[^A-Za-z_.])(?:((?:[A-Z][A-Za-z0-9]*\.)*(?:[A-Z][A-Za-z0-9]*))\.)?([a-zA-Z][a-zA-Z0-9_']*)?$""" noFlags
