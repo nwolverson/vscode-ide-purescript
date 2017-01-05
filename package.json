@@ -81,6 +81,15 @@
           "default": true,
           "description": "Enable psc-ide fast rebuild"
         },
+         "purescript.censorWarnings": { 
+           "title": "Censor warnings",
+           "description": "The warning codes to censor, both for fast rebuild and a full build. Unrelated to any psa setup. e.g.: [\"ShadowedName\",\"MissingTypeDeclaration\"]",
+           "type": "array",
+           "default": [],
+           "items": {
+             "type": "string"
+           }
+        },
         "purescript.autocompleteAllModules": {
           "type": "boolean",
           "default": true,

@@ -11,15 +11,16 @@ import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
 import Control.Monad.Except (runExcept)
 import Control.Promise (Promise, fromAff)
-import Data.Array (uncons)
+import Data.Array (filter, notElem, uncons)
 import Data.Either (Either(..), either)
-import Data.Foreign (readInt, readString, readBoolean, Foreign)
+import Data.Foreign (Foreign, readArray, readBoolean, readInt, readString)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.Nullable (toNullable, Nullable)
 import Data.String (trim, null)
 import Data.String.Regex (Regex, regex, split)
 import Data.String.Regex.Flags (noFlags)
+import Data.Traversable (traverse)
 import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.Completion (SuggestionResult(..), SuggestionType(..))
 import IdePurescript.Modules (ImportResult(FailedImport, AmbiguousImport, UpdatedImports), addExplicitImport, State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
@@ -156,10 +157,21 @@ quickBuild port filename = fromAff $ do
   liftEff $ showStatus Building
   { errors, success } <- rebuild port filename
   liftEff $ showStatus BuildSuccess
-  pure $ { success, diagnostics: toDiagnostic' errors, quickBuild: true, file: filename }
+  errors' <- liftEff $ censorWarnings errors
+  pure $ { success, diagnostics: toDiagnostic' errors', quickBuild: true, file: filename }
 
-toDiagnostic' :: { warnings :: Array PscError, errors :: Array PscError } -> Array FileDiagnostic
+toDiagnostic' :: ErrorResult -> Array FileDiagnostic
 toDiagnostic' { warnings, errors } = map (toDiagnostic true) errors <> map (toDiagnostic false) warnings
+
+type ErrorResult = { warnings :: Array PscError, errors :: Array PscError } 
+
+censorWarnings :: forall eff. ErrorResult -> Eff (MainEff eff) ErrorResult
+censorWarnings { warnings, errors } = do
+  config <- liftEff $ getConfiguration "purescript"
+  censorCodes <- getValue config "censorWarnings"
+  let codes = either (const []) id $ runExcept $ readArray censorCodes >>= traverse readString
+  let getCode (PscError { errorCode }) = errorCode
+  pure $ { warnings: filter (flip notElem codes <<< getCode) warnings, errors }
 
 build' :: forall eff. Notify (MainEff eff) -> String -> String -> Eff (MainEff eff) (Promise VSBuildResult)
 build' notify command directory = fromAff $ do
@@ -167,17 +179,18 @@ build' notify command directory = fromAff $ do
   let buildCommand = either (const []) (\reg -> (split reg <<< trim) command) (regex "\\s+" noFlags)
   case uncons buildCommand of
     Just { head: cmd, tail: args } -> do
-      liftEffM $ log "Parsed build command"
-      liftEffM $ showStatus Building
+      liftEff $ log "Parsed build command"
+      liftEff $ showStatus Building
       config <- liftEff $ getConfiguration "purescript"
       useNpmDir <- liftEff $ either (const false) id <<< runExcept <<< readBoolean <$> getValue config "addNpmPath"
       res <- build { command: Command cmd args, directory, useNpmDir }
-      liftEffM $ if res.success then showStatus BuildSuccess
+      errors <- liftEff $ censorWarnings res.errors
+      liftEff $ if res.success then showStatus BuildSuccess
                 else showStatus BuildErrors
-      pure $ { success: true, diagnostics: toDiagnostic' res.errors, quickBuild: false, file: "" }
+      pure $ { success: true, diagnostics: toDiagnostic' errors, quickBuild: false, file: "" }
     Nothing -> do
-      liftEffM $ notify Error "Error parsing PureScript build command"
-      liftEffM $ showStatus BuildFailure
+      liftEff $ notify Error "Error parsing PureScript build command"
+      liftEff $ showStatus BuildFailure
       pure { success: false, diagnostics: [], quickBuild: false, file: "" }
 
 addCompletionImport :: forall eff. (Ref State) -> Int -> Array Foreign -> Aff (MainEff eff) Unit
