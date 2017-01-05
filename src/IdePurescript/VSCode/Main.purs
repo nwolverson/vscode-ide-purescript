@@ -1,6 +1,7 @@
 module IdePurescript.VSCode.Main where
 
 import Prelude
+import IdePurescript.Completion as C
 import PscIde.Command as Command
 import VSCode.Notifications as Notify
 import Control.Monad.Aff (later', attempt, Aff, runAff)
@@ -20,6 +21,7 @@ import Data.String (trim, null)
 import Data.String.Regex (Regex, regex, split)
 import Data.String.Regex.Flags (noFlags)
 import IdePurescript.Build (Command(Command), build, rebuild)
+import IdePurescript.Completion (SuggestionResult(..), SuggestionType(..))
 import IdePurescript.Modules (ImportResult(FailedImport, AmbiguousImport, UpdatedImports), addExplicitImport, State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
 import IdePurescript.PscErrors (PscError(PscError))
 import IdePurescript.PscIde (getType, getCompletion, getLoadedModules, loadDeps)
@@ -32,7 +34,8 @@ import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
 import IdePurescript.VSCode.Symbols (SymbolInfo, SymbolQuery(..), getDefinition, getSymbols)
 import IdePurescript.VSCode.Types (MainEff, liftEffM)
 import PscIde (load) as P
-import PscIde (NET)
+import PscIde (NET, suggestTypos)
+import PscIde.Command (TypeInfo(..))
 import Unsafe.Coerce (unsafeCoerce)
 import VSCode.Command (register)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
@@ -57,22 +60,29 @@ moduleRegex :: Either String Regex
 moduleRegex = regex """(?:^|[^A-Za-z_.])(?:((?:[A-Z][A-Za-z0-9]*\.)*(?:[A-Z][A-Za-z0-9]*))\.)?([a-zA-Z][a-zA-Z0-9_']*)?$""" noFlags
 
 getCompletions :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
-  -> Eff (MainEff eff) (Promise (Array Command.TypeInfo))
+  -> Eff (MainEff eff) (Promise (Array { suggestType :: String, typeInfo :: Command.TypeInfo }))
 getCompletions port state line' char getTextInRange = do
   line <- getTextInRange line' 0 line' char
   let getQualifiedModule = (flip getQualModule) state
-  let parsed = case match' moduleRegex line of
-        Just [ Just _, mod, tok ] | mod /= Nothing || tok /= Nothing ->
-          Just { mod: fromMaybe "" mod , token: fromMaybe "" tok}
-        _ -> Nothing
-  let moduleCompletion = false
   config <- getConfiguration "purescript"
   autoCompleteAllModules <- either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autocompleteAllModules"
-  case parsed of
-    Just { mod, token } -> fromAff $ do
-      modules <- if autoCompleteAllModules then getLoadedModules port else pure $ getUnqualActiveModules state Nothing
-      getCompletion port token state.main mod moduleCompletion modules getQualifiedModule
-    _ -> fromAff $ pure []
+  fromAff $ do
+    modules <- if autoCompleteAllModules then getLoadedModules port else pure $ getUnqualActiveModules state Nothing
+    suggestions <- C.getSuggestions port { line, moduleInfo: { modules, getQualifiedModule, mainModule: state.main } }
+    pure $ convert <$> suggestions
+  where
+    -- TODO change the types here and pull in suggestion handling into PS
+    convert (ModuleSuggestion { text, suggestType, prefix }) =
+      { suggestType: convertSuggest suggestType, typeInfo: TypeInfo { type': text, identifier: text, module': text, expandedType: Just text, definedAt: Nothing, documentation: Nothing } }
+    convert (IdentSuggestion { mod, identifier, qualifier, suggestType, prefix, valueType }) =
+      { suggestType: convertSuggest suggestType, typeInfo: TypeInfo { type': valueType, identifier, module': mod, expandedType: Just valueType, definedAt: Nothing, documentation: Nothing } }
+
+    convertSuggest = case _ of
+      Module -> "Module"
+      Value -> "Value"
+      Function -> "Function"
+      Type -> "Type"
+
 
 type MarkedString = { language :: String, value :: String }
 
@@ -89,10 +99,9 @@ getTooltips port state line char getTextInRange = do
     let word = case { before: match' beforeRegex textBefore, after: match' afterRegex textAfter } of
                 { before: Just [Just s], after: Just [Just s'] } -> s<>s'
                 _ -> ""
-    let prefix = ""
     fromAff do
       -- TODO current module for opened idents
-      ty <- getType port word state.main prefix (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
+      ty <- getType port word state.main Nothing (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
       let marked = if null ty then Nothing else Just $ markedString $ word <> " :: " <> ty
       pure $ toNullable marked
 
@@ -202,7 +211,7 @@ main :: forall eff. Eff (MainEff eff)
   , quickBuild :: EffFn1 (MainEff eff) String (Promise VSBuildResult)
   , updateFile :: EffFn2 (MainEff eff) String String Unit
   , getTooltips :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable MarkedString))
-  , getCompletions :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Array Command.TypeInfo))
+  , getCompletions :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Array { suggestType :: String, typeInfo :: Command.TypeInfo }))
   , getSymbols :: EffFn1 (MainEff eff) String (Promise (Array SymbolInfo))
   , getSymbolsForDoc :: EffFn1 (MainEff eff) TextDocument (Promise (Array SymbolInfo))
   , provideDefinition :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable Location))

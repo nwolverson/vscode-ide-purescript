@@ -106,17 +106,24 @@ export function activate(context: vscode.ExtensionContext) {
         })
       , vscode.languages.registerCompletionItemProvider('purescript', {
             provideCompletionItems: (doc, pos, _) => ps.getCompletions(pos.line, pos.character, getText(doc)).
-                then(result => result.map(it => {
+                then(result => result.map(({suggestType, typeInfo: it}) => {
                     const item = new vscode.CompletionItem(it.identifier);
                     item.detail = it["type'"];
-                    if (/^[A-Z]/.test(it.identifier)) {
-                        item.kind = vscode.CompletionItemKind.Class;
-                    } else if (/->/.test(it["type'"])) {
-                        item.kind = vscode.CompletionItemKind.Function;
-                    } else {
-                        item.kind = vscode.CompletionItemKind.Value;
+                    switch (suggestType) {
+                        case "Module":
+                            item.kind = vscode.CompletionItemKind.Module;
+                            break;
+                        case "Type":
+                            item.kind = vscode.CompletionItemKind.Class;
+                            break;
+                        case "Function":
+                            item.kind = vscode.CompletionItemKind.Function;
+                            break;
+                        case "Value":
+                            item.kind = vscode.CompletionItemKind.Value;
+                            break;
                     }
-                    
+
                     item.command = { 
                         command: "purescript.addCompletionImport", 
                         title: "Add completion import", 

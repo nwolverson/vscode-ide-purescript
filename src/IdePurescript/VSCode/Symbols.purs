@@ -46,7 +46,7 @@ getSymbols modulesState portRef query = do
         let mod = getMainModule text
         pure $ maybe [] singleton mod
 
-    completions <- getCompletion port prefix Nothing "" false modules (const [])
+    completions <- getCompletion port prefix Nothing Nothing modules (const [])
 
     let getInfo (Command.TypeInfo { identifier, definedAt: Just typePos, module', type' }) =
           Just { identifier, range: convTypePosition typePos, fileName: getName typePos, moduleName: module', identType: type' }
@@ -64,9 +64,8 @@ getDefinition port state line char getTextInRange = do
   let word = case { before: match' beforeRegex textBefore, after: match' afterRegex textAfter } of
               { before: Just [Just s], after: Just [Just s'] } -> s<>s'
               _ -> ""
-  let prefix = ""
   fromAff $ do
-    info <- getTypeInfo port word Nothing prefix (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
+    info <- getTypeInfo port word Nothing Nothing (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
     pure $ toNullable $ case info of
       Just (Command.TypeInfo { definedAt: Just (Command.TypePosition { name, start }) }) -> Just $ mkLocation name $ convPosition start
       _ -> Nothing
