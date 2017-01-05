@@ -34,6 +34,8 @@ export interface FileDiagnostic {
 export interface BuildResult {
     success: boolean;
     diagnostics: FileDiagnostic[];
+    quickBuild: boolean;
+    file: string;
 }
 
 export function pscPositionToRange(p: PscPosition) : vscode.Range {

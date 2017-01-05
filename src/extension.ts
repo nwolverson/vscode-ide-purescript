@@ -56,12 +56,16 @@ export function activate(context: vscode.ExtensionContext) {
                 entries.push(d.diagnostic);
                 map.set(d.filename, entries);
             });
-            const diags = <[vscode.Uri, vscode.Diagnostic[]][]><Object> Array.from(map.entries()).map(([url, diags]) => [vscode.Uri.file(url), diags]);
+            
+            if (res.quickBuild) {
+                diagnosticCollection.set(vscode.Uri.file(res.file), map.get(res.file) || []);
+            } else {
+                // If I don't clear before set, last error remains when fixed
+                diagnosticCollection.clear();
 
-            // If I don't clear before set, last error remains when fixed
-            diagnosticCollection.clear();
-
-            diagnosticCollection.set(diags);
+                const diags = <[vscode.Uri, vscode.Diagnostic[]][]><Object> Array.from(map.entries()).map(([url, diags]) => [vscode.Uri.file(url), diags]);
+                diagnosticCollection.set(diags);
+            }
 
             buildProvider.setBuildResults(actionMap);
 

@@ -134,8 +134,10 @@ type FileDiagnostic =
   , quickfix :: { suggest :: Boolean, replacement :: String, range :: Range }
   }
 type VSBuildResult =
-  { success:: Boolean
+  { success :: Boolean
   , diagnostics :: Array FileDiagnostic
+  , quickBuild :: Boolean
+  , file :: String
   }
 
 data Status = Building | BuildFailure | BuildErrors | BuildSuccess
@@ -154,7 +156,7 @@ quickBuild port filename = fromAff $ do
   liftEff $ showStatus Building
   { errors, success } <- rebuild port filename
   liftEff $ showStatus BuildSuccess
-  pure $ { success, diagnostics: toDiagnostic' errors }
+  pure $ { success, diagnostics: toDiagnostic' errors, quickBuild: true, file: filename }
 
 toDiagnostic' :: { warnings :: Array PscError, errors :: Array PscError } -> Array FileDiagnostic
 toDiagnostic' { warnings, errors } = map (toDiagnostic true) errors <> map (toDiagnostic false) warnings
@@ -172,11 +174,11 @@ build' notify command directory = fromAff $ do
       res <- build { command: Command cmd args, directory, useNpmDir }
       liftEffM $ if res.success then showStatus BuildSuccess
                 else showStatus BuildErrors
-      pure $ { success: true, diagnostics: toDiagnostic' res.errors }
+      pure $ { success: true, diagnostics: toDiagnostic' res.errors, quickBuild: false, file: "" }
     Nothing -> do
       liftEffM $ notify Error "Error parsing PureScript build command"
       liftEffM $ showStatus BuildFailure
-      pure { success: false, diagnostics: [] }
+      pure { success: false, diagnostics: [], quickBuild: false, file: "" }
 
 addCompletionImport :: forall eff. (Ref State) -> Int -> Array Foreign -> Aff (MainEff eff) Unit
 addCompletionImport stateRef port args = case args of
