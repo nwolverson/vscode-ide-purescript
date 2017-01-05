@@ -22,8 +22,11 @@ export function activate(context: vscode.ExtensionContext) {
     const ps = require('./bundle')();
     const config = vscode.workspace.getConfiguration("purescript");
 
-    const useDoc = (doc : vscode.TextDocument) =>
-        ps.updateFile(doc.fileName, doc.getText());
+    const useDoc = (doc : vscode.TextDocument) => {
+        if (doc.fileName && doc.fileName.endsWith('.purs')) {
+            ps.updateFile(doc.fileName, doc.getText());
+        }
+    };
 
     ps.activate()
         .then(() => {
