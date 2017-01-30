@@ -23,9 +23,9 @@ import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (traverse)
 import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.Completion (SuggestionResult(..), SuggestionType(..))
-import IdePurescript.Modules (ImportResult(FailedImport, AmbiguousImport, UpdatedImports), addExplicitImport, State, initialModulesState, getQualModule, getUnqualActiveModules, getModulesForFile, getMainModule)
+import IdePurescript.Modules (ImportResult(FailedImport, AmbiguousImport, UpdatedImports), State, addExplicitImport, getModulesForFile, getQualModule, getUnqualActiveModules, initialModulesState)
 import IdePurescript.PscErrors (PscError(PscError))
-import IdePurescript.PscIde (getType, getCompletion, getLoadedModules, loadDeps)
+import IdePurescript.PscIde (getLoadedModules, getType)
 import IdePurescript.PscIdeServer (Notify, ErrorLevel(Error, Warning, Info, Success))
 import IdePurescript.PscIdeServer (startServer', QuitCallback, ServerEff) as P
 import IdePurescript.Regex (match')
@@ -35,7 +35,7 @@ import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
 import IdePurescript.VSCode.Symbols (SymbolInfo, SymbolQuery(..), getDefinition, getSymbols)
 import IdePurescript.VSCode.Types (MainEff, liftEffM)
 import PscIde (load) as P
-import PscIde (NET, suggestTypos)
+import PscIde (NET)
 import PscIde.Command (TypeInfo(..))
 import Unsafe.Coerce (unsafeCoerce)
 import VSCode.Command (register)
@@ -61,7 +61,7 @@ moduleRegex :: Either String Regex
 moduleRegex = regex """(?:^|[^A-Za-z_.])(?:((?:[A-Z][A-Za-z0-9]*\.)*(?:[A-Z][A-Za-z0-9]*))\.)?([a-zA-Z][a-zA-Z0-9_']*)?$""" noFlags
 
 getCompletions :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
-  -> Eff (MainEff eff) (Promise (Array { suggestType :: String, typeInfo :: Command.TypeInfo }))
+  -> Eff (MainEff eff) (Promise (Array { suggestType :: String, typeInfo :: Command.TypeInfo, prefix :: String }))
 getCompletions port state line' char getTextInRange = do
   line <- getTextInRange line' 0 line' char
   let getQualifiedModule = (flip getQualModule) state
@@ -74,9 +74,9 @@ getCompletions port state line' char getTextInRange = do
   where
     -- TODO change the types here and pull in suggestion handling into PS
     convert (ModuleSuggestion { text, suggestType, prefix }) =
-      { suggestType: convertSuggest suggestType, typeInfo: TypeInfo { type': text, identifier: text, module': text, expandedType: Just text, definedAt: Nothing, documentation: Nothing } }
+      { suggestType: convertSuggest suggestType, typeInfo: TypeInfo { type': text, identifier: text, module': text, expandedType: Just text, definedAt: Nothing, documentation: Nothing }, prefix }
     convert (IdentSuggestion { mod, identifier, qualifier, suggestType, prefix, valueType }) =
-      { suggestType: convertSuggest suggestType, typeInfo: TypeInfo { type': valueType, identifier, module': mod, expandedType: Just valueType, definedAt: Nothing, documentation: Nothing } }
+      { suggestType: convertSuggest suggestType, typeInfo: TypeInfo { type': valueType, identifier, module': mod, expandedType: Just valueType, definedAt: Nothing, documentation: Nothing }, prefix }
 
     convertSuggest = case _ of
       Module -> "Module"
@@ -226,7 +226,7 @@ main :: forall eff. Eff (MainEff eff)
   , quickBuild :: EffFn1 (MainEff eff) String (Promise VSBuildResult)
   , updateFile :: EffFn2 (MainEff eff) String String Unit
   , getTooltips :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable MarkedString))
-  , getCompletions :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Array { suggestType :: String, typeInfo :: Command.TypeInfo }))
+  , getCompletions :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Array { suggestType :: String, typeInfo :: Command.TypeInfo, prefix :: String }))
   , getSymbols :: EffFn1 (MainEff eff) String (Promise (Array SymbolInfo))
   , getSymbolsForDoc :: EffFn1 (MainEff eff) TextDocument (Promise (Array SymbolInfo))
   , provideDefinition :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable Location))
