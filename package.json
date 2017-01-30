@@ -73,8 +73,8 @@
         },
         "purescript.buildCommand": {
           "type": "string",
-          "default": "pulp build --no-psa --json-errors",
-          "description": "Build command to use with arguments. Not passed to shell. eg `pulp build --json-errors`"
+          "default": "pulp build -- --json-errors",
+          "description": "Build command to use with arguments. Not passed to shell. eg `pulp build -- --json-errors` (this default requires pulp >=10)"
         },
         "purescript.fastRebuild": {
           "type": "boolean",
