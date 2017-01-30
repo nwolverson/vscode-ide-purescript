@@ -2,7 +2,7 @@
   "name": "ide-purescript",
   "displayName": "PureScript IDE",
   "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "publisher": "nwolverson",
   "author": {
     "name": "Nicholas Wolverson"
