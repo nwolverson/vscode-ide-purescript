@@ -28,7 +28,7 @@ import IdePurescript.PscErrors (PscError(PscError))
 import IdePurescript.PscIde (getLoadedModules, getType)
 import IdePurescript.PscIdeServer (Notify, ErrorLevel(Error, Warning, Info, Success))
 import IdePurescript.PscIdeServer (startServer', QuitCallback, ServerEff) as P
-import IdePurescript.Regex (match')
+import IdePurescript.Tokens (identifierAtPoint)
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Editor (GetText)
 import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
@@ -93,18 +93,13 @@ markedString s = { language: "purescript", value: s }
 getTooltips :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
   -> Eff (MainEff eff) (Promise (Nullable MarkedString))
 getTooltips port state line char getTextInRange = do
-    let beforeRegex = regex "[a-zA-Z_0-9']*$" noFlags
-        afterRegex = regex "^[a-zA-Z_0-9']*" noFlags
-    textBefore <- getTextInRange line 0    line char
-    textAfter  <- getTextInRange line char line (char + 100)
-    let word = case { before: match' beforeRegex textBefore, after: match' afterRegex textAfter } of
-                { before: Just [Just s], after: Just [Just s'] } -> s<>s'
-                _ -> ""
-    fromAff do
-      -- TODO current module for opened idents
-      ty <- getType port word state.main Nothing (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
-      let marked = if null ty then Nothing else Just $ markedString $ word <> " :: " <> ty
-      pure $ toNullable marked
+    text <- getTextInRange line 0 line (char + 100)
+    case identifierAtPoint text char of
+      Just { word, qualifier } -> fromAff do
+        ty <- getType port word state.main qualifier (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
+        let marked = if null ty then Nothing else Just $ markedString $ word <> " :: " <> ty
+        pure $ toNullable marked
+      Nothing -> fromAff $ pure $ toNullable Nothing
 
 startServer' :: forall eff eff'. String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
 startServer' server _port root cb = do
