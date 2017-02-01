@@ -1,6 +1,5 @@
 module IdePurescript.VSCode.Symbols where
 
-import Prelude (pure, flip, bind, const, ($), (<>), (+), (-))
 import PscIde.Command as Command
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
@@ -14,8 +13,10 @@ import Data.String.Regex.Flags (noFlags)
 import IdePurescript.Modules (State, getQualModule, getUnqualActiveModules, getMainModule)
 import IdePurescript.PscIde (getTypeInfo, getCompletion, getLoadedModules)
 import IdePurescript.Regex (match')
-import IdePurescript.VSCode.Types (MainEff)
+import IdePurescript.Tokens (identifierAtPoint)
 import IdePurescript.VSCode.Editor (GetText)
+import IdePurescript.VSCode.Types (MainEff)
+import Prelude (pure, flip, bind, const, ($), (<>), (+), (-))
 import PscIde (NET)
 import VSCode.Location (Location, mkLocation)
 import VSCode.Position (mkPosition, Position)
@@ -57,15 +58,11 @@ getSymbols modulesState portRef query = do
 getDefinition :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
   -> Eff (MainEff eff) (Promise (Nullable Location))
 getDefinition port state line char getTextInRange = do
-  let beforeRegex = regex "[a-zA-Z_0-9']*$" noFlags
-      afterRegex = regex "^[a-zA-Z_0-9']*" noFlags
-  textBefore <- getTextInRange line 0    line char
-  textAfter  <- getTextInRange line char line (char + 100)
-  let word = case { before: match' beforeRegex textBefore, after: match' afterRegex textAfter } of
-              { before: Just [Just s], after: Just [Just s'] } -> s<>s'
-              _ -> ""
-  fromAff $ do
-    info <- getTypeInfo port word Nothing Nothing (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
-    pure $ toNullable $ case info of
-      Just (Command.TypeInfo { definedAt: Just (Command.TypePosition { name, start }) }) -> Just $ mkLocation name $ convPosition start
-      _ -> Nothing
+  text <- getTextInRange line 0 line (char + 100)
+  case identifierAtPoint text char of
+    Just { word, qualifier } -> fromAff do
+      info <- getTypeInfo port word state.main qualifier (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
+      pure $ toNullable $ case info of
+        Just (Command.TypeInfo { definedAt: Just (Command.TypePosition { name, start }) }) -> Just $ mkLocation name $ convPosition start
+        _ -> Nothing
+    Nothing -> fromAff $ pure $ toNullable Nothing
