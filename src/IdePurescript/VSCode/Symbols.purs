@@ -32,10 +32,9 @@ convPosition { line, column } = mkPosition (line-1) (column-1)
 convTypePosition :: Command.TypePosition -> Range
 convTypePosition (Command.TypePosition {start, end}) = mkRange (convPosition start) (convPosition end)
 
-getSymbols :: forall s eff. Ref s -> Ref Int -> SymbolQuery -> Eff ( ref :: REF, net :: NET, editor :: EDITOR| eff) (Promise (Array SymbolInfo))
-getSymbols modulesState portRef query = do
+getSymbols :: forall s eff. Ref s -> Int -> SymbolQuery -> Eff ( ref :: REF, net :: NET, editor :: EDITOR| eff) (Promise (Array SymbolInfo))
+getSymbols modulesState port query = do
   state <- readRef modulesState
-  port <- readRef portRef
   fromAff $ do
     let prefix = case query of
                     WorkspaceSymbolQuery pref -> pref

@@ -4,7 +4,6 @@ import Prelude
 import Control.Monad.Aff (runAff, Aff)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Eff.Ref (REF)
 import Node.Buffer (BUFFER)
@@ -40,9 +39,6 @@ type MainEff a =
   , workspace :: WORKSPACE
   | a
   )
-
-liftEffM :: forall a eff. Eff (MainEff eff) a -> Aff (MainEff eff) a
-liftEffM = liftEff
 
 launchAffSilent :: forall a b. Aff a b -> Eff a Unit
 launchAffSilent = void <<< (runAff (const $ pure unit) (const $ pure unit))

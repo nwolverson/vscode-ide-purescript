@@ -51,6 +51,14 @@
       {
         "command": "purescript.restartPscIde",
         "title": "PureScript: Restart Psc-Ide-Server"
+      },
+      {
+        "command": "purescript.startPscIde",
+        "title": "PureScript: Start Psc-Ide-Server"
+      },
+      {
+        "command": "purescript.stopPscIde",
+        "title": "PureScript: Stop Psc-Ide-Server"
       }
     ],
     "configuration": {
@@ -65,6 +73,11 @@
           "type": "integer",
           "default": 4242,
           "description": "Port to use for psc-ide"
+        },
+        "purescript.autoStartPscIde": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to automatically start psc-ide when editing a PureScript file (includes connecting to an existing running instance). If this is disabled, various features like autocomplete, tooltips, and other type info will not work until start command is run manually."
         },
         "purescript.packagePath": {
           "type": "string",

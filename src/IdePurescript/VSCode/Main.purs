@@ -15,7 +15,7 @@ import Data.Array (filter, notElem, uncons)
 import Data.Either (Either(..), either)
 import Data.Foreign (Foreign, readArray, readBoolean, readInt, readString)
 import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
-import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
+import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
 import Data.Nullable (toNullable, Nullable)
 import Data.String (trim, null)
 import Data.String.Regex (Regex, regex, split)
@@ -33,7 +33,7 @@ import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Editor (GetText)
 import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
 import IdePurescript.VSCode.Symbols (SymbolInfo, SymbolQuery(..), getDefinition, getSymbols)
-import IdePurescript.VSCode.Types (MainEff, liftEffM)
+import IdePurescript.VSCode.Types (MainEff)
 import PscIde (load) as P
 import PscIde (NET)
 import PscIde.Command (TypeInfo(..))
@@ -83,7 +83,6 @@ getCompletions port state line' char getTextInRange = do
       Value -> "Value"
       Function -> "Function"
       Type -> "Type"
-
 
 type MarkedString = { language :: String, value :: String }
 
@@ -168,9 +167,11 @@ censorWarnings { warnings, errors } = do
   let getCode (PscError { errorCode }) = errorCode
   pure $ { warnings: filter (flip notElem codes <<< getCode) warnings, errors }
 
+emptyBuildResult = { success: false, diagnostics: [], quickBuild: false, file: "" } 
+
 build' :: forall eff. Notify (MainEff eff) -> String -> String -> Eff (MainEff eff) (Promise VSBuildResult)
 build' notify command directory = fromAff $ do
-  liftEffM $ log "Building"
+  liftEff $ log "Building"
   let buildCommand = either (const []) (\reg -> (split reg <<< trim) command) (regex "\\s+" noFlags)
   case uncons buildCommand of
     Just { head: cmd, tail: args } -> do
@@ -194,24 +195,24 @@ addCompletionImport stateRef port args = case args of
     Right line', Right char' -> do
       let item' = (unsafeCoerce item) :: Command.TypeInfo
       Command.TypeInfo { identifier, module' } <- pure item'
-      ed <- liftEffM $ getActiveTextEditor
+      ed <- liftEff $ getActiveTextEditor
       case ed of
         Just ed' -> do
           let doc = getDocument ed'
-          text <- liftEffM $ getText doc
-          path <- liftEffM $ getPath doc
-          state <- liftEffM $ readRef stateRef
+          text <- liftEff $ getText doc
+          path <- liftEff $ getPath doc
+          state <- liftEff $ readRef stateRef
           { state: newState, result: output} <- addExplicitImport state port path text (Just module') identifier
-          liftEffM $ writeRef stateRef newState
+          liftEff $ writeRef stateRef newState
           case output of
             UpdatedImports out -> void $ setTextViaDiff ed' out
-            AmbiguousImport opts -> liftEffM $ log "Found ambiguous imports"
-            FailedImport -> liftEffM $ log "Failed to import"
+            AmbiguousImport opts -> liftEff $ log "Found ambiguous imports"
+            FailedImport -> liftEff $ log "Failed to import"
           pure unit
         Nothing -> pure unit
       pure unit
-    _, _ -> liftEffM $ log "Wrong argument type"
-  _ -> liftEffM $ log "Wrong command arguments"
+    _, _ -> liftEff $ log "Wrong argument type"
+  _ -> liftEff $ log "Wrong command arguments"
 
 
 main :: forall eff. Eff (MainEff eff)
@@ -229,14 +230,16 @@ main :: forall eff. Eff (MainEff eff)
 main = do
   modulesState <- newRef (initialModulesState)
   deactivateRef <- newRef (pure unit :: Eff (MainEff eff) Unit)
-  portRef <- newRef 0
+  portRef <- newRef Nothing
 
   let cmd s f = register ("purescript." <> s) (\_ -> f)
       cmdWithArgs s f = register ("purescript." <> s) f
 
   let deactivate :: Eff (MainEff eff) Unit
-      deactivate = join (readRef deactivateRef)
-
+      deactivate = do
+        join (readRef deactivateRef)
+        writeRef deactivateRef (pure unit)
+        writeRef portRef Nothing
 
   let showError :: Notify (MainEff eff)
       showError level str = case level of
@@ -245,23 +248,20 @@ main = do
                              Warning -> Notify.showWarning str
                              Error -> Notify.showError str
 
-  let liftEffMM :: forall a. Eff (MainEff eff) a -> Aff (MainEff eff) a
-      liftEffMM = liftEff
-
   let startPscIdeServer =
         do
-          config <- liftEffMM $ getConfiguration "purescript"
-          server <- liftEffMM $ either (const "psc-ide-server") id <<< runExcept <<< readString <$> getValue config "pscIdeServerExe"
-          port' <- liftEffMM $ either (const 4242) id <<< runExcept <<< readInt <$> getValue config "pscIdePort"
-          rootPath <- liftEffMM rootPath
+          config <- liftEff $ getConfiguration "purescript"
+          server <- liftEff $ either (const "psc-ide-server") id <<< runExcept <<< readString <$> getValue config "pscIdeServerExe"
+          port' <- liftEff $ either (const 4242) id <<< runExcept <<< readInt <$> getValue config "pscIdePort"
+          rootPath <- liftEff rootPath
           -- TODO pass in port just when explicitly defined
           startRes <- startServer' server port' rootPath showError
           retry 6 case startRes of
             { port: Just port, quit } -> do
               P.load port [] []
-              liftEffMM $ do
+              liftEff do
                 writeRef deactivateRef quit
-                writeRef portRef port
+                writeRef portRef $ Just port
             _ -> pure unit
         where
           retry :: Int -> Aff (MainEff eff) Unit -> Aff (MainEff eff) Unit
@@ -274,50 +274,59 @@ main = do
                 later' 500 $ retry (n - 1) a
           retry _ a = a
 
+      start :: Eff (MainEff eff) Unit
+      start = void $ runAff ignoreError ignoreError $ startPscIdeServer
 
       restart :: Eff (MainEff eff) Unit
       restart = do
         deactivate
-        void $ runAff ignoreError ignoreError $ startPscIdeServer
+        start
 
+  let withPortDef :: forall eff' a. Eff (ref :: REF | eff') a -> (Int -> Eff (ref :: REF | eff') a) -> Eff (ref :: REF | eff') a
+      withPortDef def f = readRef portRef >>= maybe def f
+  let withPort :: forall eff'. (Int -> Eff (ref :: REF | eff') Unit) -> Eff (ref :: REF | eff') Unit
+      withPort = withPortDef (pure unit)
+  
   let initialise = fromAff $ do
-        startPscIdeServer
-        liftEffMM do
-          cmd "addImport" $ readRef portRef >>= addModuleImportCmd modulesState
-          cmd "addExplicitImport" $ readRef portRef >>= addIdentImportCmd modulesState
-          cmd "caseSplit" $ readRef portRef >>= caseSplit
-          cmd "addClause" $ readRef portRef >>= addClause
-          cmd "restartPscIde" $ restart
-          cmdWithArgs "addCompletionImport" $ \args -> do
-            port <- readRef portRef
-            config <- getConfiguration "purescript"
+        config <- liftEff $ getConfiguration "purescript"
+        auto <- liftEff $ either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autoStartPscIde"
+        when auto startPscIdeServer
+        liftEff do
+          cmd "addImport" $ withPort $ addModuleImportCmd modulesState
+          cmd "addExplicitImport" $ withPort $ addIdentImportCmd modulesState
+          cmd "caseSplit" $ withPort caseSplit
+          cmd "addClause" $ withPort addClause
+          cmd "restartPscIde" restart
+          cmd "startPscIde" start
+          cmd "stopPscIde" deactivate
+          cmdWithArgs "addCompletionImport" $ \args -> withPort \port -> do
             autocompleteAddImport <- either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autocompleteAddImport"
             when autocompleteAddImport $
               void $ runAff ignoreError ignoreError $ addCompletionImport modulesState port args
 
-  pure
-    {
+  pure $ {
       activate: initialise
     , deactivate: deactivate
     , build: mkEffFn2 $ build' showError
-    , quickBuild: mkEffFn1 \fname -> do
-        port <- readRef portRef
-        quickBuild port fname
-    , updateFile: mkEffFn2 $ \fname text -> do
-        port <- readRef portRef
-        useEditor port modulesState fname text
-    , getTooltips: mkEffFn3 $ \line char getText -> do
-        state <- readRef modulesState
-        port <- readRef portRef
-        getTooltips port state line char (runEffFn4 getText)
-    , getCompletions: mkEffFn3 $ \line char getText -> do
-        state <- readRef modulesState
-        port <- readRef portRef
-        getCompletions port state line char (runEffFn4 getText)
-    , getSymbols: mkEffFn1 $ \query -> getSymbols modulesState portRef $ WorkspaceSymbolQuery query
-    , getSymbolsForDoc: mkEffFn1 $ \document -> getSymbols modulesState portRef $ FileSymbolQuery document
-    , provideDefinition: mkEffFn3 $ \line char getText -> do
-        state <- readRef modulesState
-        port <- readRef portRef
-        getDefinition port state line char (runEffFn4 getText)
+    , quickBuild: mkEffFn1 $ \fname ->
+        withPortDef (fromAff $ pure emptyBuildResult) \port -> do
+          quickBuild port fname
+    , updateFile: mkEffFn2 $ \fname text -> withPort \port -> useEditor port modulesState fname text
+    , getTooltips: mkEffFn3 $ \line char getText -> 
+        withPortDef (fromAff $ pure $ toNullable Nothing) \port -> do
+          state <- readRef modulesState
+          getTooltips port state line char (runEffFn4 getText)
+    , getCompletions: mkEffFn3 $ \line char getText ->
+        withPortDef (fromAff $ pure []) \port -> do
+          state <- readRef modulesState
+          getCompletions port state line char (runEffFn4 getText)
+    , getSymbols: mkEffFn1 $ \query -> withPortDef (fromAff $ pure []) \port -> 
+        getSymbols modulesState port $ WorkspaceSymbolQuery query
+    , getSymbolsForDoc: mkEffFn1 $ \document ->
+        withPortDef (fromAff $ pure []) \port ->
+          getSymbols modulesState port $ FileSymbolQuery document
+    , provideDefinition: mkEffFn3 $ \line char getText ->
+        withPortDef (fromAff $ pure $ toNullable Nothing) \port -> do
+          state <- readRef modulesState
+          getDefinition port state line char (runEffFn4 getText)
     }
