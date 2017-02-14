@@ -256,7 +256,7 @@ main = do
           rootPath <- liftEffMM rootPath
           -- TODO pass in port just when explicitly defined
           startRes <- startServer' server port' rootPath showError
-          retry case startRes of
+          retry 6 case startRes of
             { port: Just port, quit } -> do
               P.load port [] []
               liftEffMM $ do
@@ -264,14 +264,15 @@ main = do
                 writeRef portRef port
             _ -> pure unit
         where
-          retry :: Aff (MainEff eff) Unit -> Aff (MainEff eff) Unit
-          retry a = do
+          retry :: Int -> Aff (MainEff eff) Unit -> Aff (MainEff eff) Unit
+          retry n a | n > 0 = do
             res <- attempt a
             case res of
               Right r -> pure r
               Left err -> do
                 liftEff $ log $ "Retrying starting server after 500ms: " <> show err
-                later' 500 a
+                later' 500 $ retry (n - 1) a
+          retry _ a = a
 
 
       restart :: Eff (MainEff eff) Unit
