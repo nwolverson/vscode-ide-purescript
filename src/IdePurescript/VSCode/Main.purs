@@ -7,7 +7,7 @@ import VSCode.Notifications as Notify
 import Control.Monad.Aff (later', attempt, Aff, runAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log)
+import Control.Monad.Eff.Console (log, warn, error, info)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
 import Control.Monad.Except (runExcept)
 import Control.Promise (Promise, fromAff)
@@ -100,12 +100,13 @@ getTooltips port state line char getTextInRange = do
         pure $ toNullable marked
       Nothing -> fromAff $ pure $ toNullable Nothing
 
-startServer' :: forall eff eff'. String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
-startServer' server _port root cb = do
+
+startServer' :: forall eff eff'. String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
+startServer' server _port root cb logCb = do
   config <- liftEff $ getConfiguration "purescript"
   useNpmPath <- liftEff $ either (const false) id <<< runExcept <<< readBoolean <$> getValue config "addNpmPath"
   packagePath <- liftEff $ either (const "bower_components") id <<< runExcept <<< readString <$> getValue config "packagePath"
-  P.startServer' root server useNpmPath ["src/**/*.purs", packagePath <> "/**/*.purs"] cb
+  P.startServer' root server useNpmPath ["src/**/*.purs", packagePath <> "/**/*.purs"] cb logCb
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
 toDiagnostic isError (PscError { message, filename, position, suggestion }) =
@@ -167,6 +168,12 @@ censorWarnings { warnings, errors } = do
   let getCode (PscError { errorCode }) = errorCode
   pure $ { warnings: filter (flip notElem codes <<< getCode) warnings, errors }
 
+emptyBuildResult :: forall t280.
+  { success :: Boolean
+  , diagnostics :: Array t280
+  , quickBuild :: Boolean
+  , file :: String
+  }
 emptyBuildResult = { success: false, diagnostics: [], quickBuild: false, file: "" } 
 
 build' :: forall eff. Notify (MainEff eff) -> String -> String -> Eff (MainEff eff) (Promise VSBuildResult)
@@ -243,10 +250,17 @@ main = do
 
   let showError :: Notify (MainEff eff)
       showError level str = case level of
-                             Success -> Notify.showInfo str
-                             Info -> Notify.showInfo str
-                             Warning -> Notify.showWarning str
-                             Error -> Notify.showError str
+        Success -> Notify.showInfo str
+        Info -> Notify.showInfo str
+        Warning -> Notify.showWarning str
+        Error -> Notify.showError str
+  let logError :: Notify (MainEff eff)
+      logError level str = case level of
+        Success -> log str
+        Info -> info str
+        Warning -> warn str
+        Error -> error str
+                             
 
   let startPscIdeServer =
         do
@@ -255,7 +269,7 @@ main = do
           port' <- liftEff $ either (const 4242) id <<< runExcept <<< readInt <$> getValue config "pscIdePort"
           rootPath <- liftEff rootPath
           -- TODO pass in port just when explicitly defined
-          startRes <- startServer' server port' rootPath showError
+          startRes <- startServer' server port' rootPath showError logError
           retry 6 case startRes of
             { port: Just port, quit } -> do
               P.load port [] []
