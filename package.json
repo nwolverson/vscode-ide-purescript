@@ -64,11 +64,21 @@
     "configuration": {
       "title": "PureScript configuration",
       "properties": {
+        "purescript.pursExe": {
+          "type": "string",
+          "default": "purs",
+          "description": "Location of purs executable (resolved wrt PATH)"
+        },
+        "purescript.useCombinedExe": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to use the new combined purs executable. This will default to true in the future then go away."
+        },
         "purescript.pscIdeServerExe": {
           "type": "string",
           "default": "psc-ide-server",
           "description": "Location of psc-ide server executable (resolved wrt PATH)"
-        },
+        },       
         "purescript.pscIdePort": {
           "type": "integer",
           "default": 4242,
@@ -138,7 +148,7 @@
     "vscode:prepublish": "npm run -s compile",
     "compile": "npm run -s build && tsc -p ./",
     "build": "npm run ffi && npm run psc",
-    "psc": "mkdir -p out/src && pulp build --to out/src/bundle.js --skip-entry-point && echo 'module.exports = PS.Main.main' >> out/src/bundle.js",
+    "psc": "mkdir -p out/src && pulp build --no-psa --to out/src/bundle.js --skip-entry-point && echo 'module.exports = PS.Main.main' >> out/src/bundle.js",
     "ffi": "tsc -p src/VSCode/",
     "postinstall": "node ./node_modules/vscode/bin/install"
   },

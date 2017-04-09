@@ -101,12 +101,13 @@ getTooltips port state line char getTextInRange = do
       Nothing -> fromAff $ pure $ toNullable Nothing
 
 
-startServer' :: forall eff eff'. String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
-startServer' server _port root cb logCb = do
+startServer' :: forall eff eff'. String -> String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
+startServer' server purs _port root cb logCb = do
   config <- liftEff $ getConfiguration "purescript"
   useNpmPath <- liftEff $ either (const false) id <<< runExcept <<< readBoolean <$> getValue config "addNpmPath"
+  usePurs <- liftEff $ either (const false) id <<< runExcept <<< readBoolean <$> getValue config "useCombinedExe"
   packagePath <- liftEff $ either (const "bower_components") id <<< runExcept <<< readString <$> getValue config "packagePath"
-  P.startServer' root server useNpmPath ["src/**/*.purs", packagePath <> "/**/*.purs"] cb logCb
+  P.startServer' root (if usePurs then purs else server) useNpmPath usePurs ["src/**/*.purs", packagePath <> "/**/*.purs"] cb logCb
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
 toDiagnostic isError (PscError { message, filename, position, suggestion }) =
@@ -266,10 +267,11 @@ main = do
         do
           config <- liftEff $ getConfiguration "purescript"
           server <- liftEff $ either (const "psc-ide-server") id <<< runExcept <<< readString <$> getValue config "pscIdeServerExe"
+          purs <- liftEff $ either (const "purs") id <<< runExcept <<< readString <$> getValue config "pursExe"
           port' <- liftEff $ either (const 4242) id <<< runExcept <<< readInt <$> getValue config "pscIdePort"
           rootPath <- liftEff rootPath
           -- TODO pass in port just when explicitly defined
-          startRes <- startServer' server port' rootPath showError logError
+          startRes <- startServer' server purs port' rootPath showError logError
           retry 6 case startRes of
             { port: Just port, quit } -> do
               P.load port [] []
