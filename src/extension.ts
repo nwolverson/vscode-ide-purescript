@@ -114,8 +114,11 @@ export function activate(context: vscode.ExtensionContext) {
       , vscode.languages.registerCompletionItemProvider('purescript', {
             provideCompletionItems: (doc, pos, _) => ps.getCompletions(pos.line, pos.character, getText(doc)).
                 then(result => result.map(({suggestType, typeInfo: it, prefix}) => {
-                    const item = new vscode.CompletionItem(it.identifier);
+                    const mod = it["module'"];
+                    const text = it.identifier;
+                    const item = new vscode.CompletionItem(text);
                     item.detail = it["type'"];
+                    item.documentation = '*' + mod + '*';
                     item.textEdit = new vscode.TextEdit(new vscode.Range(pos.line, pos.character - prefix.length, pos.line, pos.character), item.label);
                     switch (suggestType) {
                         case "Module":
