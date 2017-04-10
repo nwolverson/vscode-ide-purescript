@@ -2,7 +2,7 @@ module VSCode.Diagnostic where
 
 import VSCode.Range
 
-foreign import data Diagnostic :: *
+foreign import data Diagnostic :: Type
 
 type Severity = Int
 

@@ -21,7 +21,7 @@ import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Random (RANDOM)
 
 type MainEff a =
-  ( err :: EXCEPTION
+  ( exception :: EXCEPTION
   , random :: RANDOM
   , buffer :: BUFFER
   , fs :: FS

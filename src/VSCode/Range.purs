@@ -2,7 +2,7 @@ module VSCode.Range where
 
 import VSCode.Position
 
-foreign import data Range :: *
+foreign import data Range :: Type
 
 foreign import getStart :: Range -> Position
 foreign import getEnd :: Range -> Position

@@ -1,13 +1,13 @@
 module VSCode.TextDocument where
 
 import Prelude
-import Control.Monad.Eff (Eff)
+import Control.Monad.Eff (Eff, kind Effect)
 import VSCode.Range (Range)
 import VSCode.Position (Position)
 
-foreign import data TextDocument :: *
+foreign import data TextDocument :: Type
 
-foreign import data EDITOR :: !
+foreign import data EDITOR :: Effect
 
 foreign import getPath :: forall eff. TextDocument -> Eff (editor :: EDITOR | eff) String
 

@@ -3,10 +3,10 @@ module VSCode.TextEditor (TextEditor, setText, setTextInRange, setTextViaDiff, g
 import Prelude
 import VSCode.TextDocument (TextDocument, EDITOR)
 import VSCode.Range (Range)
-import Control.Monad.Eff (Eff)
+import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Aff (Aff, makeAff)
     
-foreign import data TextEditor :: *
+foreign import data TextEditor :: Type
 
 foreign import setTextImpl :: forall eff. TextEditor -> String -> (Boolean -> Eff (editor :: EDITOR | eff) Unit) -> Eff (editor :: EDITOR | eff) Unit
 

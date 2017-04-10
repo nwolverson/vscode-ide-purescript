@@ -4,22 +4,23 @@ import Prelude
 import IdePurescript.Completion as C
 import PscIde.Command as Command
 import VSCode.Notifications as Notify
-import Control.Monad.Aff (later', attempt, Aff, runAff)
+import Control.Monad.Aff (Aff, attempt, delay, runAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log, warn, error, info)
 import Control.Monad.Eff.Ref (REF, Ref, readRef, newRef, writeRef)
+import Control.Monad.Eff.Uncurried (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Control.Monad.Except (runExcept)
 import Control.Promise (Promise, fromAff)
 import Data.Array (filter, notElem, uncons)
 import Data.Either (Either(..), either)
 import Data.Foreign (Foreign, readArray, readBoolean, readInt, readString)
-import Data.Function.Eff (EffFn4, EffFn3, EffFn2, EffFn1, runEffFn4, mkEffFn3, mkEffFn2, mkEffFn1)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
 import Data.Nullable (toNullable, Nullable)
 import Data.String (trim, null)
 import Data.String.Regex (Regex, regex, split)
 import Data.String.Regex.Flags (noFlags)
+import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (traverse)
 import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.Completion (SuggestionResult(..), SuggestionType(..))
@@ -274,7 +275,7 @@ main = do
           startRes <- startServer' server purs port' rootPath showError logError
           retry 6 case startRes of
             { port: Just port, quit } -> do
-              P.load port [] []
+              _<- P.load port [] []
               liftEff do
                 writeRef deactivateRef quit
                 writeRef portRef $ Just port
@@ -287,7 +288,8 @@ main = do
               Right r -> pure r
               Left err -> do
                 liftEff $ log $ "Retrying starting server after 500ms: " <> show err
-                later' 500 $ retry (n - 1) a
+                delay (Milliseconds 500.0)
+                retry (n - 1) a
           retry _ a = a
 
       start :: Eff (MainEff eff) Unit

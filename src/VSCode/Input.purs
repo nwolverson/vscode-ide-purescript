@@ -2,7 +2,7 @@ module VSCode.Input (DIALOG, InputBoxOptions, defaultInputOptions, getInput, sho
 
 import Prelude
 import Control.Monad.Aff (Aff, makeAff)
-import Control.Monad.Eff (Eff)
+import Control.Monad.Eff (Eff, kind Effect)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toNullable)
 
@@ -13,7 +13,7 @@ type InputBoxOptions = {
   , validateInput:: Nullable (String -> Nullable String)
 }
 
-foreign import data DIALOG :: !
+foreign import data DIALOG :: Effect
 
 foreign import showInputBox :: forall eff. InputBoxOptions -> (String -> Eff (dialog :: DIALOG | eff) Unit) -> Eff (dialog :: DIALOG | eff) Unit
 
