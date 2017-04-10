@@ -123,7 +123,7 @@ export function activate(context: vscode.ExtensionContext) {
                     const text = it.identifier;
                     const item = new vscode.CompletionItem(text);
                     item.detail = it["type'"];
-                    item.documentation = '*' + mod + '*';
+                    item.documentation = mod;
                     item.textEdit = new vscode.TextEdit(new vscode.Range(pos.line, pos.character - prefix.length, pos.line, pos.character), item.label);
                     switch (suggestType) {
                         case "Module":
