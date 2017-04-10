@@ -3,6 +3,8 @@ import * as vscode from 'vscode';
 import { BuildActionProvider, CodeActionCommands } from './codeActions';
 import { PscError, PscPosition, PscErrorSuggestion, PscResults, QuickFix, FileDiagnostic, BuildResult } from './build';
 
+import { resolve } from 'path';
+
 const getText = doc => (a,b,c,d) => doc.getText(new vscode.Range(new vscode.Position(a,b), new vscode.Position(c,d)));
 
 const convSymbolInformation = it => {
@@ -52,9 +54,12 @@ export function activate(context: vscode.ExtensionContext) {
                 ++code;
                 d.diagnostic.code = code;
                 actionMap.set(code, d);
-                const entries = map.get(d.filename) || [];
+                
+                const filename = resolve(vscode.workspace.rootPath, d.filename);
+                console.log(filename);
+                const entries = map.get(filename) || [];
                 entries.push(d.diagnostic);
-                map.set(d.filename, entries);
+                map.set(filename, entries);
             });
             
             if (res.quickBuild) {
