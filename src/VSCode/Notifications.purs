@@ -3,7 +3,7 @@ module VSCode.Notifications where
 import Prelude (Unit)
 import Control.Monad.Eff
 
-foreign import data NOTIFY :: !
+foreign import data NOTIFY :: Effect
 
 foreign import showError :: forall eff. String -> Eff (notify :: NOTIFY | eff) Unit
 

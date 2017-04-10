@@ -1,12 +1,11 @@
 module VSCode.Workspace where
 
-import Control.Monad.Eff (Eff)
+import Control.Monad.Eff (Eff, kind Effect)
 import Data.Foreign
 
+foreign import data Configuration :: Type
 
-foreign import data Configuration :: *
-
-foreign import data WORKSPACE :: !
+foreign import data WORKSPACE :: Effect
 
 foreign import getConfiguration :: forall eff. String -> Eff (workspace :: WORKSPACE | eff) Configuration
 
