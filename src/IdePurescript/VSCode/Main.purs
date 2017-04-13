@@ -33,6 +33,7 @@ import IdePurescript.Tokens (identifierAtPoint)
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Editor (GetText)
 import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
+import IdePurescript.VSCode.Pursuit (searchPursuit)
 import IdePurescript.VSCode.Symbols (SymbolInfo, SymbolQuery(..), getDefinition, getSymbols)
 import IdePurescript.VSCode.Types (MainEff)
 import PscIde (load) as P
@@ -317,6 +318,7 @@ main = do
           cmd "restartPscIde" restart
           cmd "startPscIde" start
           cmd "stopPscIde" deactivate
+          cmd "searchPursuit" $ withPort searchPursuit
           cmdWithArgs "addCompletionImport" $ \args -> withPort \port -> do
             autocompleteAddImport <- either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autocompleteAddImport"
             when autocompleteAddImport $

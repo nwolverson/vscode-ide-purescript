@@ -59,6 +59,10 @@
       {
         "command": "purescript.stopPscIde",
         "title": "PureScript: Stop Psc-Ide-Server"
+      },
+      {
+        "command": "purescript.searchPursuit",
+        "title": "PureScript: Search Pursuit"
       }
     ],
     "configuration": {
@@ -160,6 +164,7 @@
     "vscode": "^0.11.18"
   },
   "dependencies": {
+    "striptags": "^3.0.1",
     "which": "^1.2.9"
   }
 }

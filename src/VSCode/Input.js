@@ -6,3 +6,6 @@ exports.showInputBox = function (options) { return function (cb) { return functi
 exports.showQuickPickImpl = function (items) { return function (nothing) { return function (just) { return function (cb) { return function () {
     return vscode_1.window.showQuickPick(items).then(function (value) { return value === undefined ? cb(nothing)() : cb(just(value))(); });
 }; }; }; }; };
+exports.showQuickPickItemsImpl = function (items) { return function (nothing) { return function (just) { return function (cb) { return function () {
+    return vscode_1.window.showQuickPick(items).then(function (value) { return value === undefined ? cb(nothing)() : cb(just(value))(); });
+}; }; }; }; };

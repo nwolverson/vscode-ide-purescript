@@ -1,4 +1,4 @@
-module VSCode.Input (DIALOG, InputBoxOptions, defaultInputOptions, getInput, showQuickPick) where
+module VSCode.Input (DIALOG, InputBoxOptions, defaultInputOptions, getInput, showQuickPick, showQuickPickItems, QuickPickItem) where
 
 import Prelude
 import Control.Monad.Aff (Aff, makeAff)
@@ -31,5 +31,17 @@ defaultInputOptions =
 
 foreign import showQuickPickImpl :: forall eff. Array String -> Maybe String -> (String -> Maybe String) -> (Maybe String -> Eff (dialog :: DIALOG | eff) Unit) -> Eff (dialog :: DIALOG | eff) Unit
 
+foreign import showQuickPickItemsImpl :: forall eff. Array QuickPickItem -> Maybe QuickPickItem -> (QuickPickItem -> Maybe QuickPickItem) -> (Maybe QuickPickItem -> Eff (dialog :: DIALOG | eff) Unit) -> Eff (dialog :: DIALOG | eff) Unit
+
+type QuickPickItem = {
+  description :: String,
+  detail :: String,
+  label :: String
+}
+
 showQuickPick :: forall eff. Array String -> Aff (dialog :: DIALOG | eff) (Maybe String)
 showQuickPick items = makeAff $ \_ succ -> showQuickPickImpl items Nothing Just succ 
+
+
+showQuickPickItems :: forall eff. Array QuickPickItem -> Aff (dialog :: DIALOG | eff) (Maybe QuickPickItem)
+showQuickPickItems items = makeAff $ \_ succ -> showQuickPickItemsImpl items Nothing Just succ 
