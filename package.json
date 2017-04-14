@@ -75,7 +75,7 @@
         },
         "purescript.useCombinedExe": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Whether to use the new combined purs executable. This will default to true in the future then go away."
         },
         "purescript.pscIdeServerExe": {
