@@ -149,17 +149,21 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run -s compile",
-    "compile": "npm run -s build && tsc -p ./",
-    "build": "npm run ffi && npm run psc",
-    "psc": "mkdir -p out/src && pulp build --no-psa --to out/src/bundle.js --skip-entry-point && echo 'module.exports = PS.Main.main' >> out/src/bundle.js",
-    "ffi": "tsc -p src/VSCode/",
-    "postinstall": "node ./node_modules/vscode/bin/install"
+    "vscode:prepublish": "npm run -s build",
+    "build": "npm-run-all tsc:* psc:*",
+    "tsc:ffi": "tsc -p src/VSCode/",
+    "tsc:extension": "tsc -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "psc:src": "mkdirp out/src",
+    "psc:build": "pulp build --no-psa --to out/src/bundle.js --skip-entry-point",
+    "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js"
   },
   "extensionDependencies": [
     "nwolverson.language-purescript"
   ],
   "devDependencies": {
+    "mkdirp": "^0.5.1",
+    "npm-run-all": "^4.0.2",
     "typescript": "^1.8.10",
     "vscode": "^0.11.18"
   },
