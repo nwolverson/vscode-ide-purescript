@@ -14,6 +14,7 @@
   "bugs": {
     "url": "https://github.com/nwolverson/vscode-ide-purescript/issues"
   },
+  "icon": "images/ps_avatar2.png",
   "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
   "license": "MIT",
   "engines": {
