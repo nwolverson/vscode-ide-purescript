@@ -37,12 +37,12 @@ import IdePurescript.VSCode.Pursuit (searchPursuit)
 import IdePurescript.VSCode.Symbols (SymbolInfo, SymbolQuery(..), getDefinition, getSymbols)
 import IdePurescript.VSCode.Types (MainEff)
 import PscIde (load) as P
-import PscIde (NET)
 import PscIde.Command (TypeInfo(..))
 import Unsafe.Coerce (unsafeCoerce)
 import VSCode.Command (register)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
 import VSCode.Location (Location)
+import VSCode.Notifications (appendOutputLine, createOutputChannel)
 import VSCode.Position (mkPosition)
 import VSCode.Range (mkRange, Range)
 import VSCode.TextDocument (TextDocument, getPath, getText)
@@ -50,12 +50,9 @@ import VSCode.TextEditor (setTextViaDiff, getDocument)
 import VSCode.Window (getActiveTextEditor, setStatusBarMessage, WINDOW)
 import VSCode.Workspace (rootPath, getValue, getConfiguration, WORKSPACE)
 
-ignoreError :: forall a eff. a -> Eff eff Unit
-ignoreError _ = pure unit
-
-useEditor :: forall eff. Int -> (Ref State) -> String -> String -> Eff (net :: NET, ref :: REF | eff) Unit
-useEditor port modulesStateRef path text = do
-  void $ runAff ignoreError ignoreError $ do
+useEditor :: forall eff.  Notify (MainEff eff) -> Int -> (Ref State) -> String -> String -> Eff (MainEff eff) Unit
+useEditor logError port modulesStateRef path text = do
+  void $ runAff (logError Info <<< show) (const $ pure unit) $ do
     state <- getModulesForFile port path text
     liftEff $ writeRef modulesStateRef state
 
@@ -241,6 +238,7 @@ main = do
   modulesState <- newRef (initialModulesState)
   deactivateRef <- newRef (pure unit :: Eff (MainEff eff) Unit)
   portRef <- newRef Nothing
+  output <- createOutputChannel "PureScript"
 
   let cmd s f = register ("purescript." <> s) (\_ -> f)
       cmdWithArgs s f = register ("purescript." <> s) f
@@ -251,19 +249,23 @@ main = do
         writeRef deactivateRef (pure unit)
         writeRef portRef Nothing
 
-  let showError :: Notify (MainEff eff)
-      showError level str = case level of
-        Success -> Notify.showInfo str
-        Info -> Notify.showInfo str
-        Warning -> Notify.showWarning str
-        Error -> Notify.showError str
   let logError :: Notify (MainEff eff)
-      logError level str = case level of
-        Success -> log str
-        Info -> info str
-        Warning -> warn str
-        Error -> error str
-                             
+      logError level str = do
+        appendOutputLine output str
+        case level of
+          Success -> log str
+          Info -> info str
+          Warning -> warn str
+          Error -> error str
+  let showError :: Notify (MainEff eff)
+      showError level str = do
+        appendOutputLine output str
+        logError level str
+        case level of
+          Success -> Notify.showInfo str
+          Info -> Notify.showInfo str
+          Warning -> Notify.showWarning str
+          Error -> Notify.showError str                 
 
   let startPscIdeServer =
         do
@@ -294,7 +296,7 @@ main = do
           retry _ a = a
 
       start :: Eff (MainEff eff) Unit
-      start = void $ runAff ignoreError ignoreError $ startPscIdeServer
+      start = void $ runAff (logError Info <<< show) (const $ pure unit) $ startPscIdeServer
 
       restart :: Eff (MainEff eff) Unit
       restart = do
@@ -322,7 +324,7 @@ main = do
           cmdWithArgs "addCompletionImport" $ \args -> withPort \port -> do
             autocompleteAddImport <- either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autocompleteAddImport"
             when autocompleteAddImport $
-              void $ runAff ignoreError ignoreError $ addCompletionImport modulesState port args
+              void $ runAff (logError Info <<< show) (const $ pure unit) $ addCompletionImport modulesState port args
 
   pure $ {
       activate: initialise
@@ -331,7 +333,7 @@ main = do
     , quickBuild: mkEffFn1 $ \fname ->
         withPortDef (fromAff $ pure emptyBuildResult) \port -> do
           quickBuild port fname
-    , updateFile: mkEffFn2 $ \fname text -> withPort \port -> useEditor port modulesState fname text
+    , updateFile: mkEffFn2 $ \fname text -> withPort \port -> useEditor logError port modulesState fname text
     , getTooltips: mkEffFn3 $ \line char getText -> 
         withPortDef (fromAff $ pure $ toNullable Nothing) \port -> do
           state <- readRef modulesState

@@ -1,5 +1,6 @@
 "use strict";
-var vscode_1 = require('vscode');
+Object.defineProperty(exports, "__esModule", { value: true });
+var vscode_1 = require("vscode");
 exports.showInputBox = function (options) { return function (cb) { return function () {
     return vscode_1.window.showInputBox(options).then(function (x) { return cb(x)(); });
 }; }; };

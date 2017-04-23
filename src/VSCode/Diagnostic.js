@@ -1,5 +1,6 @@
 "use strict";
-var vscode_1 = require('vscode');
+Object.defineProperty(exports, "__esModule", { value: true });
+var vscode_1 = require("vscode");
 exports.mkDiagnostic = function (range) { return function (message) { return function (severity) {
     return new vscode_1.Diagnostic(range, message, severity);
 }; }; };

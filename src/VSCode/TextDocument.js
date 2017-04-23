@@ -1,5 +1,6 @@
 "use strict";
-var vscode = require('vscode');
+Object.defineProperty(exports, "__esModule", { value: true });
+var vscode = require("vscode");
 exports.openTextDocument = function (fileName) { return function (cb) { return function () {
     return vscode.workspace.openTextDocument(fileName).then(function (doc) { return cb(doc)(); });
 }; }; };
