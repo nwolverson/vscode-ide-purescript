@@ -176,13 +176,13 @@ emptyBuildResult :: forall t280.
   }
 emptyBuildResult = { success: false, diagnostics: [], quickBuild: false, file: "" } 
 
-build' :: forall eff. Notify (MainEff eff) -> String -> String -> Eff (MainEff eff) (Promise VSBuildResult)
-build' notify command directory = fromAff $ do
-  liftEff $ log "Building"
+build' :: forall eff. Notify (MainEff eff) -> Notify (MainEff eff) -> String -> String -> Eff (MainEff eff) (Promise VSBuildResult)
+build' notify logCb command directory = fromAff $ do
+  liftEff $ logCb Info "Building"
   let buildCommand = either (const []) (\reg -> (split reg <<< trim) command) (regex "\\s+" noFlags)
   case uncons buildCommand of
     Just { head: cmd, tail: args } -> do
-      liftEff $ log "Parsed build command"
+      liftEff $ logCb Info $ "Parsed build command, base command is: " <> cmd 
       liftEff $ showStatus Building
       config <- liftEff $ getConfiguration "purescript"
       useNpmDir <- liftEff $ either (const false) id <<< runExcept <<< readBoolean <$> getValue config "addNpmPath"
@@ -196,8 +196,8 @@ build' notify command directory = fromAff $ do
       liftEff $ showStatus BuildFailure
       pure { success: false, diagnostics: [], quickBuild: false, file: "" }
 
-addCompletionImport :: forall eff. (Ref State) -> Int -> Array Foreign -> Aff (MainEff eff) Unit
-addCompletionImport stateRef port args = case args of
+addCompletionImport :: forall eff.  Notify (MainEff eff) -> (Ref State) -> Int -> Array Foreign -> Aff (MainEff eff) Unit
+addCompletionImport logCb stateRef port args = case args of
   [ line, char, item ] -> case runExcept $ readInt line, runExcept $ readInt char of
     Right line', Right char' -> do
       let item' = (unsafeCoerce item) :: Command.TypeInfo
@@ -213,13 +213,13 @@ addCompletionImport stateRef port args = case args of
           liftEff $ writeRef stateRef newState
           case output of
             UpdatedImports out -> void $ setTextViaDiff ed' out
-            AmbiguousImport opts -> liftEff $ log "Found ambiguous imports"
-            FailedImport -> liftEff $ log "Failed to import"
+            AmbiguousImport opts -> liftEff $ logCb Warning "Found ambiguous imports"
+            FailedImport -> liftEff $ logCb Error "Failed to import"
           pure unit
         Nothing -> pure unit
       pure unit
-    _, _ -> liftEff $ log "Wrong argument type"
-  _ -> liftEff $ log "Wrong command arguments"
+    _, _ -> liftEff $ logCb Error "Wrong argument type"
+  _ -> liftEff $ logCb Error "Wrong command arguments"
 
 
 main :: forall eff. Eff (MainEff eff)
@@ -290,13 +290,13 @@ main = do
             case res of
               Right r -> pure r
               Left err -> do
-                liftEff $ log $ "Retrying starting server after 500ms: " <> show err
+                liftEff $ logError Info $ "Retrying starting server after 500ms: " <> show err
                 delay (Milliseconds 500.0)
                 retry (n - 1) a
           retry _ a = a
 
       start :: Eff (MainEff eff) Unit
-      start = void $ runAff (logError Info <<< show) (const $ pure unit) $ startPscIdeServer
+      start = void $ runAff (logError Error <<< show) (const $ pure unit) $ startPscIdeServer
 
       restart :: Eff (MainEff eff) Unit
       restart = do
@@ -324,12 +324,12 @@ main = do
           cmdWithArgs "addCompletionImport" $ \args -> withPort \port -> do
             autocompleteAddImport <- either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autocompleteAddImport"
             when autocompleteAddImport $
-              void $ runAff (logError Info <<< show) (const $ pure unit) $ addCompletionImport modulesState port args
+              void $ runAff (logError Info <<< show) (const $ pure unit) $ addCompletionImport logError modulesState port args
 
   pure $ {
       activate: initialise
     , deactivate: deactivate
-    , build: mkEffFn2 $ build' showError
+    , build: mkEffFn2 $ build' showError logError
     , quickBuild: mkEffFn1 $ \fname ->
         withPortDef (fromAff $ pure emptyBuildResult) \port -> do
           quickBuild port fname
