@@ -2,6 +2,7 @@ module IdePurescript.VSCode.Main where
 
 import Prelude
 import IdePurescript.Completion as C
+import IdePurescript.VSCode.Config as Config
 import PscIde.Command as Command
 import VSCode.Notifications as Notify
 import Control.Monad.Aff (Aff, attempt, delay, runAff)
@@ -14,14 +15,13 @@ import Control.Monad.Except (runExcept)
 import Control.Promise (Promise, fromAff)
 import Data.Array (filter, notElem, uncons)
 import Data.Either (Either(..), either)
-import Data.Foreign (Foreign, readArray, readBoolean, readInt, readString)
+import Data.Foreign (Foreign, readInt)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
 import Data.Nullable (toNullable, Nullable)
 import Data.String (trim, null)
 import Data.String.Regex (Regex, regex, split)
 import Data.String.Regex.Flags (noFlags)
 import Data.Time.Duration (Milliseconds(..))
-import Data.Traversable (traverse)
 import IdePurescript.Build (Command(Command), build, rebuild)
 import IdePurescript.Completion (SuggestionResult(..), SuggestionType(..))
 import IdePurescript.Modules (ImportResult(FailedImport, AmbiguousImport, UpdatedImports), State, addExplicitImport, getModulesForFile, getQualModule, getUnqualActiveModules, initialModulesState)
@@ -48,7 +48,7 @@ import VSCode.Range (mkRange, Range)
 import VSCode.TextDocument (TextDocument, getPath, getText)
 import VSCode.TextEditor (setTextViaDiff, getDocument)
 import VSCode.Window (getActiveTextEditor, setStatusBarMessage, WINDOW)
-import VSCode.Workspace (rootPath, getValue, getConfiguration, WORKSPACE)
+import VSCode.Workspace (WORKSPACE, rootPath)
 
 useEditor :: forall eff.  Notify (MainEff eff) -> Int -> (Ref State) -> String -> String -> Eff (MainEff eff) Unit
 useEditor logError port modulesStateRef path text = do
@@ -64,8 +64,7 @@ getCompletions :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff
 getCompletions port state line' char getTextInRange = do
   line <- getTextInRange line' 0 line' char
   let getQualifiedModule = (flip getQualModule) state
-  config <- getConfiguration "purescript"
-  autoCompleteAllModules <- either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autocompleteAllModules"
+  autoCompleteAllModules <- Config.autoCompleteAllModules
   fromAff $ do
     modules <- if autoCompleteAllModules then getLoadedModules port else pure $ getUnqualActiveModules state Nothing
     suggestions <- C.getSuggestions port { line, moduleInfo: { modules, getQualifiedModule, mainModule: state.main } }
@@ -102,10 +101,9 @@ getTooltips port state line char getTextInRange = do
 
 startServer' :: forall eff eff'. String -> String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
 startServer' server purs _port root cb logCb = do
-  config <- liftEff $ getConfiguration "purescript"
-  useNpmPath <- liftEff $ either (const false) id <<< runExcept <<< readBoolean <$> getValue config "addNpmPath"
-  usePurs <- liftEff $ either (const false) id <<< runExcept <<< readBoolean <$> getValue config "useCombinedExe"
-  packagePath <- liftEff $ either (const "bower_components") id <<< runExcept <<< readString <$> getValue config "packagePath"
+  useNpmPath <- liftEff Config.addNpmPath
+  usePurs <- liftEff Config.usePurs
+  packagePath <- liftEff Config.packagePath
   P.startServer' root (if usePurs then purs else server) useNpmPath usePurs ["src/**/*.purs", packagePath <> "/**/*.purs"] cb logCb
 
 toDiagnostic :: Boolean -> PscError -> FileDiagnostic
@@ -162,9 +160,7 @@ type ErrorResult = { warnings :: Array PscError, errors :: Array PscError }
 
 censorWarnings :: forall eff. ErrorResult -> Eff (MainEff eff) ErrorResult
 censorWarnings { warnings, errors } = do
-  config <- liftEff $ getConfiguration "purescript"
-  censorCodes <- getValue config "censorWarnings"
-  let codes = either (const []) id $ runExcept $ readArray censorCodes >>= traverse readString
+  codes <- Config.censorCodes
   let getCode (PscError { errorCode }) = errorCode
   pure $ { warnings: filter (flip notElem codes <<< getCode) warnings, errors }
 
@@ -184,8 +180,7 @@ build' notify logCb command directory = fromAff $ do
     Just { head: cmd, tail: args } -> do
       liftEff $ logCb Info $ "Parsed build command, base command is: " <> cmd 
       liftEff $ showStatus Building
-      config <- liftEff $ getConfiguration "purescript"
-      useNpmDir <- liftEff $ either (const false) id <<< runExcept <<< readBoolean <$> getValue config "addNpmPath"
+      useNpmDir <- liftEff $ Config.addNpmPath
       res <- build { command: Command cmd args, directory, useNpmDir }
       errors <- liftEff $ censorWarnings res.errors
       liftEff $ if res.success then showStatus BuildSuccess
@@ -269,10 +264,9 @@ main = do
 
   let startPscIdeServer =
         do
-          config <- liftEff $ getConfiguration "purescript"
-          server <- liftEff $ either (const "psc-ide-server") id <<< runExcept <<< readString <$> getValue config "pscIdeServerExe"
-          purs <- liftEff $ either (const "purs") id <<< runExcept <<< readString <$> getValue config "pursExe"
-          port' <- liftEff $ either (const 4242) id <<< runExcept <<< readInt <$> getValue config "pscIdePort"
+          server <- liftEff Config.serverExe
+          purs <- liftEff Config.pursExe
+          port' <- liftEff Config.pscIdePort
           rootPath <- liftEff rootPath
           -- TODO pass in port just when explicitly defined
           startRes <- startServer' server purs port' rootPath showError logError
@@ -309,8 +303,7 @@ main = do
       withPort = withPortDef (pure unit)
   
   let initialise = fromAff $ do
-        config <- liftEff $ getConfiguration "purescript"
-        auto <- liftEff $ either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autoStartPscIde"
+        auto <- liftEff $ Config.autoStartPscIde
         when auto startPscIdeServer
         liftEff do
           cmd "addImport" $ withPort $ addModuleImportCmd modulesState
@@ -322,7 +315,7 @@ main = do
           cmd "stopPscIde" deactivate
           cmd "searchPursuit" $ withPort searchPursuit
           cmdWithArgs "addCompletionImport" $ \args -> withPort \port -> do
-            autocompleteAddImport <- either (const true) id <<< runExcept <<< readBoolean <$> getValue config "autocompleteAddImport"
+            autocompleteAddImport <- Config.autocompleteAddImport
             when autocompleteAddImport $
               void $ runAff (logError Info <<< show) (const $ pure unit) $ addCompletionImport logError modulesState port args
 
