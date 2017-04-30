@@ -18,7 +18,7 @@
   "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
   "license": "MIT",
   "engines": {
-    "vscode": "^1.5.0"
+    "vscode": "^1.11.0"
   },
   "categories": [
     "Other"
@@ -64,6 +64,10 @@
       {
         "command": "purescript.searchPursuit",
         "title": "PureScript: Search Pursuit"
+      },
+      {
+        "command": "purescript:test",
+        "title": "PureScript: LSP test command"
       }
     ],
     "configuration": {
@@ -154,9 +158,11 @@
     "build": "npm-run-all tsc:* psc:*",
     "tsc:ffi": "tsc -p src/VSCode/",
     "tsc:extension": "tsc -p ./",
+    "tsc:lsp": "tsc -p src/LanguageServer/",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "psc:src": "mkdirp out/src",
     "psc:build": "pulp build --no-psa --to out/src/bundle.js --skip-entry-point",
+    "psc:language-server": "pulp build --no-psa --to out/src/server.js -m LanguageServer.IdePurescript.Main",
     "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js"
   },
   "extensionDependencies": [
@@ -166,10 +172,13 @@
     "mkdirp": "^0.5.1",
     "npm-run-all": "^4.0.2",
     "typescript": "^2.2.2",
-    "vscode": "^1.1.0"
+    "vscode": "^1.1.0",
+    "vscode-languageclient": "^3.2.0",
+    "vscode-uri": "^1.0.0"
   },
   "dependencies": {
     "striptags": "^3.0.1",
+    "vscode-languageserver": "^3.2.0",
     "which": "^1.2.9"
   }
 }

@@ -5,6 +5,14 @@ import { PscError, PscPosition, PscErrorSuggestion, PscResults, QuickFix, FileDi
 
 import { resolve } from 'path';
 
+
+import * as path from 'path';
+
+import { workspace, Disposable, ExtensionContext } from 'vscode';
+import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind } from 'vscode-languageclient';
+import * as lc from 'vscode-languageclient';
+
+
 const getText = doc => (a,b,c,d) => doc.getText(new vscode.Range(new vscode.Position(a,b), new vscode.Position(c,d)));
 
 const convSymbolInformation = it => {
@@ -116,40 +124,13 @@ export function activate(context: vscode.ExtensionContext) {
                     console.error("Hover error", err);
                 })
         })
-      , vscode.languages.registerCompletionItemProvider('purescript', {
-            provideCompletionItems: (doc, pos, _) => ps.getCompletions(pos.line, pos.character, getText(doc)).
-                then(result => result.map(({suggestType, typeInfo: it, prefix}) => {
-                    const mod = it["module'"];
-                    const text = it.identifier;
-                    const item = new vscode.CompletionItem(text);
-                    item.detail = it["type'"];
-                    item.documentation = mod;
-                    item.textEdit = new vscode.TextEdit(new vscode.Range(pos.line, pos.character - prefix.length, pos.line, pos.character), item.label);
-                    switch (suggestType) {
-                        case "Module":
-                            item.kind = vscode.CompletionItemKind.Module;
-                            break;
-                        case "Type":
-                            item.kind = vscode.CompletionItemKind.Class;
-                            break;
-                        case "Function":
-                            item.kind = vscode.CompletionItemKind.Function;
-                            break;
-                        case "Value":
-                            item.kind = vscode.CompletionItemKind.Value;
-                            break;
-                    }
 
-                    item.command = { 
-                        command: "purescript.addCompletionImport", 
-                        title: "Add completion import", 
-                        arguments: [ pos.line, pos.character, it ] 
-                    };
+                    // item.command = { 
+                    //     command: "purescript.addCompletionImport", 
+                    //     title: "Add completion import", 
+                    //     arguments: [ pos.line, pos.character, it ] 
+                    // };
 
-                    return item;
-                }))
-            .catch(err => console.error("Completion error", err))
-        })
       , vscode.languages.registerDefinitionProvider('purescript', {
           provideDefinition: (doc, pos, tok) =>
             ps.provideDefinition(pos.line, pos.character, getText(doc))
@@ -175,4 +156,44 @@ export function activate(context: vscode.ExtensionContext) {
       , vscode.Disposable.from(new CodeActionCommands())
     );
 
+
+    let serverModule = context.asAbsolutePath(path.join('out', 'src', 'server.js'));
+    // The debug options for the server
+    let debugOptions = { execArgv: ["--nolazy", "--debug=6010"] };
+    
+    // If the extension is launched in debug mode then the debug server options are used
+    // Otherwise the run options are used
+    let serverOptions: ServerOptions = {
+        run : { module: serverModule, transport: TransportKind.ipc },
+        debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
+    }
+    
+    // Options to control the language client
+    let clientOptions: LanguageClientOptions = {
+        // Register the server for plain text documents
+        documentSelector: ['purescript'],
+        synchronize: {
+            configurationSection: 'purescript',
+            fileEvents: workspace.createFileSystemWatcher('**/*.purs')
+        },
+        errorHandler: { 
+            error: (e,m,c) => { console.error(e,m,c); return lc.ErrorAction.Continue  },
+            closed: () => lc.CloseAction.DoNotRestart
+        }
+    };
+	
+	// Create the language client and start the client.
+    const client = new LanguageClient('PureScript', 'IDE PureScript', serverOptions, clientOptions);
+	const disposable = client.start();
+    // vscode.commands.registerCommand("purescript:test", () => {
+    //     // client.sendRequest()
+    // })
+    
+    console.log("started server");
+
+	// Push the disposable to the context's subscriptions so that the 
+	// client can be deactivated on extension deactivation
+	context.subscriptions.push(disposable);
 }
+
+

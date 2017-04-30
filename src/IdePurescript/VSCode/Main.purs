@@ -1,7 +1,6 @@
 module IdePurescript.VSCode.Main where
 
 import Prelude
-import IdePurescript.Completion as C
 import IdePurescript.VSCode.Config as Config
 import PscIde.Command as Command
 import VSCode.Notifications as Notify
@@ -23,10 +22,9 @@ import Data.String.Regex (Regex, regex, split)
 import Data.String.Regex.Flags (noFlags)
 import Data.Time.Duration (Milliseconds(..))
 import IdePurescript.Build (Command(Command), build, rebuild)
-import IdePurescript.Completion (SuggestionResult(..), SuggestionType(..))
 import IdePurescript.Modules (ImportResult(FailedImport, AmbiguousImport, UpdatedImports), State, addExplicitImport, getModulesForFile, getQualModule, getUnqualActiveModules, initialModulesState)
 import IdePurescript.PscErrors (PscError(PscError))
-import IdePurescript.PscIde (getLoadedModules, getType)
+import IdePurescript.PscIde (getType)
 import IdePurescript.PscIdeServer (Notify, ErrorLevel(Error, Warning, Info, Success))
 import IdePurescript.PscIdeServer (startServer', QuitCallback, ServerEff) as P
 import IdePurescript.Tokens (identifierAtPoint)
@@ -37,7 +35,6 @@ import IdePurescript.VSCode.Pursuit (searchPursuit)
 import IdePurescript.VSCode.Symbols (SymbolInfo, SymbolQuery(..), getDefinition, getSymbols)
 import IdePurescript.VSCode.Types (MainEff)
 import PscIde (load) as P
-import PscIde.Command (TypeInfo(..))
 import Unsafe.Coerce (unsafeCoerce)
 import VSCode.Command (register)
 import VSCode.Diagnostic (Diagnostic, mkDiagnostic)
@@ -59,29 +56,6 @@ useEditor logError port modulesStateRef path text = do
 moduleRegex :: Either String Regex
 moduleRegex = regex """(?:^|[^A-Za-z_.])(?:((?:[A-Z][A-Za-z0-9]*\.)*(?:[A-Z][A-Za-z0-9]*))\.)?([a-zA-Z][a-zA-Z0-9_']*)?$""" noFlags
 
-getCompletions :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
-  -> Eff (MainEff eff) (Promise (Array { suggestType :: String, typeInfo :: Command.TypeInfo, prefix :: String }))
-getCompletions port state line' char getTextInRange = do
-  line <- getTextInRange line' 0 line' char
-  let getQualifiedModule = (flip getQualModule) state
-  autoCompleteAllModules <- Config.autoCompleteAllModules
-  fromAff $ do
-    modules <- if autoCompleteAllModules then getLoadedModules port else pure $ getUnqualActiveModules state Nothing
-    suggestions <- C.getSuggestions port { line, moduleInfo: { modules, getQualifiedModule, mainModule: state.main } }
-    pure $ convert <$> suggestions
-  where
-    -- TODO change the types here and pull in suggestion handling into PS
-    convert (ModuleSuggestion { text, suggestType, prefix }) =
-      { suggestType: convertSuggest suggestType, typeInfo: TypeInfo { type': text, identifier: text, module': text, expandedType: Just text, definedAt: Nothing, documentation: Nothing }, prefix }
-    convert (IdentSuggestion { mod, identifier, qualifier, suggestType, prefix, valueType }) =
-      { suggestType: convertSuggest suggestType, typeInfo: TypeInfo { type': valueType, identifier, module': mod, expandedType: Just valueType, definedAt: Nothing, documentation: Nothing }, prefix }
-
-    convertSuggest = case _ of
-      Module -> "Module"
-      Value -> "Value"
-      Function -> "Function"
-      Type -> "Type"
-
 type MarkedString = { language :: String, value :: String }
 
 markedString :: String -> MarkedString
@@ -97,7 +71,6 @@ getTooltips port state line char getTextInRange = do
         let marked = if null ty then Nothing else Just $ markedString $ word <> " :: " <> ty
         pure $ toNullable marked
       Nothing -> fromAff $ pure $ toNullable Nothing
-
 
 startServer' :: forall eff eff'. String -> String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
 startServer' server purs _port root cb logCb = do
@@ -224,7 +197,6 @@ main :: forall eff. Eff (MainEff eff)
   , quickBuild :: EffFn1 (MainEff eff) String (Promise VSBuildResult)
   , updateFile :: EffFn2 (MainEff eff) String String Unit
   , getTooltips :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable MarkedString))
-  , getCompletions :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Array { suggestType :: String, typeInfo :: Command.TypeInfo, prefix :: String }))
   , getSymbols :: EffFn1 (MainEff eff) String (Promise (Array SymbolInfo))
   , getSymbolsForDoc :: EffFn1 (MainEff eff) TextDocument (Promise (Array SymbolInfo))
   , provideDefinition :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable Location))
@@ -331,10 +303,6 @@ main = do
         withPortDef (fromAff $ pure $ toNullable Nothing) \port -> do
           state <- readRef modulesState
           getTooltips port state line char (runEffFn4 getText)
-    , getCompletions: mkEffFn3 $ \line char getText ->
-        withPortDef (fromAff $ pure []) \port -> do
-          state <- readRef modulesState
-          getCompletions port state line char (runEffFn4 getText)
     , getSymbols: mkEffFn1 $ \query -> withPortDef (fromAff $ pure []) \port -> 
         getSymbols modulesState port $ WorkspaceSymbolQuery query
     , getSymbolsForDoc: mkEffFn1 $ \document ->
