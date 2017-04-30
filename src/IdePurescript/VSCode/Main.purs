@@ -32,7 +32,6 @@ import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Editor (GetText)
 import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
 import IdePurescript.VSCode.Pursuit (searchPursuit)
-import IdePurescript.VSCode.Symbols (SymbolInfo, SymbolQuery(..), getDefinition, getSymbols)
 import IdePurescript.VSCode.Types (MainEff)
 import PscIde (load) as P
 import Unsafe.Coerce (unsafeCoerce)
@@ -53,24 +52,10 @@ useEditor logError port modulesStateRef path text = do
     state <- getModulesForFile port path text
     liftEff $ writeRef modulesStateRef state
 
-moduleRegex :: Either String Regex
-moduleRegex = regex """(?:^|[^A-Za-z_.])(?:((?:[A-Z][A-Za-z0-9]*\.)*(?:[A-Z][A-Za-z0-9]*))\.)?([a-zA-Z][a-zA-Z0-9_']*)?$""" noFlags
-
 type MarkedString = { language :: String, value :: String }
 
 markedString :: String -> MarkedString
 markedString s = { language: "purescript", value: s }
-
-getTooltips :: forall eff. Int -> State -> Int -> Int -> GetText (MainEff eff)
-  -> Eff (MainEff eff) (Promise (Nullable MarkedString))
-getTooltips port state line char getTextInRange = do
-    text <- getTextInRange line 0 line (char + 100)
-    case identifierAtPoint text char of
-      Just { word, qualifier } -> fromAff do
-        ty <- getType port word state.main qualifier (getUnqualActiveModules state $ Just word) (flip getQualModule $ state)
-        let marked = if null ty then Nothing else Just $ markedString $ word <> " :: " <> ty
-        pure $ toNullable marked
-      Nothing -> fromAff $ pure $ toNullable Nothing
 
 startServer' :: forall eff eff'. String -> String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
 startServer' server purs _port root cb logCb = do
@@ -196,10 +181,6 @@ main :: forall eff. Eff (MainEff eff)
   , build :: EffFn2 (MainEff eff) String String (Promise VSBuildResult)
   , quickBuild :: EffFn1 (MainEff eff) String (Promise VSBuildResult)
   , updateFile :: EffFn2 (MainEff eff) String String Unit
-  , getTooltips :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable MarkedString))
-  , getSymbols :: EffFn1 (MainEff eff) String (Promise (Array SymbolInfo))
-  , getSymbolsForDoc :: EffFn1 (MainEff eff) TextDocument (Promise (Array SymbolInfo))
-  , provideDefinition :: EffFn3 (MainEff eff) Int Int (EffFn4 (MainEff eff) Int Int Int Int String) (Promise (Nullable Location))
   }
 main = do
   modulesState <- newRef (initialModulesState)
@@ -299,17 +280,4 @@ main = do
         withPortDef (fromAff $ pure emptyBuildResult) \port -> do
           quickBuild port fname
     , updateFile: mkEffFn2 $ \fname text -> withPort \port -> useEditor logError port modulesState fname text
-    , getTooltips: mkEffFn3 $ \line char getText -> 
-        withPortDef (fromAff $ pure $ toNullable Nothing) \port -> do
-          state <- readRef modulesState
-          getTooltips port state line char (runEffFn4 getText)
-    , getSymbols: mkEffFn1 $ \query -> withPortDef (fromAff $ pure []) \port -> 
-        getSymbols modulesState port $ WorkspaceSymbolQuery query
-    , getSymbolsForDoc: mkEffFn1 $ \document ->
-        withPortDef (fromAff $ pure []) \port ->
-          getSymbols modulesState port $ FileSymbolQuery document
-    , provideDefinition: mkEffFn3 $ \line char getText ->
-        withPortDef (fromAff $ pure $ toNullable Nothing) \port -> do
-          state <- readRef modulesState
-          getDefinition port state line char (runEffFn4 getText)
     }

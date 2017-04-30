@@ -18,6 +18,9 @@ exports.initConnection = (cb: (arg: {params: InitializeParams, conn: IConnection
                 completionProvider: true,
                 hoverProvider: true,
                 definitionProvider: true,
+                workspaceSymbolProvider: true,
+                documentSymbolProvider: true,
+                codeActionProvider: true,
                 executeCommandProvider: {
                     commands: [ "purescript:test" ]
                 }

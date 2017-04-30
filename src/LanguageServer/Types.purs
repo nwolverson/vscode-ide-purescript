@@ -6,6 +6,7 @@ import Data.Foreign (Foreign)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable, toNullable)
+import IdePurescript.VSCode.Main (MarkedString)
 
 foreign import data CONN :: Effect
 foreign import data Connection :: Type
@@ -112,12 +113,53 @@ completionItemKindToInt = case _ of
 
 newtype SymbolInformation = SymbolInformation
     { name :: String
-    , kind :: Number
+    , kind :: Int
     , location :: Location
     , containerName :: Nullable String
     }
 
-newtype Hover = Hover { contents :: String, range :: Nullable Range }
+data SymbolKind
+  = FileSymbolKind
+  | ModuleSymbolKind
+  | NamespaceSymbolKind
+  | PackageSymbolKind
+  | ClassSymbolKind
+  | MethodSymbolKind
+  | PropertySymbolKind
+  | FieldSymbolKind
+  | ConstructorSymbolKind
+  | EnumSymbolKind
+  | InterfaceSymbolKind
+  | FunctionSymbolKind
+  | VariableSymbolKind
+  | ConstantSymbolKind
+  | StringSymbolKind
+  | NumberSymbolKind
+  | BooleanSymbolKind
+  | ArraySymbolKind
+
+symbolKindToInt :: SymbolKind -> Int
+symbolKindToInt = case _ of 
+  FileSymbolKind -> 1
+  ModuleSymbolKind -> 2
+  NamespaceSymbolKind -> 3
+  PackageSymbolKind -> 4
+  ClassSymbolKind -> 5
+  MethodSymbolKind -> 6
+  PropertySymbolKind -> 7 
+  FieldSymbolKind -> 8
+  ConstructorSymbolKind -> 9
+  EnumSymbolKind -> 10
+  InterfaceSymbolKind -> 11
+  FunctionSymbolKind -> 12
+  VariableSymbolKind -> 13
+  ConstantSymbolKind -> 14
+  StringSymbolKind -> 15
+  NumberSymbolKind -> 16
+  BooleanSymbolKind -> 17
+  ArraySymbolKind -> 18
+ 
+newtype Hover = Hover { contents :: MarkedString, range :: Nullable Range }
 
 newtype Command = Command { title :: String, command :: String, arguments :: Nullable (Array Foreign) }
 

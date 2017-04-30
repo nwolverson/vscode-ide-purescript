@@ -18,6 +18,9 @@ exports.initConnection = function (cb) { return function () {
                 completionProvider: true,
                 hoverProvider: true,
                 definitionProvider: true,
+                workspaceSymbolProvider: true,
+                documentSymbolProvider: true,
+                codeActionProvider: true,
                 executeCommandProvider: {
                     commands: ["purescript:test"]
                 }

@@ -10,26 +10,22 @@ import Data.Foreign (toForeign)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (over, un, unwrap)
 import Data.Nullable (toMaybe)
-import IdePurescript.Modules (Module(..), getModulesForFile, initialModulesState)
+import IdePurescript.Modules (Module, getModulesForFile, initialModulesState)
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
 import LanguageServer.Console (error, info, log, warn)
 import LanguageServer.DocumentStore (getDocument)
-import LanguageServer.Handlers (onCompletion, onDidChangeConfiguration)
+import LanguageServer.Handlers (onCompletion, onDefinition, onDidChangeConfiguration, onDocumentSymbol, onHover, onWorkspaceSymbol)
 import LanguageServer.IdePurescript.Completion (getCompletions)
 import LanguageServer.IdePurescript.Server (retry, startServer')
+import LanguageServer.IdePurescript.Symbols (getDefinition, getDocumentSymbols, getWorkspaceSymbols)
+import LanguageServer.IdePurescript.Tooltips (getTooltips)
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff)
 import LanguageServer.Setup (InitParams(..), initConnection, initDocumentStore)
 import LanguageServer.TextDocument (getText)
-import LanguageServer.Types (DocumentUri(..), Settings, TextDocumentIdentifier(..))
+import LanguageServer.Types (DocumentUri, Settings, TextDocumentIdentifier(..))
 import LanguageServer.Uri (uriToFilename)
 import PscIde (load)
 
-
---   let withPortDef :: forall eff' a. Eff (ref :: REF | eff') a -> (Int -> Eff (ref :: REF | eff') a) -> Eff (ref :: REF | eff') a
---       withPortDef def f = readRef portRef >>= maybe def f
---   let withPort :: forall eff'. (Int -> Eff (ref :: REF | eff') Unit) -> Eff (ref :: REF | eff') Unit
---       withPort = withPortDef (pure unit)
-  
 --   let initialise = fromAff $ do
 --         auto <- liftEff $ Config.autoStartPscIde
 --         when auto startPscIdeServer
@@ -78,7 +74,6 @@ main = do
       startPscIdeServer = void $ runAff (const $ pure unit) (const $ pure unit) do
         rootPath <- liftEff $ (_.root <<< unwrap) <$> readRef state
         settings <- liftEff $ readRef config
-        -- liftEff $ info conn $ show rootPath
         startRes <- startServer' settings rootPath logError logError
         retry logError 6 case startRes of
           { port: Just port, quit } -> do
@@ -91,15 +86,6 @@ main = do
     modifyRef state (over ServerState $ _ { root = toMaybe rootPath })
     startPscIdeServer
   modifyRef state (over ServerState $ _ { conn = Just conn })
-
-
-
-
--- useEditor :: forall eff.  Notify (MainEff eff) -> Int -> (Ref State) -> String -> String -> Eff (MainEff eff) Unit
--- useEditor logError port modulesStateRef path text = do
---   void $ runAff (logError Info <<< show) (const $ pure unit) $ do
---     state <- getModulesForFile port path text
---     liftEff $ writeRef modulesStateRef state
 
   onDidChangeConfiguration conn $ writeRef config <<< _.settings
 
@@ -124,20 +110,20 @@ main = do
             liftEff $ info conn $ "Updated modules to: " <> show modules.main <> " / " <> show (showModule <$> modules.modules)
           _ -> pure unit
 
-  
-  
   let runHandler :: forall a b . (b -> Maybe DocumentUri) -> (Settings -> ServerState (MainEff eff) -> b -> Aff (MainEff eff) a) -> b -> Eff (MainEff eff) (Promise a)
-      runHandler docUri f b = 
+      runHandler docUri f b =
         fromAff do
           c <- liftEff $ readRef config
           s <- liftEff $ readRef state
-          maybe (pure unit) updateModules (docUri b)
+          liftEff $ maybe (pure unit) (\con -> log con "handler") (_.conn $ unwrap s)
+          maybe (pure unit) updateModules (docUri b)          
           f c s b
 
-  onCompletion conn $ runHandler (Just <<< _.uri <<< un TextDocumentIdentifier <<< _.textDocument) (getCompletions documents)
-    
-  pure unit
+  let getTextDocUri :: forall r. { textDocument :: TextDocumentIdentifier | r } -> Maybe DocumentUri
+      getTextDocUri = (Just <<< _.uri <<< un TextDocumentIdentifier <<< _.textDocument)
 
-  -- onDefinition conn \params -> do
-  --   log conn "Got definition request"
-  --   pure $ Location { uri: DocumentUri "./fake-file" , range: Range { start: zero, end: zero  } }
+  onCompletion conn $ runHandler getTextDocUri (getCompletions documents)
+  onDefinition conn $ runHandler getTextDocUri (getDefinition documents)
+  onDocumentSymbol conn $ runHandler getTextDocUri getDocumentSymbols
+  onWorkspaceSymbol conn $ runHandler (const Nothing) getWorkspaceSymbols
+  onHover conn $ runHandler getTextDocUri (getTooltips documents)
