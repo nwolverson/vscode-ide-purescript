@@ -16,13 +16,15 @@ import IdePurescript.Modules (getQualModule, getUnqualActiveModules)
 import IdePurescript.PscIde (getLoadedModules)
 import LanguageServer.DocumentStore (getDocument)
 import LanguageServer.Handlers (TextDocumentPositionParams, Res)
+import LanguageServer.IdePurescript.Commands (addCompletionImport)
 import LanguageServer.IdePurescript.Types (MainEff, ServerState(..))
 import LanguageServer.TextDocument (getTextAtRange)
 import LanguageServer.Types (CONN, CompletionItem(..), DocumentStore, Position(..), Range(..), Settings, TextDocumentIdentifier(..), TextEdit(..), completionItem)
 
 getCompletions :: forall eff. DocumentStore -> Settings -> ServerState (MainEff eff) -> TextDocumentPositionParams -> Aff (MainEff eff) (Array CompletionItem)
 getCompletions docs settings state ({ textDocument, position }) = do
-    doc <- liftEff $ getDocument docs (_.uri $ un TextDocumentIdentifier textDocument)
+    let uri = _.uri $ un TextDocumentIdentifier textDocument
+    doc <- liftEff $ getDocument docs uri
     line <- liftEff $ getTextAtRange doc (mkRange position)
     let autoCompleteAllModules = Config.autoCompleteAllModules settings
         { port, modules } = unwrap state
@@ -37,7 +39,7 @@ getCompletions docs settings state ({ textDocument, position }) = do
                 { line
                 , moduleInfo: { modules: usedModules, getQualifiedModule, mainModule: modules.main }
                 }
-            pure $ convert <$> suggestions
+            pure $ convert uri <$> suggestions
         _ -> pure []
 
     where
@@ -52,12 +54,13 @@ getCompletions docs settings state ({ textDocument, position }) = do
       Function -> LS.Function
       Type -> LS.Class
 
-    convert (ModuleSuggestion { text, suggestType, prefix }) = completionItem text (convertSuggest suggestType)
-    convert (IdentSuggestion { mod, identifier, qualifier, suggestType, prefix, valueType }) =
+    convert _ (ModuleSuggestion { text, suggestType, prefix }) = completionItem text (convertSuggest suggestType)
+    convert uri (IdentSuggestion { mod, identifier, qualifier, suggestType, prefix, valueType }) =
         completionItem identifier (convertSuggest suggestType) 
         # over CompletionItem (_
           { detail = toNullable $ Just valueType
           , documentation = toNullable $ Just mod
+          , command = toNullable $ Just $ addCompletionImport identifier mod uri
         --   , textEdit = toNullable $ Just edit
           })
         where 

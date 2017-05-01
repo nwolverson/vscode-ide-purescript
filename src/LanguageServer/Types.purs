@@ -163,11 +163,19 @@ newtype Hover = Hover { contents :: MarkedString, range :: Nullable Range }
 
 newtype Command = Command { title :: String, command :: String, arguments :: Nullable (Array Foreign) }
 
+derive instance newtypeCommand :: Newtype Command _
+
 newtype TextEdit = TextEdit { range :: Range, newText :: String }
 
--- newtype TextDocumentEdit = TextDocumentEdit { textDocument :: , edits :: Array TextEdit }
+newtype WorkspaceEdit = WorkspaceEdit { documentChanges :: Nullable (Array TextDocumentEdit) }
 
-newtype TextDocumentIdentifier = TextDocumentIdentifier { uri :: DocumentUri }
+workspaceEdit :: Array TextDocumentEdit -> WorkspaceEdit
+workspaceEdit edits = WorkspaceEdit { documentChanges: toNullable $ Just edits }
+
+newtype TextDocumentEdit = TextDocumentEdit { textDocument :: TextDocumentIdentifier, edits :: Array TextEdit }
+
+newtype TextDocumentIdentifier = TextDocumentIdentifier { uri :: DocumentUri, version :: Number }
+
 
 derive instance newtypeTextDocumentIdentifier :: Newtype TextDocumentIdentifier _
 

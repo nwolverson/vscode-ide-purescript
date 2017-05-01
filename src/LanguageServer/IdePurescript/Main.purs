@@ -6,6 +6,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Ref (modifyRef, newRef, readRef, writeRef)
 import Control.Promise (Promise, fromAff)
+import Data.Array (length)
 import Data.Foreign (toForeign)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (over, un, unwrap)
@@ -13,15 +14,18 @@ import Data.Nullable (toMaybe)
 import IdePurescript.Modules (Module, getModulesForFile, initialModulesState)
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
 import LanguageServer.Console (error, info, log, warn)
-import LanguageServer.DocumentStore (getDocument)
-import LanguageServer.Handlers (onCompletion, onDefinition, onDidChangeConfiguration, onDocumentSymbol, onHover, onWorkspaceSymbol)
+import LanguageServer.DocumentStore (getDocument, onDidSaveDocument)
+import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDocumentSymbol, onExecuteCommand, onHover, onWorkspaceSymbol, publishDiagnostics)
+import LanguageServer.IdePurescript.Build (getDiagnostics)
+import LanguageServer.IdePurescript.Commands (addCompletionImportCmd, cmdName, commands)
 import LanguageServer.IdePurescript.Completion (getCompletions)
+import LanguageServer.IdePurescript.Imports (addCompletionImport)
 import LanguageServer.IdePurescript.Server (retry, startServer')
 import LanguageServer.IdePurescript.Symbols (getDefinition, getDocumentSymbols, getWorkspaceSymbols)
 import LanguageServer.IdePurescript.Tooltips (getTooltips)
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff)
 import LanguageServer.Setup (InitParams(..), initConnection, initDocumentStore)
-import LanguageServer.TextDocument (getText)
+import LanguageServer.TextDocument (getText, getUri)
 import LanguageServer.Types (DocumentUri, Settings, TextDocumentIdentifier(..))
 import LanguageServer.Uri (uriToFilename)
 import PscIde (load)
@@ -65,6 +69,7 @@ main = do
             Info -> info conn s
             Warning -> warn conn s
             Error -> error conn s)
+  let launchAffLog = void <<< runAff (logError Error <<< show) (const $ pure unit)
 
   let deactivate :: Eff (MainEff eff) Unit
       deactivate = do
@@ -82,7 +87,7 @@ main = do
             liftEff $ logError Success "Started psc-ide server"
           _ -> pure unit
 
-  conn <- initConnection $ \({ params: InitParams { rootPath }, conn }) ->  do
+  conn <- initConnection commands $ \({ params: InitParams { rootPath }, conn }) ->  do
     modifyRef state (over ServerState $ _ { root = toMaybe rootPath })
     startPscIdeServer
   modifyRef state (over ServerState $ _ { conn = Just conn })
@@ -127,3 +132,22 @@ main = do
   onDocumentSymbol conn $ runHandler getTextDocUri getDocumentSymbols
   onWorkspaceSymbol conn $ runHandler (const Nothing) getWorkspaceSymbols
   onHover conn $ runHandler getTextDocUri (getTooltips documents)
+  onCodeAction conn $ \p -> do
+    log conn "Code action!"
+    fromAff $ pure []
+
+  onDidSaveDocument documents \{ document } -> launchAffLog do
+    let uri = getUri document
+    c <- liftEff $ readRef config
+    s <- liftEff $ readRef state
+    diagnostics <- getDiagnostics uri c s
+    liftEff $ publishDiagnostics conn { uri, diagnostics }
+    liftEff $ info conn $ "Published " <> (show $ length diagnostics) <> " issues"
+
+  onExecuteCommand conn $ \{command, arguments} -> launchAffLog do
+    c <- liftEff $ readRef config
+    s <- liftEff $ readRef state
+    case command of 
+      _ | command == cmdName addCompletionImportCmd ->
+        addCompletionImport documents logError c s arguments
+      _ -> liftEff $ log conn $ "Unknown command: " <> command

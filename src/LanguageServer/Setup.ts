@@ -1,6 +1,6 @@
 import { IConnection, createConnection,InitializeParams, IPCMessageReader, IPCMessageWriter, TextDocuments, Location, Hover, TextDocumentSyncKind } from 'vscode-languageserver';
 
-exports.initConnection = (cb: (arg: {params: InitializeParams, conn: IConnection}) => () => void) => (): IConnection => {
+exports.initConnection = (commands: string[]) => (cb: (arg: {params: InitializeParams, conn: IConnection}) => () => void) => (): IConnection => {
     const conn = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
     conn.listen();
     
@@ -22,7 +22,7 @@ exports.initConnection = (cb: (arg: {params: InitializeParams, conn: IConnection
                 documentSymbolProvider: true,
                 codeActionProvider: true,
                 executeCommandProvider: {
-                    commands: [ "purescript:test" ]
+                    commands
                 }
             }
         };
@@ -31,9 +31,6 @@ exports.initConnection = (cb: (arg: {params: InitializeParams, conn: IConnection
         console.log(params.settings);
         conn.onRequest
     });
-    conn.onExecuteCommand(() => {
-        conn.console.log("Command!");
-    })
     return conn;
 }
 

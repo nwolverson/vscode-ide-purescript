@@ -6,7 +6,7 @@ import Control.Monad.Eff (Eff, kind Effect)
 import Control.Promise (Promise)
 import Data.Foreign (Foreign)
 import Data.Nullable (Nullable)
-import LanguageServer.Types (CONN, Command, CompletionItem, Connection, Diagnostic, Hover, Location, Position, Range, SymbolInformation, TextDocumentIdentifier)
+import LanguageServer.Types (CONN, Command, CompletionItem, Connection, Diagnostic, DocumentUri(..), Hover, Location, Position, Range, SymbolInformation, TextDocumentIdentifier, WorkspaceEdit(..))
 
 type TextDocumentPositionParams = { textDocument :: TextDocumentIdentifier, position :: Position }
 
@@ -17,6 +17,9 @@ type CodeActionParams = { textDocument :: TextDocumentIdentifier, range :: Range
 type CodeActionContext = { diagnostics :: Array Diagnostic }
 
 type DidChangeConfigurationParams = { settings :: Foreign }
+
+type PublishDiagnosticParams = { uri :: DocumentUri, diagnostics :: Array Diagnostic }
+type ExecuteCommandParams = { command :: String, arguments :: Array Foreign }
 
 type Res eff a = Eff (conn :: CONN | eff) (Promise a)
 
@@ -33,3 +36,9 @@ foreign import onWorkspaceSymbol :: forall eff. Connection -> (WorkspaceSymbolPa
 foreign import onCodeAction :: forall eff. Connection -> (CodeActionParams -> Res eff (Array Command)) -> Eff (conn :: CONN | eff) Unit
 
 foreign import onDidChangeConfiguration :: forall eff. Connection -> (DidChangeConfigurationParams -> Eff (conn :: CONN | eff) Unit) -> Eff (conn :: CONN | eff) Unit
+
+foreign import onExecuteCommand :: forall eff. Connection -> (ExecuteCommandParams -> Eff (conn :: CONN | eff) Unit) -> Eff (conn :: CONN | eff) Unit
+
+foreign import publishDiagnostics :: forall eff. Connection -> PublishDiagnosticParams -> Eff (conn :: CONN | eff) Unit
+
+foreign import applyEdit :: forall eff. Connection -> WorkspaceEdit -> Eff (conn :: CONN | eff) Unit

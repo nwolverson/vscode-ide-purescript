@@ -103,14 +103,6 @@ showStatus status = do
               BuildSuccess -> "$(check)"
   setStatusBarMessage $ icon <> " PureScript"
 
-quickBuild :: forall eff. Int -> String -> Eff (MainEff eff) (Promise VSBuildResult)
-quickBuild port filename = fromAff $ do
-  liftEff $ showStatus Building
-  { errors, success } <- rebuild port filename
-  liftEff $ showStatus BuildSuccess
-  errors' <- liftEff $ censorWarnings errors
-  pure $ { success, diagnostics: toDiagnostic' errors', quickBuild: true, file: filename }
-
 toDiagnostic' :: ErrorResult -> Array FileDiagnostic
 toDiagnostic' { warnings, errors } = map (toDiagnostic true) errors <> map (toDiagnostic false) warnings
 
@@ -179,7 +171,6 @@ main :: forall eff. Eff (MainEff eff)
   { activate :: Eff (MainEff eff) (Promise Unit)
   , deactivate :: Eff (MainEff eff) Unit
   , build :: EffFn2 (MainEff eff) String String (Promise VSBuildResult)
-  , quickBuild :: EffFn1 (MainEff eff) String (Promise VSBuildResult)
   , updateFile :: EffFn2 (MainEff eff) String String Unit
   }
 main = do
@@ -276,8 +267,5 @@ main = do
       activate: initialise
     , deactivate: deactivate
     , build: mkEffFn2 $ build' showError logError
-    , quickBuild: mkEffFn1 $ \fname ->
-        withPortDef (fromAff $ pure emptyBuildResult) \port -> do
-          quickBuild port fname
     , updateFile: mkEffFn2 $ \fname text -> withPort \port -> useEditor logError port modulesState fname text
     }

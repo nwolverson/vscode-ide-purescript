@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var vscode_languageserver_1 = require("vscode-languageserver");
-exports.initConnection = function (cb) { return function () {
+exports.initConnection = function (commands) { return function (cb) { return function () {
     var conn = vscode_languageserver_1.createConnection(new vscode_languageserver_1.IPCMessageReader(process), new vscode_languageserver_1.IPCMessageWriter(process));
     conn.listen();
     conn.onInitialize(function (params) {
@@ -22,7 +22,7 @@ exports.initConnection = function (cb) { return function () {
                 documentSymbolProvider: true,
                 codeActionProvider: true,
                 executeCommandProvider: {
-                    commands: ["purescript:test"]
+                    commands: commands
                 }
             }
         };
@@ -31,11 +31,8 @@ exports.initConnection = function (cb) { return function () {
         console.log(params.settings);
         conn.onRequest;
     });
-    conn.onExecuteCommand(function () {
-        conn.console.log("Command!");
-    });
     return conn;
-}; };
+}; }; };
 // conn.onDefinition((params) => {
 //         conn.console.log('onDefinition');
 //         return Location.create('./fake-file', { start: { line: 0, character: 0}, end: { line: 1, character: 1} });
