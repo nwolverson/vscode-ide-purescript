@@ -13,11 +13,13 @@ import Data.Newtype (over, un, unwrap)
 import Data.Nullable (toMaybe)
 import IdePurescript.Modules (Module, getModulesForFile, initialModulesState)
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
+import IdePurescript.VSCode.Types (launchAffSilent)
 import LanguageServer.Console (error, info, log, warn)
 import LanguageServer.DocumentStore (getDocument, onDidSaveDocument)
 import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDocumentSymbol, onExecuteCommand, onHover, onWorkspaceSymbol, publishDiagnostics)
+import LanguageServer.IdePurescript.Assist (addClause, caseSplit)
 import LanguageServer.IdePurescript.Build (getDiagnostics)
-import LanguageServer.IdePurescript.Commands (addCompletionImportCmd, cmdName, commands)
+import LanguageServer.IdePurescript.Commands (addClauseCmd, addCompletionImportCmd, caseSplitCmd, cmdName, commands)
 import LanguageServer.IdePurescript.Completion (getCompletions)
 import LanguageServer.IdePurescript.Imports (addCompletionImport)
 import LanguageServer.IdePurescript.Server (retry, startServer')
@@ -144,10 +146,20 @@ main = do
     liftEff $ publishDiagnostics conn { uri, diagnostics }
     liftEff $ info conn $ "Published " <> (show $ length diagnostics) <> " issues"
 
-  onExecuteCommand conn $ \{command, arguments} -> launchAffLog do
-    c <- liftEff $ readRef config
-    s <- liftEff $ readRef state
-    case command of 
-      _ | command == cmdName addCompletionImportCmd ->
-        addCompletionImport documents logError c s arguments
-      _ -> liftEff $ log conn $ "Unknown command: " <> command
+  onExecuteCommand conn $ \{command, arguments} -> do 
+    -- launchAffSilent (do
+    --   c <- liftEff $ readRef config
+    --   s <- liftEff $ readRef state
+    --   case command of 
+    --     _ | command == cmdName addCompletionImportCmd ->
+    --       addCompletionImport documents logError c s arguments
+    --     _ | command == cmdName caseSplitCmd -> do
+    --       liftEff $ log conn "case split (server)"
+    --       caseSplit documents c s arguments
+    --     _ | command == cmdName addClauseCmd -> do
+    --       liftEff $ log conn "add clause (server)"
+    --       addClause documents c s arguments
+          
+    --     _ -> liftEff $ log conn $ "Unknown command: " <> command)
+    
+    pure $ toForeign 42

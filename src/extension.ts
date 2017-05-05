@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
     //     }
     // };
 
-    // ps.activate()
+    ps.activate();
     //     .then(() => {
     //         // if (vscode.window.activeTextEditor) {
     //         //     useDoc(vscode.window.activeTextEditor.document)

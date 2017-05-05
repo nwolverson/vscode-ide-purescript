@@ -6,16 +6,29 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Ref (readRef, writeRef, Ref)
-import Data.Maybe (Maybe(..), maybe)
-import Data.Nullable (toNullable)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Nullable (toMaybe, toNullable)
 import IdePurescript.Modules (State, ImportResult(..), addModuleImport, addExplicitImport)
 import IdePurescript.PscIde (getAvailableModules)
+import IdePurescript.VSCode.Assist (getActivePosInfo)
 import IdePurescript.VSCode.Editor (identifierAtCursor)
-import IdePurescript.VSCode.Types (MainEff, launchAffSilent)
+import IdePurescript.VSCode.Types (MainEff, launchAffAndRaise, launchAffSilent)
+import LanguageServer.IdePurescript.Commands (addCompletionImport)
+import LanguageServer.Types (Command(..))
+import VSCode.Command (executeAff)
 import VSCode.Input (showQuickPick, defaultInputOptions, getInput)
 import VSCode.TextDocument (getText, getPath)
 import VSCode.TextEditor (setText, getDocument)
 import VSCode.Window (getActiveTextEditor)
+
+addIdentImport :: forall eff. Eff (MainEff eff) Unit
+addIdentImport = launchAffAndRaise $ void $ do
+  liftEff getActivePosInfo >>= maybe (pure unit) \{ pos, uri, ed } -> do
+    atCursor <- liftEff $ identifierAtCursor ed
+    let defaultIdent = maybe "" _.word atCursor
+    ident <- getInput (defaultInputOptions { prompt = toNullable $ Just "Identifier", value = toNullable $ Just defaultIdent })      
+    let Command { command, arguments } = addCompletionImport ident Nothing uri
+    executeAff command (fromMaybe [] $ toMaybe arguments)
 
 addIdentImportCmd :: forall eff. Ref State -> Int -> Eff (MainEff eff) Unit
 addIdentImportCmd modulesState port = do

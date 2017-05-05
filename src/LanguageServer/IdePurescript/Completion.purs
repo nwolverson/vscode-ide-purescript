@@ -4,9 +4,7 @@ import Prelude
 import LanguageServer.IdePurescript.Config as Config
 import LanguageServer.Types as LS
 import Control.Monad.Aff (Aff)
-import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Promise (Promise, fromAff)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (over, un, unwrap)
 import Data.Nullable (toNullable)
@@ -15,11 +13,11 @@ import IdePurescript.Completion (SuggestionResult(..), SuggestionType(..), getSu
 import IdePurescript.Modules (getQualModule, getUnqualActiveModules)
 import IdePurescript.PscIde (getLoadedModules)
 import LanguageServer.DocumentStore (getDocument)
-import LanguageServer.Handlers (TextDocumentPositionParams, Res)
+import LanguageServer.Handlers (TextDocumentPositionParams)
 import LanguageServer.IdePurescript.Commands (addCompletionImport)
-import LanguageServer.IdePurescript.Types (MainEff, ServerState(..))
+import LanguageServer.IdePurescript.Types (MainEff, ServerState)
 import LanguageServer.TextDocument (getTextAtRange)
-import LanguageServer.Types (CONN, CompletionItem(..), DocumentStore, Position(..), Range(..), Settings, TextDocumentIdentifier(..), TextEdit(..), completionItem)
+import LanguageServer.Types (CompletionItem(..), DocumentStore, Position(..), Range(..), Settings, TextDocumentIdentifier(..), TextEdit(..), completionItem)
 
 getCompletions :: forall eff. DocumentStore -> Settings -> ServerState (MainEff eff) -> TextDocumentPositionParams -> Aff (MainEff eff) (Array CompletionItem)
 getCompletions docs settings state ({ textDocument, position }) = do
@@ -60,7 +58,7 @@ getCompletions docs settings state ({ textDocument, position }) = do
         # over CompletionItem (_
           { detail = toNullable $ Just valueType
           , documentation = toNullable $ Just mod
-          , command = toNullable $ Just $ addCompletionImport identifier mod uri
+          , command = toNullable $ Just $ addCompletionImport identifier (Just mod) uri
         --   , textEdit = toNullable $ Just edit
           })
         where 

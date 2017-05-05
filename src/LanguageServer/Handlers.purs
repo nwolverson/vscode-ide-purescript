@@ -1,12 +1,11 @@
 module LanguageServer.Handlers where
   
 import Prelude
-import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Promise (Promise)
 import Data.Foreign (Foreign)
 import Data.Nullable (Nullable)
-import LanguageServer.Types (CONN, Command, CompletionItem, Connection, Diagnostic, DocumentUri(..), Hover, Location, Position, Range, SymbolInformation, TextDocumentIdentifier, WorkspaceEdit(..))
+import LanguageServer.Types (CONN, Command, CompletionItem, Connection, Diagnostic, DocumentUri, Hover, Location, Position, Range, SymbolInformation, TextDocumentIdentifier, WorkspaceEdit)
 
 type TextDocumentPositionParams = { textDocument :: TextDocumentIdentifier, position :: Position }
 
@@ -37,7 +36,7 @@ foreign import onCodeAction :: forall eff. Connection -> (CodeActionParams -> Re
 
 foreign import onDidChangeConfiguration :: forall eff. Connection -> (DidChangeConfigurationParams -> Eff (conn :: CONN | eff) Unit) -> Eff (conn :: CONN | eff) Unit
 
-foreign import onExecuteCommand :: forall eff. Connection -> (ExecuteCommandParams -> Eff (conn :: CONN | eff) Unit) -> Eff (conn :: CONN | eff) Unit
+foreign import onExecuteCommand :: forall eff. Connection -> (ExecuteCommandParams -> Eff (conn :: CONN | eff) ( Foreign)) -> Eff (conn :: CONN | eff) Unit
 
 foreign import publishDiagnostics :: forall eff. Connection -> PublishDiagnosticParams -> Eff (conn :: CONN | eff) Unit
 

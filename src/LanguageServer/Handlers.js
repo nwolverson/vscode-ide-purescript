@@ -12,4 +12,8 @@ exports.onCodeAction = function (conn) { return registerHandler(conn.onCodeActio
 exports.onDidChangeConfiguration = function (conn) { return registerHandler(conn.onDidChangeConfiguration); };
 exports.publishDiagnostics = function (conn) { return function (params) { return function () { return conn.sendDiagnostics(params); }; }; };
 exports.applyEdit = function (conn) { return function (edit) { return function () { return conn.workspace.applyEdit(edit); }; }; };
-exports.onExecuteCommand = function (conn) { return registerHandler(conn.onExecuteCommand); };
+// export const onExecuteCommand = (conn: IConnection) => registerHandler(conn.onExecuteCommand);
+exports.onExecuteCommand = function (conn) { return function (f) { return function () { return conn.onExecuteCommand(function (p) {
+    conn.console.log(p.command);
+    return 42;
+}); }; }; };

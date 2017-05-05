@@ -6,11 +6,17 @@ import Data.Foreign (Foreign)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable, toNullable)
-import IdePurescript.VSCode.Main (MarkedString)
 
 foreign import data CONN :: Effect
 foreign import data Connection :: Type
 foreign import data DocumentStore :: Type
+
+
+type MarkedString = { language :: String, value :: String }
+
+markedString :: String -> MarkedString
+markedString s = { language: "purescript", value: s }
+
 
 derive instance newtypeDocumentUri :: Newtype DocumentUri _
 

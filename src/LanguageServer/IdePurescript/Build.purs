@@ -10,10 +10,8 @@ import IdePurescript.Build (rebuild)
 import IdePurescript.PscErrors (PscError(..))
 import LanguageServer.IdePurescript.Config (censorCodes)
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff)
-import LanguageServer.TextDocument (TextDocument)
-import LanguageServer.Types (Diagnostic(..), DocumentUri(..), Position(..), Range(..), Settings)
+import LanguageServer.Types (Diagnostic(Diagnostic), DocumentUri, Position(Position), Range(Range), Settings)
 import LanguageServer.Uri (uriToFilename)
-
 
 getDiagnostics :: forall eff. DocumentUri -> Settings -> ServerState (MainEff eff) -> Aff (MainEff eff) (Array Diagnostic)
 getDiagnostics uri settings state = do 

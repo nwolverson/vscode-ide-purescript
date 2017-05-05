@@ -30,7 +30,7 @@ import IdePurescript.PscIdeServer (startServer', QuitCallback, ServerEff) as P
 import IdePurescript.Tokens (identifierAtPoint)
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Editor (GetText)
-import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImportCmd)
+import IdePurescript.VSCode.Imports (addModuleImportCmd, addIdentImport)
 import IdePurescript.VSCode.Pursuit (searchPursuit)
 import IdePurescript.VSCode.Types (MainEff)
 import PscIde (load) as P
@@ -51,11 +51,6 @@ useEditor logError port modulesStateRef path text = do
   void $ runAff (logError Info <<< show) (const $ pure unit) $ do
     state <- getModulesForFile port path text
     liftEff $ writeRef modulesStateRef state
-
-type MarkedString = { language :: String, value :: String }
-
-markedString :: String -> MarkedString
-markedString s = { language: "purescript", value: s }
 
 startServer' :: forall eff eff'. String -> String -> Int -> String -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Notify (P.ServerEff (workspace :: WORKSPACE | eff)) -> Aff (P.ServerEff (workspace :: WORKSPACE | eff)) { port:: Maybe Int, quit:: P.QuitCallback eff' }
 startServer' server purs _port root cb logCb = do
@@ -170,23 +165,24 @@ addCompletionImport logCb stateRef port args = case args of
 main :: forall eff. Eff (MainEff eff)
   { activate :: Eff (MainEff eff) (Promise Unit)
   , deactivate :: Eff (MainEff eff) Unit
-  , build :: EffFn2 (MainEff eff) String String (Promise VSBuildResult)
-  , updateFile :: EffFn2 (MainEff eff) String String Unit
+  -- , build :: EffFn2 (MainEff eff) String String (Promise VSBuildResult)
+  -- , updateFile :: EffFn2 (MainEff eff) String String Unit
   }
 main = do
-  modulesState <- newRef (initialModulesState)
-  deactivateRef <- newRef (pure unit :: Eff (MainEff eff) Unit)
-  portRef <- newRef Nothing
+  -- modulesState <- newRef (initialModulesState)
+  -- deactivateRef <- newRef (pure unit :: Eff (MainEff eff) Unit)
+  -- portRef <- newRef Nothing
   output <- createOutputChannel "PureScript"
 
   let cmd s f = register ("purescript." <> s) (\_ -> f)
       cmdWithArgs s f = register ("purescript." <> s) f
 
   let deactivate :: Eff (MainEff eff) Unit
-      deactivate = do
-        join (readRef deactivateRef)
-        writeRef deactivateRef (pure unit)
-        writeRef portRef Nothing
+      deactivate =pure unit
+      -- do
+      --   join (readRef deactivateRef)
+      --   writeRef deactivateRef (pure unit)
+      --   writeRef portRef Nothing
 
   let logError :: Notify (MainEff eff)
       logError level str = do
@@ -205,67 +201,68 @@ main = do
           Info -> Notify.showInfo str
           Warning -> Notify.showWarning str
           Error -> Notify.showError str                 
+      
 
-  let startPscIdeServer =
-        do
-          server <- liftEff Config.serverExe
-          purs <- liftEff Config.pursExe
-          port' <- liftEff Config.pscIdePort
-          rootPath <- liftEff rootPath
-          -- TODO pass in port just when explicitly defined
-          startRes <- startServer' server purs port' rootPath showError logError
-          retry 6 case startRes of
-            { port: Just port, quit } -> do
-              _<- P.load port [] []
-              liftEff do
-                writeRef deactivateRef quit
-                writeRef portRef $ Just port
-            _ -> pure unit
-        where
-          retry :: Int -> Aff (MainEff eff) Unit -> Aff (MainEff eff) Unit
-          retry n a | n > 0 = do
-            res <- attempt a
-            case res of
-              Right r -> pure r
-              Left err -> do
-                liftEff $ logError Info $ "Retrying starting server after 500ms: " <> show err
-                delay (Milliseconds 500.0)
-                retry (n - 1) a
-          retry _ a = a
+  -- let startPscIdeServer =
+  --       do
+  --         server <- liftEff Config.serverExe
+  --         purs <- liftEff Config.pursExe
+  --         port' <- liftEff Config.pscIdePort
+  --         rootPath <- liftEff rootPath
+  --         -- TODO pass in port just when explicitly defined
+  --         startRes <- startServer' server purs port' rootPath showError logError
+  --         retry 6 case startRes of
+  --           { port: Just port, quit } -> do
+  --             _<- P.load port [] []
+  --             liftEff do
+  --               writeRef deactivateRef quit
+  --               writeRef portRef $ Just port
+  --           _ -> pure unit
+  --       where
+  --         retry :: Int -> Aff (MainEff eff) Unit -> Aff (MainEff eff) Unit
+  --         retry n a | n > 0 = do
+  --           res <- attempt a
+  --           case res of
+  --             Right r -> pure r
+  --             Left err -> do
+  --               liftEff $ logError Info $ "Retrying starting server after 500ms: " <> show err
+  --               delay (Milliseconds 500.0)
+  --               retry (n - 1) a
+  --         retry _ a = a
 
-      start :: Eff (MainEff eff) Unit
-      start = void $ runAff (logError Error <<< show) (const $ pure unit) $ startPscIdeServer
+  --     start :: Eff (MainEff eff) Unit
+  --     start = void $ runAff (logError Error <<< show) (const $ pure unit) $ startPscIdeServer
 
-      restart :: Eff (MainEff eff) Unit
-      restart = do
-        deactivate
-        start
+  --     restart :: Eff (MainEff eff) Unit
+  --     restart = do
+  --       deactivate
+  --       start
 
-  let withPortDef :: forall eff' a. Eff (ref :: REF | eff') a -> (Int -> Eff (ref :: REF | eff') a) -> Eff (ref :: REF | eff') a
-      withPortDef def f = readRef portRef >>= maybe def f
-  let withPort :: forall eff'. (Int -> Eff (ref :: REF | eff') Unit) -> Eff (ref :: REF | eff') Unit
-      withPort = withPortDef (pure unit)
+  -- let withPortDef :: forall eff' a. Eff (ref :: REF | eff') a -> (Int -> Eff (ref :: REF | eff') a) -> Eff (ref :: REF | eff') a
+  --     withPortDef def f = readRef portRef >>= maybe def f
+  -- let withPort :: forall eff'. (Int -> Eff (ref :: REF | eff') Unit) -> Eff (ref :: REF | eff') Unit
+  --     withPort = withPortDef (pure unit)
   
   let initialise = fromAff $ do
-        auto <- liftEff $ Config.autoStartPscIde
-        when auto startPscIdeServer
+        -- auto <- liftEff $ Config.autoStartPscIde
+        -- when auto startPscIdeServer
         liftEff do
-          cmd "addImport" $ withPort $ addModuleImportCmd modulesState
-          cmd "addExplicitImport" $ withPort $ addIdentImportCmd modulesState
-          cmd "caseSplit" $ withPort caseSplit
-          cmd "addClause" $ withPort addClause
-          cmd "restartPscIde" restart
-          cmd "startPscIde" start
-          cmd "stopPscIde" deactivate
-          cmd "searchPursuit" $ withPort searchPursuit
-          cmdWithArgs "addCompletionImport" $ \args -> withPort \port -> do
-            autocompleteAddImport <- Config.autocompleteAddImport
-            when autocompleteAddImport $
-              void $ runAff (logError Info <<< show) (const $ pure unit) $ addCompletionImport logError modulesState port args
+          -- cmd "addImport" $ withPort $ addModuleImportCmd modulesState
+          cmd "addExplicitImport" $ addIdentImport
+          cmd "caseSplit" $ caseSplit
+          cmd "addClause" $ addClause
+          -- cmd "restartPscIde" restart
+          -- cmd "startPscIde" start
+          -- cmd "stopPscIde" deactivate
+          -- cmd "searchPursuit" $ withPort searchPursuit
+          -- cmdWithArgs "addCompletionImport" $ \args -> withPort \port -> do
+          --   autocompleteAddImport <- Config.autocompleteAddImport
+          --   when autocompleteAddImport $
+          --     void $ runAff (logError Info <<< show) (const $ pure unit) $ addCompletionImport logError modulesState port args
 
   pure $ {
       activate: initialise
     , deactivate: deactivate
-    , build: mkEffFn2 $ build' showError logError
-    , updateFile: mkEffFn2 $ \fname text -> withPort \port -> useEditor logError port modulesState fname text
+    -- , build: mkEffFn2 $ build' showError logError
+    -- , updateFile: mkEffFn2 $ \fname text -> withPort \port -> useEditor logError port modulesState fname text
     }

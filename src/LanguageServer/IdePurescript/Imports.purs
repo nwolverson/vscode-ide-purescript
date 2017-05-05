@@ -5,7 +5,7 @@ import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Except (runExcept)
 import Data.Array (singleton)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foreign (Foreign, readString)
 import Data.Maybe (Maybe(..), maybe)
 import Data.String (length)
@@ -18,16 +18,17 @@ import LanguageServer.IdePurescript.Types (MainEff, ServerState(..))
 import LanguageServer.TextDocument (getText, getVersion, positionAtOffset)
 import LanguageServer.Types (DocumentStore, DocumentUri(..), Position(..), Range(..), Settings, TextDocumentEdit(..), TextDocumentIdentifier(..), TextEdit(..), workspaceEdit)
 
-addCompletionImport :: forall eff. DocumentStore -> Notify (MainEff eff)  -> Settings -> ServerState (MainEff eff) -> Array Foreign -> Aff (MainEff eff) Unit
+addCompletionImport :: forall eff. DocumentStore -> Notify (MainEff eff) -> Settings -> ServerState (MainEff eff) -> Array Foreign -> Aff (MainEff eff) Unit
 addCompletionImport docs log config state args = do
   let shouldAddImport = autocompleteAddImport config
       ServerState { port, modules, conn } = state
   case port, (runExcept <<< readString) <$> args of
-    Just port', [ Right identifier, Right mod, Right uri ] -> do   
+    Just port', [ Right identifier, mod', Right uri ] -> do
+      let mod'' = either (const Nothing) Just mod'
       doc <- liftEff $ getDocument docs (DocumentUri uri)
       version <- liftEff $ getVersion doc
       text <- liftEff $ getText doc
-      { state: modulesState', result } <- addExplicitImport modules port' uri text (Just mod) identifier
+      { state: modulesState', result } <- addExplicitImport modules port' uri text mod'' identifier
       liftEff $ case result of
         UpdatedImports newText -> do
           textEdit <- TextEdit <$> { range: _, newText } <$> allTextRange doc text
@@ -37,7 +38,7 @@ addCompletionImport docs log config state args = do
         AmbiguousImport _ -> log Warning "Found ambiguous imports"
         FailedImport -> log Error "Failed to import"
       pure unit
-    _, _ -> pure unit
+    _, args' -> liftEff $ log Info $ show args'
 
     where
     allTextRange doc text = do
