@@ -18,6 +18,8 @@ exports.executeCb = function (command) { return function (args) { return functio
     return (_a = vscode.commands).executeCommand.apply(_a, [command].concat(args)).then(function (res) {
         console.log(res);
         cb(res);
+    }, function (err) {
+        console.error("Command error", err);
     });
     var _a;
 }; }; }; };

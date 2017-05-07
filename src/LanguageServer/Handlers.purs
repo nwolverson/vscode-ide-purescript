@@ -36,7 +36,7 @@ foreign import onCodeAction :: forall eff. Connection -> (CodeActionParams -> Re
 
 foreign import onDidChangeConfiguration :: forall eff. Connection -> (DidChangeConfigurationParams -> Eff (conn :: CONN | eff) Unit) -> Eff (conn :: CONN | eff) Unit
 
-foreign import onExecuteCommand :: forall eff. Connection -> (ExecuteCommandParams -> Eff (conn :: CONN | eff) ( Foreign)) -> Eff (conn :: CONN | eff) Unit
+foreign import onExecuteCommand :: forall eff. Connection -> (ExecuteCommandParams -> Eff (conn :: CONN | eff) (Promise Foreign)) -> Eff (conn :: CONN | eff) Unit
 
 foreign import publishDiagnostics :: forall eff. Connection -> PublishDiagnosticParams -> Eff (conn :: CONN | eff) Unit
 

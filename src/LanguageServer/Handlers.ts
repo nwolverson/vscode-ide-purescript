@@ -21,9 +21,5 @@ export const publishDiagnostics = (conn: IConnection) => (params: PublishDiagnos
 
 export const applyEdit = (conn: IConnection) => (edit: WorkspaceEdit) => () => conn.workspace.applyEdit(edit);
 
-// export const onExecuteCommand = (conn: IConnection) => registerHandler(conn.onExecuteCommand);
+export const onExecuteCommand = (conn: IConnection) => registerHandler(conn.onExecuteCommand);
 
-export const onExecuteCommand = (conn: IConnection) => (f: any) => () => conn.onExecuteCommand((p) => {
-    conn.console.log(p.command);
-    return 42;
-});

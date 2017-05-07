@@ -25,8 +25,6 @@ export function activate(context: vscode.ExtensionContext) {
     //         ps.updateFile(doc.fileName, doc.getText());
     //     }
     // };
-
-    ps.activate();
     //     .then(() => {
     //         // if (vscode.window.activeTextEditor) {
     //         //     useDoc(vscode.window.activeTextEditor.document)
@@ -160,13 +158,13 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	// Create the language client and start the client.
     const client = new LanguageClient('PureScript', 'IDE PureScript', serverOptions, clientOptions);
-	const disposable = client.start();
-    // vscode.commands.registerCommand("purescript:test", () => {
-    //     // client.sendRequest()
-    // })
-    
-    console.log("started server");
 
+	const disposable = client.start();
+    client.onReady().then(() => {
+        console.log("started server");
+        ps.activate(client)();
+    });
+    
 	// Push the disposable to the context's subscriptions so that the 
 	// client can be deactivated on extension deactivation
 	context.subscriptions.push(disposable);

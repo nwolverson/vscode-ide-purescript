@@ -10,10 +10,9 @@ import Data.Array (length)
 import Data.Foreign (toForeign)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (over, un, unwrap)
-import Data.Nullable (toMaybe)
+import Data.Nullable (toMaybe, toNullable)
 import IdePurescript.Modules (Module, getModulesForFile, initialModulesState)
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
-import IdePurescript.VSCode.Types (launchAffSilent)
 import LanguageServer.Console (error, info, log, warn)
 import LanguageServer.DocumentStore (getDocument, onDidSaveDocument)
 import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDocumentSymbol, onExecuteCommand, onHover, onWorkspaceSymbol, publishDiagnostics)
@@ -147,12 +146,17 @@ main = do
     liftEff $ info conn $ "Published " <> (show $ length diagnostics) <> " issues"
 
   onExecuteCommand conn $ \{command, arguments} -> do 
-    -- launchAffSilent (do
-    --   c <- liftEff $ readRef config
-    --   s <- liftEff $ readRef state
-    --   case command of 
-    --     _ | command == cmdName addCompletionImportCmd ->
-    --       addCompletionImport documents logError c s arguments
+    fromAff (do
+      c <- liftEff $ readRef config
+      s <- liftEff $ readRef state
+      case command of 
+        _ | command == cmdName addCompletionImportCmd ->
+          addCompletionImport documents logError c s arguments
+        _ -> do
+              liftEff $ error conn $ "Unknown command: " <> command
+              pure $ toForeign $ toNullable Nothing
+
+          )
     --     _ | command == cmdName caseSplitCmd -> do
     --       liftEff $ log conn "case split (server)"
     --       caseSplit documents c s arguments
@@ -161,5 +165,3 @@ main = do
     --       addClause documents c s arguments
           
     --     _ -> liftEff $ log conn $ "Unknown command: " <> command)
-    
-    pure $ toForeign 42

@@ -11,4 +11,6 @@ export const executeCb = (command: string) => (args: any[]) => <T>(cb: (arg: T) 
     vscode.commands.executeCommand<T>(command, ...args).then(res => {
         console.log(res);
         cb(res)
+    }, (err) => {
+        console.error("Command error", err)
     });
