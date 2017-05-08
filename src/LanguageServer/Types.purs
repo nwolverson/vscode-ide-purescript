@@ -1,11 +1,13 @@
 module LanguageServer.Types where
 
 import Prelude
+import Control.Bind ((=<<))
 import Control.Monad.Eff (kind Effect)
 import Data.Foreign (Foreign)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable, toNullable)
+import Data.Ord (class Ord)
 
 foreign import data CONN :: Effect
 foreign import data Connection :: Type
@@ -24,9 +26,26 @@ newtype DocumentUri = DocumentUri String
 
 newtype Position = Position { line :: Int, character :: Int }
 
+instance eqPosition :: Eq Position where
+  eq (Position { line, character }) (Position { line: line', character: character' }) =
+    line == line' && character == character'
+
+instance positionOrd :: Ord Position where
+  compare (Position { line: line, character: character }) (Position { line: line', character: character' })
+    | line < line' = LT
+    | line == line' && character < character' = LT
+    | line == line' && character == character' = EQ
+    | otherwise = GT
+
 derive instance newtypePosition :: Newtype Position _
 
+instance showPosition :: Show Position where
+  show (Position { line, character }) = "Position(" <> show line <> "," <> show character <> ")"
+
 newtype Range = Range { start :: Position, end :: Position }
+
+instance showRange :: Show Range where
+  show (Range { start, end }) = "Range(" <> show start <> "," <> show end <> ")"
 
 derive instance newtypeRange :: Newtype Range _
 

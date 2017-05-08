@@ -9,7 +9,9 @@ import Control.Monad.Eff.Random (RANDOM)
 import Control.Monad.Eff.Ref (REF)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
+import Data.StrMap (StrMap)
 import IdePurescript.Modules (State)
+import IdePurescript.PscErrors (PscError)
 import LanguageServer.Types (CONN, Connection)
 import Node.Buffer (BUFFER)
 import Node.ChildProcess (CHILD_PROCESS)
@@ -36,6 +38,7 @@ newtype ServerState eff = ServerState
   , root :: Maybe String
   , conn :: Maybe Connection
   , modules :: State
+  , diagnostics :: StrMap (Array PscError)
   }
 
 derive instance newtypeServerState :: Newtype (ServerState eff) _

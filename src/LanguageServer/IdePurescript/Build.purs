@@ -8,12 +8,19 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toNullable)
 import IdePurescript.Build (rebuild)
 import IdePurescript.PscErrors (PscError(..))
+import IdePurescript.PscErrors as PscErrors
 import LanguageServer.IdePurescript.Config (censorCodes)
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff)
 import LanguageServer.Types (Diagnostic(Diagnostic), DocumentUri, Position(Position), Range(Range), Settings)
 import LanguageServer.Uri (uriToFilename)
 
-getDiagnostics :: forall eff. DocumentUri -> Settings -> ServerState (MainEff eff) -> Aff (MainEff eff) (Array Diagnostic)
+positionToRange :: PscErrors.Position -> Range
+positionToRange ({ startLine, startColumn, endLine, endColumn}) =
+  Range { start: Position { line: startLine-1, character: startColumn-1 }
+        , end:   Position { line: endLine-1, character: endColumn-1 } }
+
+getDiagnostics :: forall eff. DocumentUri -> Settings -> ServerState (MainEff eff) -> Aff (MainEff eff)
+  ({ pscErrors :: Array PscError, diagnostics :: Array Diagnostic })
 getDiagnostics uri settings state = do 
   filename <- liftEff $ uriToFilename uri
   case state of
@@ -21,9 +28,10 @@ getDiagnostics uri settings state = do
       -- TODO: Status Indication
       { errors: { warnings, errors }, success } <- rebuild port filename
       let warnings' = censorWarnings warnings
-      pure $ (convertDiagnostic true <$> errors) <> (convertDiagnostic false <$> warnings)
-      
-    _ -> pure []
+      pure $ { diagnostics: (convertDiagnostic true <$> errors) <> (convertDiagnostic false <$> warnings)
+             , pscErrors: errors <> warnings' }
+
+    _ -> pure { pscErrors: [], diagnostics: [] }
 
   where
     dummyRange = 
@@ -37,10 +45,6 @@ getDiagnostics uri settings state = do
         , source: toNullable $ Just "PureScript"
         , message
         }
-
-    positionToRange ({ startLine, startColumn, endLine, endColumn}) =
-      Range { start: Position { line: startLine-1, character: startColumn-1 }
-            , end:   Position { line: endLine-1, character: endColumn-1 } }
 
     censorWarnings :: Array PscError -> Array PscError
     censorWarnings = filter (flip notElem codes <<< getCode)

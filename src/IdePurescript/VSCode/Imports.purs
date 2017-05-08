@@ -44,6 +44,7 @@ addIdentImport client = launchAffAndRaise $ void $ do
           -> showQuickPick arr >>= maybe (pure unit) (addIdentImportMod ident uri <<< Just)
         _ -> pure unit
 
+-- TODO: How to implement via server
 addModuleImportCmd :: forall eff. Ref State -> Int -> Eff (MainEff eff) Unit
 addModuleImportCmd modulesState port =
   launchAffSilent $ do

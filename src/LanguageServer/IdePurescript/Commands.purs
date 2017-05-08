@@ -4,7 +4,7 @@ import Prelude
 import Data.Foreign (Foreign, toForeign)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
-import LanguageServer.Types (Command(..), DocumentUri)
+import LanguageServer.Types (Command(..), DocumentUri, Range(..))
 
 cmdName :: CommandInfo -> String
 cmdName (CommandInfo _ command) = "purescript:" <> command
@@ -27,10 +27,18 @@ addCompletionImport :: String -> Maybe String -> DocumentUri -> Command
 addCompletionImport ident mod uri = c addCompletionImportCmd $
   Just [ toForeign ident, toForeign $ toNullable mod, toForeign uri ]
 
+replaceSuggestionCmd :: CommandInfo
+replaceSuggestionCmd = CommandInfo "Apply Suggestion" "replaceSuggestion"
+
+replaceSuggestion :: DocumentUri -> String -> Range -> Command
+replaceSuggestion uri replacement fixRange = c replaceSuggestionCmd $ 
+  Just [ toForeign uri, toForeign replacement, toForeign fixRange ]
+
 commands :: Array String
 commands = cmdName <$> 
   [ addCompletionImportCmd 
   , caseSplitCmd
   , addClauseCmd
+  , replaceSuggestionCmd
   ]
 

@@ -11,6 +11,7 @@ import Data.Foreign (toForeign)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (over, un, unwrap)
 import Data.Nullable (toMaybe, toNullable)
+import Data.StrMap (empty, insert)
 import IdePurescript.Modules (Module, getModulesForFile, initialModulesState)
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
 import LanguageServer.Console (error, info, log, warn)
@@ -18,7 +19,8 @@ import LanguageServer.DocumentStore (getDocument, onDidSaveDocument)
 import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDocumentSymbol, onExecuteCommand, onHover, onWorkspaceSymbol, publishDiagnostics)
 import LanguageServer.IdePurescript.Assist (addClause, caseSplit)
 import LanguageServer.IdePurescript.Build (getDiagnostics)
-import LanguageServer.IdePurescript.Commands (addClauseCmd, addCompletionImportCmd, caseSplitCmd, cmdName, commands)
+import LanguageServer.IdePurescript.CodeActions (getActions, onReplaceSuggestion)
+import LanguageServer.IdePurescript.Commands (addClauseCmd, addCompletionImportCmd, caseSplitCmd, cmdName, commands, replaceSuggestionCmd)
 import LanguageServer.IdePurescript.Completion (getCompletions)
 import LanguageServer.IdePurescript.Imports (addCompletionImport)
 import LanguageServer.IdePurescript.Server (retry, startServer')
@@ -27,26 +29,9 @@ import LanguageServer.IdePurescript.Tooltips (getTooltips)
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff)
 import LanguageServer.Setup (InitParams(..), initConnection, initDocumentStore)
 import LanguageServer.TextDocument (getText, getUri)
-import LanguageServer.Types (DocumentUri, Settings, TextDocumentIdentifier(..))
+import LanguageServer.Types (DocumentUri(..), Settings, TextDocumentIdentifier(..))
 import LanguageServer.Uri (uriToFilename)
 import PscIde (load)
-
---   let initialise = fromAff $ do
---         auto <- liftEff $ Config.autoStartPscIde
---         when auto startPscIdeServer
---         liftEff do
---           cmd "addImport" $ withPort $ addModuleImportCmd modulesState
---           cmd "addExplicitImport" $ withPort $ addIdentImportCmd modulesState
---           cmd "caseSplit" $ withPort caseSplit
---           cmd "addClause" $ withPort addClause
---           cmd "restartPscIde" restart
---           cmd "startPscIde" start
---           cmd "stopPscIde" deactivate
---           cmd "searchPursuit" $ withPort searchPursuit
---           cmdWithArgs "addCompletionImport" $ \args -> withPort \port -> do
---             autocompleteAddImport <- Config.autocompleteAddImport
---             when autocompleteAddImport $
---               void $ runAff (logError Info <<< show) (const $ pure unit) $ addCompletionImport logError modulesState port args
 
 defaultServerState :: forall eff. ServerState eff
 defaultServerState = ServerState
@@ -55,6 +40,7 @@ defaultServerState = ServerState
   , root: Nothing
   , conn: Nothing
   , modules: initialModulesState
+  , diagnostics: empty
   }
 
 main :: forall eff. Eff (MainEff eff) Unit
@@ -133,35 +119,32 @@ main = do
   onDocumentSymbol conn $ runHandler getTextDocUri getDocumentSymbols
   onWorkspaceSymbol conn $ runHandler (const Nothing) getWorkspaceSymbols
   onHover conn $ runHandler getTextDocUri (getTooltips documents)
-  onCodeAction conn $ \p -> do
-    log conn "Code action!"
-    fromAff $ pure []
+  onCodeAction conn $ runHandler getTextDocUri (getActions documents)
 
   onDidSaveDocument documents \{ document } -> launchAffLog do
     let uri = getUri document
     c <- liftEff $ readRef config
     s <- liftEff $ readRef state
-    diagnostics <- getDiagnostics uri c s
+    { pscErrors, diagnostics } <- getDiagnostics uri c s
+    let state' = over ServerState (\s1 -> s1 { diagnostics = insert (un DocumentUri uri) pscErrors (s1.diagnostics) }) s
+    liftEff $ writeRef state state'
     liftEff $ publishDiagnostics conn { uri, diagnostics }
     liftEff $ info conn $ "Published " <> (show $ length diagnostics) <> " issues"
 
   onExecuteCommand conn $ \{command, arguments} -> do 
-    fromAff (do
+    fromAff do
       c <- liftEff $ readRef config
       s <- liftEff $ readRef state
+      let noResult = toForeign $ toNullable Nothing
       case command of 
         _ | command == cmdName addCompletionImportCmd ->
           addCompletionImport documents logError c s arguments
+        _ | command == cmdName caseSplitCmd ->
+          caseSplit documents c s arguments $> noResult
+        _ | command == cmdName addClauseCmd ->
+          addClause documents c s arguments $> noResult
+        _ | command == cmdName replaceSuggestionCmd ->
+          onReplaceSuggestion documents c s arguments $> noResult
         _ -> do
               liftEff $ error conn $ "Unknown command: " <> command
-              pure $ toForeign $ toNullable Nothing
-
-          )
-    --     _ | command == cmdName caseSplitCmd -> do
-    --       liftEff $ log conn "case split (server)"
-    --       caseSplit documents c s arguments
-    --     _ | command == cmdName addClauseCmd -> do
-    --       liftEff $ log conn "add clause (server)"
-    --       addClause documents c s arguments
-          
-    --     _ -> liftEff $ log conn $ "Unknown command: " <> command)
+              pure noResult
