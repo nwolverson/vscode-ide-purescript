@@ -171,14 +171,14 @@
   "devDependencies": {
     "mkdirp": "^0.5.1",
     "npm-run-all": "^4.0.2",
-    "typescript": "^2.2.2",
-    "vscode": "^1.1.0",
-    "vscode-languageclient": "^3.2.0",
-    "vscode-uri": "^1.0.0"
+    "typescript": "^2.2.2"
   },
   "dependencies": {
     "striptags": "^3.0.1",
     "vscode-languageserver": "^3.2.0",
+    "vscode-languageclient": "^3.2.0",
+    "vscode": "^1.1.0",
+    "vscode-uri": "^1.0.0",
     "which": "^1.2.9"
   }
 }
