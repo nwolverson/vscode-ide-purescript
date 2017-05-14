@@ -46,7 +46,7 @@
         "title": "PureScript: Case Split"
       },
       {
-        "command": "purescript:caseSplit-explicit",
+        "command": "purescript.caseSplit-explicit",
         "title": "PureScript: Case Split (explicit)"
       },
       {
@@ -68,10 +68,6 @@
       {
         "command": "purescript.searchPursuit",
         "title": "PureScript: Search Pursuit"
-      },
-      {
-        "command": "purescript:test",
-        "title": "PureScript: LSP test command"
       }
     ],
     "configuration": {

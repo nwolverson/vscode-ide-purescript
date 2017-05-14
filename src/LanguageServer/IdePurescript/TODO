@@ -1,5 +1,4 @@
 - Add module import (get modules)
-- Full build
 
 Probably best left in the extension:
 - Pursuit search (direct? expose psc-ide connection via command?)

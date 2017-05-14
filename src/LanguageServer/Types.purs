@@ -1,28 +1,26 @@
 module LanguageServer.Types where
 
 import Prelude
-import Control.Bind ((=<<))
 import Control.Monad.Eff (kind Effect)
 import Data.Foreign (Foreign)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over)
 import Data.Nullable (Nullable, toNullable)
-import Data.Ord (class Ord)
 
 foreign import data CONN :: Effect
 foreign import data Connection :: Type
 foreign import data DocumentStore :: Type
-
 
 type MarkedString = { language :: String, value :: String }
 
 markedString :: String -> MarkedString
 markedString s = { language: "purescript", value: s }
 
-
 derive instance newtypeDocumentUri :: Newtype DocumentUri _
 
 newtype DocumentUri = DocumentUri String
+
+derive newtype instance eqDocumentUri :: Eq DocumentUri
 
 newtype Position = Position { line :: Int, character :: Int }
 
@@ -201,9 +199,7 @@ newtype TextDocumentEdit = TextDocumentEdit { textDocument :: TextDocumentIdenti
 
 newtype TextDocumentIdentifier = TextDocumentIdentifier { uri :: DocumentUri, version :: Number }
 
-
 derive instance newtypeTextDocumentIdentifier :: Newtype TextDocumentIdentifier _
-
 
 type Settings = Foreign
 

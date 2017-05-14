@@ -1,19 +1,17 @@
 module IdePurescript.VSCode.Imports where
 
 import Prelude
-import PscIde.Command as C
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log)
-import Control.Monad.Eff.Ref (readRef, writeRef, Ref)
+import Control.Monad.Eff.Ref (Ref, readRef)
 import Control.Monad.Except (runExcept)
 import Data.Either (Either(..))
-import Data.Foreign (isArray, readArray, readString)
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Nullable (toMaybe, toNullable)
+import Data.Foreign (readArray, readString)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Nullable (toNullable)
 import Data.Traversable (traverse)
-import IdePurescript.Modules (State, ImportResult(..), addModuleImport, addExplicitImport)
+import IdePurescript.Modules (State, addModuleImport)
 import IdePurescript.PscIde (getAvailableModules)
 import IdePurescript.VSCode.Assist (getActivePosInfo)
 import IdePurescript.VSCode.Editor (identifierAtCursor)

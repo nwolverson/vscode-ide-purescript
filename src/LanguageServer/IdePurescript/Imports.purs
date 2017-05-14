@@ -20,8 +20,8 @@ import LanguageServer.IdePurescript.Types (MainEff, ServerState(..))
 import LanguageServer.TextDocument (getText, getVersion, positionAtOffset)
 import LanguageServer.Types (DocumentStore, DocumentUri(..), Position(..), Range(..), Settings, TextDocumentEdit(..), TextDocumentIdentifier(..), TextEdit(..), workspaceEdit)
 
-addCompletionImport :: forall eff. DocumentStore -> Notify (MainEff eff) -> Settings -> ServerState (MainEff eff) -> Array Foreign -> Aff (MainEff eff) Foreign
-addCompletionImport docs log config state args = do
+addCompletionImport :: forall eff. Notify (MainEff eff) -> DocumentStore -> Settings -> ServerState (MainEff eff) -> Array Foreign -> Aff (MainEff eff) Foreign
+addCompletionImport log docs config state args = do
   let shouldAddImport = autocompleteAddImport config
       ServerState { port, modules, conn } = state
   case port, (runExcept <<< readString) <$> args of

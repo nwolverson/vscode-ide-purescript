@@ -39,6 +39,9 @@ pscIdePort = getInt "pscIdePort" 4242
 autoCompleteAllModules :: ConfigFn Boolean
 autoCompleteAllModules = getBoolean "autocompleteAllModules" true 
 
+buildCommand :: ConfigFn String
+buildCommand = getString "buildCommand" "pulp build -- --json-errors"
+
 addNpmPath :: ConfigFn Boolean
 addNpmPath = getBoolean "addNpmPath" false
 
