@@ -26,7 +26,7 @@ startServer' :: forall eff eff'. Settings -> Maybe String -> Notify (P.ServerEff
 startServer' settings root cb logCb =
   P.startServer' (fromMaybe "" root) exe (Config.addNpmPath settings) (Config.usePurs settings) globs cb logCb
   where
-    globs = ["src/**/*.purs", Config.packagePath settings <> "/**/*.purs"]
+    globs = [Config.srcPath settings <> "/**/*.purs", Config.packagePath settings <> "/**/*.purs"]
     exe = if Config.usePurs settings then Config.pursExe settings else Config.serverExe settings
   
 

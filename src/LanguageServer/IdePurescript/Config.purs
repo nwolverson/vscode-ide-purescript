@@ -51,6 +51,9 @@ usePurs = getBoolean "useCombinedExe" true
 packagePath :: ConfigFn String
 packagePath = getString "packagePath" "bower_components"
 
+srcPath :: ConfigFn String
+srcPath = getString "sourcePath" "src"
+
 censorCodes :: ConfigFn (Array String)
 censorCodes = getConfig (readArray >=> traverse readString) "censorWarnings" []
 

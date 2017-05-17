@@ -101,7 +101,12 @@
         "purescript.packagePath": {
           "type": "string",
           "default": "bower_components",
-          "description": "Path to installed packages"
+          "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations."
+        },
+        "purescript.sourcePath": {
+          "type": "string",
+          "default": "src",
+          "description": "Path to application source root. Will be used to control globs passed to IDE server for source locations."
         },
         "purescript.buildCommand": {
           "type": "string",
