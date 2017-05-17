@@ -16,11 +16,11 @@ import Data.Profunctor.Strong (first)
 import Data.StrMap (StrMap, empty, fromFoldable, insert, lookup, toUnfoldable)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import IdePurescript.Modules (Module, getModulesForFile, initialModulesState)
+import IdePurescript.Modules (Module, getModulesForFileTemp, initialModulesState)
 import IdePurescript.PscErrors (PscError(..))
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
 import LanguageServer.Console (error, info, log, warn)
-import LanguageServer.DocumentStore (getDocument, onDidSaveDocument)
+import LanguageServer.DocumentStore (getDocument, onDidChangeContent, onDidSaveDocument)
 import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDocumentSymbol, onExecuteCommand, onHover, onWorkspaceSymbol, publishDiagnostics)
 import LanguageServer.IdePurescript.Assist (addClause, caseSplit)
 import LanguageServer.IdePurescript.Build (collectByFirst, fullBuild, getDiagnostics)
@@ -107,8 +107,7 @@ main = do
             | modulesFile /= Just uri -> do
             text <- liftEff $ getDocument documents uri >>= getText
             path <- liftEff $ uriToFilename uri
-            -- TODO use temp file
-            modules <- getModulesForFile port path text
+            modules <- getModulesForFileTemp port path text
             liftEff $ modifyRef state $ over ServerState (_ { modules = modules, modulesFile = Just uri })
             -- liftEff $ info conn $ "Updated modules to: " <> show modules.main <> " / " <> show (showModule <$> modules.modules)
           _ -> pure unit
@@ -131,6 +130,9 @@ main = do
   onWorkspaceSymbol conn $ runHandler "onWorkspaceSymbol" (const Nothing) getWorkspaceSymbols
   onHover conn $ runHandler "onHover" getTextDocUri (getTooltips documents)
   onCodeAction conn $ runHandler "onCodeAction" getTextDocUri (getActions documents)
+
+  onDidChangeContent documents $ \_ ->
+    liftEff $ modifyRef state $ over ServerState (_ { modulesFile = Nothing })
 
   onDidSaveDocument documents \{ document } -> launchAffLog do
     let uri = getUri document
