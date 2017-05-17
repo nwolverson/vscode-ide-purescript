@@ -4,7 +4,7 @@ import Prelude
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Except (runExcept)
-import Data.Array (catMaybes, singleton)
+import Data.Array (concat, singleton)
 import Data.Either (Either(..))
 import Data.Foreign (F, Foreign, readInt, readString)
 import Data.Foreign.Index ((!))
@@ -16,6 +16,7 @@ import Data.String.Regex (regex)
 import Data.String.Regex.Flags (noFlags)
 import Data.Traversable (traverse)
 import IdePurescript.PscErrors (PscError(..))
+import IdePurescript.QuickFix (getTitle)
 import IdePurescript.Regex (test')
 import LanguageServer.DocumentStore (getDocument)
 import LanguageServer.Handlers (CodeActionParams, applyEdit)
@@ -28,14 +29,16 @@ import LanguageServer.Types (Command, DocumentStore, DocumentUri(..), Position(.
 getActions :: forall eff. DocumentStore -> Settings -> ServerState (MainEff eff) -> CodeActionParams -> Aff (MainEff eff) (Array Command)
 getActions documents settings (ServerState { diagnostics, conn }) { textDocument, range } =  
   case lookup (un DocumentUri $ _.uri $ un TextDocumentIdentifier textDocument) diagnostics of
-    Just errs -> catMaybes <$> traverse asCommand errs
+    Just errs -> concat <$> traverse asCommand errs
     _ -> pure []
   where
-    asCommand (PscError { position: Just position, suggestion: Just { replacement, replaceRange } })
+    asCommand (PscError { position: Just position, suggestion: Just { replacement, replaceRange }, errorCode })
       | contains range (positionToRange position) = do
       let range' = positionToRange $ fromMaybe position replaceRange
-      pure $ Just $ replaceSuggestion (_.uri $ un TextDocumentIdentifier textDocument) replacement range'
-    asCommand _ = pure Nothing
+      pure $ [ replaceSuggestion (getTitle errorCode) (_.uri $ un TextDocumentIdentifier textDocument) replacement range' ]
+    asCommand _ = pure []
+
+    -- TODO if isUnknownToken errorCode -> then add quick fix action
 
     contains (Range { start, end }) (Range { start: start', end: end' }) = start <= start' && end >= end'
 

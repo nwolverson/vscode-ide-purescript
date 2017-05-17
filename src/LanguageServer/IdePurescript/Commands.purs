@@ -30,8 +30,8 @@ addCompletionImport ident mod uri = c addCompletionImportCmd $
 replaceSuggestionCmd :: CommandInfo
 replaceSuggestionCmd = CommandInfo "Apply Suggestion" "replaceSuggestion"
 
-replaceSuggestion :: DocumentUri -> String -> Range -> Command
-replaceSuggestion uri replacement fixRange = c replaceSuggestionCmd $ 
+replaceSuggestion :: String -> DocumentUri -> String -> Range -> Command
+replaceSuggestion title uri replacement fixRange = c (CommandInfo title "replaceSuggestion") $ 
   Just [ toForeign uri, toForeign replacement, toForeign fixRange ]
 
 buildCmd :: CommandInfo
