@@ -5,19 +5,20 @@ import PscIde as P
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Except (runExcept)
-import Data.Array (intercalate, length, singleton)
+import Data.Array (intercalate, length)
 import Data.Either (Either(..))
 import Data.Foreign (Foreign, readInt, readString)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (over)
 import IdePurescript.PscIde (eitherToErr)
 import IdePurescript.Tokens (identifierAtPoint)
+import IdePurescript.VSCode.Text (makeWorkspaceEdit)
 import LanguageServer.Console (log)
 import LanguageServer.DocumentStore (getDocument)
 import LanguageServer.Handlers (applyEdit)
 import LanguageServer.IdePurescript.Types (MainEff, ServerState(..))
 import LanguageServer.TextDocument (getTextAtRange, getVersion)
-import LanguageServer.Types (DocumentStore, DocumentUri(DocumentUri), Position(Position), Range(Range), Settings, TextDocumentEdit(TextDocumentEdit), TextDocumentIdentifier(TextDocumentIdentifier), TextEdit(TextEdit), workspaceEdit)
+import LanguageServer.Types (DocumentStore, DocumentUri(..), Position(..), Range(..), Settings)
 
 lineRange' :: Int -> Int -> Range
 lineRange' line character = lineRange $ Position { line, character }
@@ -39,17 +40,14 @@ caseSplit docs settings state args = do
         , Right char <- runExcept $ readInt argChar
         , Right tyStr <- runExcept $ readString argType
         -> do
-            doc <-liftEff $  getDocument docs (DocumentUri uri)
+            doc <- liftEff $ getDocument docs (DocumentUri uri)
             lineText <- liftEff $ getTextAtRange doc (lineRange' line char)
             version <- liftEff $ getVersion doc
             case identifierAtPoint lineText char of
                 Just { range: { left, right } } -> do
                     liftEff $ log conn' $ "Case split: " <> lineText <> " / " <> show left <> " / " <> show right <> " / " <> tyStr
                     lines <- eitherToErr $ P.caseSplit port' lineText left right true tyStr
-                    let newText = (intercalate "\n" lines)
-                    let textEdit = TextEdit { range: lineRange' line char, newText }
-                    let docid = TextDocumentIdentifier { uri: DocumentUri uri, version }
-                    let edit = workspaceEdit $ singleton $ TextDocumentEdit { textDocument: docid, edits: [ textEdit ] }
+                    let edit = makeWorkspaceEdit (DocumentUri uri) version (lineRange' line char) (intercalate "\n" lines)
                     liftEff $ applyEdit conn' edit
                 _ -> do liftEff $ log conn' "fail identifier"
                         pure unit
@@ -75,10 +73,7 @@ addClause docs settings state args = do
             case identifierAtPoint lineText char of
                 Just { range: { left, right } } -> do
                     lines <- eitherToErr $ P.addClause port' lineText true
-                    let newText = (intercalate "\n" lines)
-                    let textEdit = TextEdit { range: lineRange' line char, newText }
-                    let docid = TextDocumentIdentifier { uri: DocumentUri uri, version }
-                    let edit = workspaceEdit $ singleton $ TextDocumentEdit { textDocument: docid, edits: [ textEdit ] }
+                    let edit = makeWorkspaceEdit (DocumentUri uri) version (lineRange' line char) (intercalate "\n" lines)
                     liftEff $ applyEdit conn' edit
                 _ -> pure unit
             pure unit

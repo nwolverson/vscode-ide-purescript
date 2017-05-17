@@ -13,6 +13,12 @@ foreign import positionAtOffset :: forall eff. TextDocument -> Int -> Eff (conn 
 
 foreign import getText :: forall eff. TextDocument -> Eff (conn :: CONN | eff) String
 
+getTextAtVersion :: forall eff. TextDocument -> Eff (conn :: CONN | eff) { text :: String, version :: Number }
+getTextAtVersion doc = do
+    text <- getText doc
+    version <- getVersion doc
+    pure { text, version }
+
 foreign import getUri :: TextDocument -> DocumentUri
 foreign import getLanguageId :: TextDocument -> String
 foreign import getVersion :: forall eff. TextDocument -> Eff (conn :: CONN | eff) Number

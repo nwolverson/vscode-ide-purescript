@@ -5,7 +5,6 @@ import PscIde.Command as C
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Except (runExcept)
-import Data.Array (singleton)
 import Data.Either (Either(..), either)
 import Data.Foreign (Foreign, readString, toForeign)
 import Data.Maybe (Maybe(..), maybe)
@@ -13,12 +12,13 @@ import Data.Nullable (toNullable)
 import Data.String (length)
 import IdePurescript.Modules (ImportResult(..), addExplicitImport)
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
+import IdePurescript.VSCode.Text (makeWorkspaceEdit)
 import LanguageServer.DocumentStore (getDocument)
 import LanguageServer.Handlers (applyEdit)
 import LanguageServer.IdePurescript.Config (autocompleteAddImport)
 import LanguageServer.IdePurescript.Types (MainEff, ServerState(..))
 import LanguageServer.TextDocument (getText, getVersion, positionAtOffset)
-import LanguageServer.Types (DocumentStore, DocumentUri(..), Position(..), Range(..), Settings, TextDocumentEdit(..), TextDocumentIdentifier(..), TextEdit(..), workspaceEdit)
+import LanguageServer.Types (DocumentStore, DocumentUri(..), Position(..), Range(..), Settings)
 
 addCompletionImport :: forall eff. Notify (MainEff eff) -> DocumentStore -> Settings -> ServerState (MainEff eff) -> Array Foreign -> Aff (MainEff eff) Foreign
 addCompletionImport log docs config state args = do
@@ -33,9 +33,8 @@ addCompletionImport log docs config state args = do
       { state: modulesState', result } <- addExplicitImport modules port' uri text mod'' identifier
       liftEff $ case result of
         UpdatedImports newText -> do
-          textEdit <- TextEdit <$> { range: _, newText } <$> allTextRange doc text
-          let docid = TextDocumentIdentifier { uri: DocumentUri uri, version }
-          let edit = workspaceEdit $ singleton $ TextDocumentEdit { textDocument: docid, edits: [ textEdit ] }
+          range <- allTextRange doc text
+          let edit = makeWorkspaceEdit (DocumentUri uri) version range newText
           maybe (pure unit) (flip applyEdit edit) conn
           pure successResult
         AmbiguousImport imps ->  do

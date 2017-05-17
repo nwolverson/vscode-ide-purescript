@@ -4,7 +4,7 @@ import Prelude
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Except (runExcept)
-import Data.Array (concat, singleton)
+import Data.Array (concat)
 import Data.Either (Either(..))
 import Data.Foreign (F, Foreign, readInt, readString)
 import Data.Foreign.Index ((!))
@@ -18,13 +18,14 @@ import Data.Traversable (traverse)
 import IdePurescript.PscErrors (PscError(..))
 import IdePurescript.QuickFix (getTitle)
 import IdePurescript.Regex (test')
+import IdePurescript.VSCode.Text (makeWorkspaceEdit)
 import LanguageServer.DocumentStore (getDocument)
 import LanguageServer.Handlers (CodeActionParams, applyEdit)
 import LanguageServer.IdePurescript.Build (positionToRange)
 import LanguageServer.IdePurescript.Commands (replaceSuggestion)
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff)
-import LanguageServer.TextDocument (getText, getTextAtRange, getVersion)
-import LanguageServer.Types (Command, DocumentStore, DocumentUri(..), Position(..), Range(..), Settings, TextDocumentEdit(..), TextDocumentIdentifier(..), TextEdit(..), workspaceEdit)
+import LanguageServer.TextDocument (getTextAtRange, getVersion)
+import LanguageServer.Types (Command, DocumentStore, DocumentUri(..), Position(..), Range(..), Settings, TextDocumentIdentifier(..))
 
 getActions :: forall eff. DocumentStore -> Settings -> ServerState (MainEff eff) -> CodeActionParams -> Aff (MainEff eff) (Array Command)
 getActions documents settings (ServerState { diagnostics, conn }) { textDocument, range } =  
@@ -69,18 +70,15 @@ onReplaceSuggestion docs config (ServerState { conn }) args =
       , Right range <- runExcept $ readRange range'
       -> liftEff do
         doc <- getDocument docs (DocumentUri uri)
-        text <- getText doc
         version <- getVersion doc
-
         origText <- getTextAtRange doc range
         afterText <- getTextAtRange doc (afterEnd range)
 
         let trailingNewline = test' (regex """\n\s+$""" noFlags) replacement
         let addNewline = trailingNewline && length (trim afterText) > 0
         let newText = trim replacement <> if addNewline then "\n" else ""
-        let textEdit = TextEdit { range, newText }
-        let docid = TextDocumentIdentifier { uri: DocumentUri uri, version }
-        let edit = workspaceEdit $ singleton $ TextDocumentEdit { textDocument: docid, edits: [ textEdit ] }
+
+        let edit = makeWorkspaceEdit (DocumentUri uri) version range newText
 
         -- TODO: Check original & expected text ?
         applyEdit conn' edit
