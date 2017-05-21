@@ -8,7 +8,7 @@ import * as lc from 'vscode-languageclient';
 export function activate(context: vscode.ExtensionContext) {
     const ps = require('./bundle')();
     const config = vscode.workspace.getConfiguration("purescript");
-    let serverModule = context.asAbsolutePath(path.join('out', 'src', 'server.js'));
+    let serverModule = context.asAbsolutePath(path.join('language-server', 'server.js'));
     // The debug options for the server
     let debugOptions = { execArgv: ["--nolazy", "--debug=6010"] };
     

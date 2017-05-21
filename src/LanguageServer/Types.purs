@@ -202,4 +202,21 @@ newtype TextDocumentIdentifier = TextDocumentIdentifier { uri :: DocumentUri, ve
 derive instance newtypeTextDocumentIdentifier :: Newtype TextDocumentIdentifier _
 
 type Settings = Foreign
+newtype FileChangeTypeCode = FileChangeTypeCode Int
 
+data FileChangeType = CreatedChangeType | ChangedChangeType | DeletedChangeType
+
+fileChangeTypeToInt :: FileChangeType -> Int
+fileChangeTypeToInt = case _ of
+  CreatedChangeType -> 1
+  ChangedChangeType -> 2
+  DeletedChangeType -> 3
+
+intToFileChangeType :: Int -> Maybe FileChangeType
+intToFileChangeType = case _ of
+  1 -> Just CreatedChangeType
+  2 -> Just ChangedChangeType
+  3 -> Just DeletedChangeType
+  _ -> Nothing
+  
+newtype FileEvent = FileEvent { uri :: DocumentUri, type :: FileChangeTypeCode }

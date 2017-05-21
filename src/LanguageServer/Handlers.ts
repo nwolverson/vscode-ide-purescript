@@ -23,3 +23,4 @@ export const applyEdit = (conn: IConnection) => (edit: WorkspaceEdit) => () => c
 
 export const onExecuteCommand = (conn: IConnection) => registerHandler(conn.onExecuteCommand);
 
+export const onDidChangeWatchedFiles = (conn: IConnection) => registerHandler(conn.onDidChangeWatchedFiles);

@@ -13,3 +13,4 @@ exports.onDidChangeConfiguration = function (conn) { return registerHandler(conn
 exports.publishDiagnostics = function (conn) { return function (params) { return function () { return conn.sendDiagnostics(params); }; }; };
 exports.applyEdit = function (conn) { return function (edit) { return function () { return conn.workspace.applyEdit(edit); }; }; };
 exports.onExecuteCommand = function (conn) { return registerHandler(conn.onExecuteCommand); };
+exports.onDidChangeWatchedFiles = function (conn) { return registerHandler(conn.onDidChangeWatchedFiles); };

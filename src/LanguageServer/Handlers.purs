@@ -5,7 +5,7 @@ import Control.Monad.Eff (Eff, kind Effect)
 import Control.Promise (Promise)
 import Data.Foreign (Foreign)
 import Data.Nullable (Nullable)
-import LanguageServer.Types (CONN, Command, CompletionItem, Connection, Diagnostic, DocumentUri, Hover, Location, Position, Range, SymbolInformation, TextDocumentIdentifier, WorkspaceEdit)
+import LanguageServer.Types (CONN, Command, CompletionItem, Connection, Diagnostic, DocumentUri, FileEvent, Hover, Location, Position, Range, SymbolInformation, TextDocumentIdentifier, WorkspaceEdit)
 
 type TextDocumentPositionParams = { textDocument :: TextDocumentIdentifier, position :: Position }
 
@@ -19,6 +19,8 @@ type DidChangeConfigurationParams = { settings :: Foreign }
 
 type PublishDiagnosticParams = { uri :: DocumentUri, diagnostics :: Array Diagnostic }
 type ExecuteCommandParams = { command :: String, arguments :: Array Foreign }
+
+type DidChangeWatchedFilesParams = { changes :: Array FileEvent }
 
 type Res eff a = Eff (conn :: CONN | eff) (Promise a)
 
@@ -35,6 +37,8 @@ foreign import onWorkspaceSymbol :: forall eff. Connection -> (WorkspaceSymbolPa
 foreign import onCodeAction :: forall eff. Connection -> (CodeActionParams -> Res eff (Array Command)) -> Eff (conn :: CONN | eff) Unit
 
 foreign import onDidChangeConfiguration :: forall eff. Connection -> (DidChangeConfigurationParams -> Eff (conn :: CONN | eff) Unit) -> Eff (conn :: CONN | eff) Unit
+
+foreign import onDidChangeWatchedFiles ::  forall eff. Connection -> (DidChangeWatchedFilesParams -> Eff (conn :: CONN | eff) Unit) -> Eff (conn :: CONN | eff) Unit
 
 foreign import onExecuteCommand :: forall eff. Connection -> (ExecuteCommandParams -> Eff (conn :: CONN | eff) (Promise Foreign)) -> Eff (conn :: CONN | eff) Unit
 

@@ -21,7 +21,7 @@ import IdePurescript.PscErrors (PscError(..))
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
 import LanguageServer.Console (error, info, log, warn)
 import LanguageServer.DocumentStore (getDocument, onDidChangeContent, onDidSaveDocument)
-import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDocumentSymbol, onExecuteCommand, onHover, onWorkspaceSymbol, publishDiagnostics)
+import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDidChangeWatchedFiles, onDocumentSymbol, onExecuteCommand, onHover, onWorkspaceSymbol, publishDiagnostics)
 import LanguageServer.IdePurescript.Assist (addClause, caseSplit)
 import LanguageServer.IdePurescript.Build (collectByFirst, fullBuild, getDiagnostics)
 import LanguageServer.IdePurescript.CodeActions (getActions, onReplaceSuggestion)
@@ -34,7 +34,7 @@ import LanguageServer.IdePurescript.Tooltips (getTooltips)
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff, CommandHandler)
 import LanguageServer.Setup (InitParams(..), initConnection, initDocumentStore)
 import LanguageServer.TextDocument (getText, getUri)
-import LanguageServer.Types (Diagnostic, DocumentUri(..), Settings, TextDocumentIdentifier(..))
+import LanguageServer.Types (Diagnostic, DocumentUri(..), FileChangeType(..), FileChangeTypeCode(..), FileEvent(..), Settings, TextDocumentIdentifier(..), intToFileChangeType)
 import LanguageServer.Uri (filenameToUri, uriToFilename)
 import PscIde (load)
 
@@ -130,6 +130,13 @@ main = do
   onWorkspaceSymbol conn $ runHandler "onWorkspaceSymbol" (const Nothing) getWorkspaceSymbols
   onHover conn $ runHandler "onHover" getTextDocUri (getTooltips documents)
   onCodeAction conn $ runHandler "onCodeAction" getTextDocUri (getActions documents)
+
+  onDidChangeWatchedFiles conn $ \{ changes } -> do
+    for_ changes \(FileEvent { uri, "type": FileChangeTypeCode n }) -> do
+      case intToFileChangeType n of
+        Just CreatedChangeType -> log conn $ "Created " <> un DocumentUri uri <> " - full build may be required"
+        Just DeletedChangeType -> log conn $ "Deleted " <> un DocumentUri uri <> " - full build may be required"
+        _ -> pure unit
 
   onDidChangeContent documents $ \_ ->
     liftEff $ modifyRef state $ over ServerState (_ { modulesFile = Nothing })

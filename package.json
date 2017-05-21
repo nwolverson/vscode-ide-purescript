@@ -167,7 +167,7 @@
     "postinstall": "node ./node_modules/vscode/bin/install",
     "psc:src": "mkdirp out/src",
     "psc:build": "pulp build --no-psa --to out/src/bundle.js --skip-entry-point",
-    "psc:language-server": "pulp build --no-psa --to out/src/server.js -m LanguageServer.IdePurescript.Main",
+    "psc:language-server": "pulp build --no-psa --to language-server/server.js -m LanguageServer.IdePurescript.Main",
     "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js"
   },
   "extensionDependencies": [

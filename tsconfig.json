@@ -4,6 +4,10 @@
 		"target": "ES5",
 		"outDir": "out/src",
 		"lib": ["es6"],
+		
 		"sourceMap": true
-	}
+	},
+	"include": [
+		"src/*.ts"
+	]
 }
