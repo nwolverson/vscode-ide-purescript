@@ -1,0 +1,19 @@
+{
+    "name": "purescript-language-server",
+    "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
+    "version": "0.0.0",
+    "publisher": "nwolverson",
+    "author": {
+        "name": "Nicholas Wolverson"
+    },
+    "repository": {
+        "type": "git",  
+        "url": "https://github.com/nwolverson/vscode-ide-purescript.git"
+    },
+    "bugs": {
+        "url": "https://github.com/nwolverson/vscode-ide-purescript/issues"
+    },
+    "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
+    "license": "MIT",
+    "main": "./server.js"
+}

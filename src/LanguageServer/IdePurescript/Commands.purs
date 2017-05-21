@@ -37,6 +37,9 @@ replaceSuggestion title uri replacement fixRange = c (CommandInfo title "replace
 buildCmd :: CommandInfo
 buildCmd = CommandInfo "Build" "build"
 
+build :: Command
+build = c buildCmd Nothing
+
 startPscIdeCmd :: CommandInfo
 startPscIdeCmd = CommandInfo "Start Psc-Ide-Server" "startPscIde"
 

@@ -4,7 +4,7 @@ import Prelude
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Except (runExcept)
-import Data.Array (concat)
+import Data.Array (catMaybes, concat, mapMaybe)
 import Data.Either (Either(..))
 import Data.Foreign (F, Foreign, readInt, readString)
 import Data.Foreign.Index ((!))
@@ -22,7 +22,7 @@ import IdePurescript.VSCode.Text (makeWorkspaceEdit)
 import LanguageServer.DocumentStore (getDocument)
 import LanguageServer.Handlers (CodeActionParams, applyEdit)
 import LanguageServer.IdePurescript.Build (positionToRange)
-import LanguageServer.IdePurescript.Commands (replaceSuggestion)
+import LanguageServer.IdePurescript.Commands (build, replaceSuggestion)
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff)
 import LanguageServer.TextDocument (getTextAtRange, getVersion)
 import LanguageServer.Types (Command, DocumentStore, DocumentUri(..), Position(..), Range(..), Settings, TextDocumentIdentifier(..))
@@ -30,14 +30,22 @@ import LanguageServer.Types (Command, DocumentStore, DocumentUri(..), Position(.
 getActions :: forall eff. DocumentStore -> Settings -> ServerState (MainEff eff) -> CodeActionParams -> Aff (MainEff eff) (Array Command)
 getActions documents settings (ServerState { diagnostics, conn }) { textDocument, range } =  
   case lookup (un DocumentUri $ _.uri $ un TextDocumentIdentifier textDocument) diagnostics of
-    Just errs -> concat <$> traverse asCommand errs
+    Just errs -> do 
+      replacements <- catMaybes <$> traverse asCommand errs
+      pure $ replacements <> mapMaybe commandForCode errs
     _ -> pure []
   where
     asCommand (PscError { position: Just position, suggestion: Just { replacement, replaceRange }, errorCode })
       | contains range (positionToRange position) = do
       let range' = positionToRange $ fromMaybe position replaceRange
-      pure $ [ replaceSuggestion (getTitle errorCode) (_.uri $ un TextDocumentIdentifier textDocument) replacement range' ]
-    asCommand _ = pure []
+      pure $ Just $ replaceSuggestion (getTitle errorCode) (_.uri $ un TextDocumentIdentifier textDocument) replacement range'
+    asCommand _ = pure Nothing
+
+    commandForCode (PscError { position: Just position, errorCode }) | contains range (positionToRange position) =
+      case errorCode of
+        "ModuleNotFound" -> Just build
+        _ -> Nothing
+    commandForCode _ = Nothing
 
     -- TODO if isUnknownToken errorCode -> then add quick fix action
 

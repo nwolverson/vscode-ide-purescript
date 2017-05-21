@@ -10,7 +10,7 @@ export function activate(context: vscode.ExtensionContext) {
     const config = vscode.workspace.getConfiguration("purescript");
     let serverModule = context.asAbsolutePath(path.join('language-server', 'server.js'));
     // The debug options for the server
-    let debugOptions = { execArgv: ["--nolazy", "--debug=6010"] };
+    let debugOptions = { execArgv: ["--nolazy", "--debug=6011"] };
     
     // If the extension is launched in debug mode then the debug server options are used
     // Otherwise the run options are used
