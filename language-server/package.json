@@ -1,6 +1,6 @@
 {
     "name": "purescript-language-server",
-    "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
+    "description": "Language Server Protocol server for PureScript wrapping purs ide server functionality",
     "version": "0.0.0",
     "publisher": "nwolverson",
     "author": {
@@ -15,5 +15,8 @@
     },
     "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
     "license": "MIT",
-    "main": "./server.js"
+    "main": "./server.js",
+    "scripts": {
+        "prepublish": "cd .. && npm run -s build"
+    }
 }

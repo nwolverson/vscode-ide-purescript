@@ -8,19 +8,19 @@ import * as lc from 'vscode-languageclient';
 export function activate(context: vscode.ExtensionContext) {
     const ps = require('./bundle')();
     const config = vscode.workspace.getConfiguration("purescript");
-    let serverModule = context.asAbsolutePath(path.join('language-server', 'server.js'));
     // The debug options for the server
-    let debugOptions = { execArgv: ["--nolazy", "--debug=6011"] };
+    const debugOptions = { execArgv: ["--nolazy", "--debug=6011"] };
     
     // If the extension is launched in debug mode then the debug server options are used
     // Otherwise the run options are used
-    let serverOptions: ServerOptions = {
-        run : { module: serverModule, transport: TransportKind.ipc },
-        debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
+    const opts = { module: 'purescript-language-server', transport: TransportKind.ipc };
+    const serverOptions: ServerOptions = {
+        run : opts,
+        debug: { ...opts, options: debugOptions }
     }
     
     // Options to control the language client
-    let clientOptions: LanguageClientOptions = {
+    const clientOptions: LanguageClientOptions = {
         // Register the server for plain text documents
         documentSelector: ['purescript'],
         synchronize: {

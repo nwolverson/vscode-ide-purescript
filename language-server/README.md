@@ -28,6 +28,50 @@ in.
   - Start IDE server
   - Stop IDE server
   - Restart IDE server
+- Config
+  - `purescript.*`
+
+## Commands
+
+### `purescript.build`
+
+No arguments. Provides diagnostics.
+
+### `purescript.startPscIde`
+
+No arguments. Start IDE server according to configuration.
+
+### `purescript.stopPscIde`
+
+No arguments. Stop running IDE server.
+
+### `purescript.restartPscIde`
+
+No arguments. Stop any running IDE server then start a new one according to configuration.
+
+### `purescript.addCompletionImport`
+
+Arguments: identifier, module, document URI.
+
+### `purescript.replaceSuggestion`
+
+Arguments: document URI, replacement, replacement range.
+
+### `purescript.caseSplit-explicit`
+
+(Used to back the case split command in VS Code UI).
+
+Arguments: document URI, line, character, type.
+
+### `purescript.addClause-explicit`
+
+(Used to back the add clause command in VS Code UI).
+
+Arguments: document URI, line, character.
+
+## Config
+
+See [config defined in vscode plugin](https://github.com/nwolverson/vscode-ide-purescript/blob/master/package.json).
 
 ## Development
 
