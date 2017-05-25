@@ -14,6 +14,10 @@ export const setTextViaDiffImpl  = (ed : TextEditor) => (text : string) => (cb: 
         && lineNo < newLines.length
         && oldLines[lineNo] === newLines[lineNo];
         lineNo++);
+    if (lineNo == oldLines.length && lineNo == newLines.length) {
+        cb(true);
+        return;
+    }
     for (var endLineNo = 0; 
         endLineNo < oldLines.length 
         && endLineNo < newLines.length 
