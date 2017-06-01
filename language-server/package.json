@@ -1,23 +1,28 @@
 {
-    "name": "purescript-language-server",
-    "description": "Language Server Protocol server for PureScript wrapping purs ide server functionality",
-    "version": "0.0.0",
-    "publisher": "nwolverson",
-    "author": {
-        "name": "Nicholas Wolverson"
-    },
-    "repository": {
-        "type": "git",  
-        "url": "https://github.com/nwolverson/vscode-ide-purescript.git"
-    },
-    "bugs": {
-        "url": "https://github.com/nwolverson/vscode-ide-purescript/issues"
-    },
-    "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
-    "license": "MIT",
-    "main": "./server.js",
-    "bin": "./cli.js",
-    "scripts": {
-        "prepublish": "cd .. && npm run -s build"
-    }
+  "name": "purescript-language-server",
+  "description": "Language Server Protocol server for PureScript wrapping purs ide server functionality",
+  "version": "0.1.0",
+  "publisher": "nwolverson",
+  "author": {
+    "name": "Nicholas Wolverson"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nwolverson/vscode-ide-purescript.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nwolverson/vscode-ide-purescript/issues"
+  },
+  "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
+  "license": "MIT",
+  "main": "./server.js",
+  "bin": "./cli.js",
+  "scripts": {
+    "prepublish": "cd .. && npm run -s build"
+  },
+  "dependencies": {
+    "vscode-languageserver": "^3.2.0",
+    "vscode-uri": "^1.0.0",
+    "which": "^1.2.9"
+  }
 }
