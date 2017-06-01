@@ -1,54 +1,46 @@
-module IdePurescript.VSCode.Assist (caseSplit, addClause) where
+module IdePurescript.VSCode.Assist (caseSplit, addClause, getActivePosInfo) where
 
 import Prelude
-import PscIde as P
-import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Maybe.Trans (MaybeT(MaybeT), runMaybeT, lift)
-import Data.Foldable (intercalate)
-import Data.Maybe (Maybe(..))
+import Data.Foreign (toForeign)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toNullable)
 import Data.String (length)
-import IdePurescript.PscIde (eitherToErr)
-import IdePurescript.VSCode.Editor (identifierAtCursor)
 import IdePurescript.VSCode.Types (MainEff, launchAffAndRaise)
+import LanguageServer.IdePurescript.Commands (cmdName, caseSplitCmd, addClauseCmd)
+import LanguageServer.Types (DocumentUri)
+import LanguageServer.Uri (filenameToUri)
+import VSCode.Command (executeAff)
 import VSCode.Input (defaultInputOptions, getInput)
-import VSCode.Position (Position, mkPosition, getLine)
+import VSCode.Position (Position, getCharacter, getLine, mkPosition)
 import VSCode.Range (Range, mkRange)
-import VSCode.TextDocument (lineAtPosition)
-import VSCode.TextEditor (setTextInRange, getDocument)
-import VSCode.Window (getSelectionRange, getCursorBufferPosition, getActiveTextEditor)
+import VSCode.TextDocument (getPath)
+import VSCode.TextEditor (TextEditor, getDocument)
+import VSCode.Window (getActiveTextEditor, getCursorBufferPosition)
 
 lineRange :: Position -> String -> Range
-lineRange pos line =
-  let col = getLine pos
-      p = mkPosition col
-  in
-      mkRange (p 0) (p (length line))
-
-caseSplit :: forall eff. Int -> Eff (MainEff eff) Unit
-caseSplit port = do
-  launchAffAndRaise $ runMaybeT body
+lineRange pos line = mkRange (p 0) (p (length line))
   where
-  body :: MaybeT (Aff (MainEff eff)) Unit
-  body = do
-    ed <- MaybeT $ liftEff getActiveTextEditor
-    pos <- lift $ liftEff $ getCursorBufferPosition ed
-    line <- lift $ liftEff $ lineAtPosition (getDocument ed) pos
-    { range: { left, right } } <- MaybeT $ liftEff $ identifierAtCursor ed
-    ty <- lift $ getInput (defaultInputOptions { prompt = toNullable $ Just "Parameter type" })
-    lines <- lift $ eitherToErr $ P.caseSplit port line left right true ty
-    lift $ void $ setTextInRange ed (intercalate "\n" lines) (lineRange pos line)
+  col = getLine pos
+  p = mkPosition col
 
-addClause :: forall eff. Int -> Eff (MainEff eff) Unit
-addClause port = do
-  editor <- getActiveTextEditor
-  case editor of
-    Just ed -> launchAffAndRaise $ do
-      pos <- liftEff $ getCursorBufferPosition ed
-      range <- liftEff $ getSelectionRange ed
-      line <- liftEff $ lineAtPosition (getDocument ed) pos
-      lines <- eitherToErr $ P.addClause port line true
-      void $ setTextInRange ed (intercalate "\n" lines) (lineRange pos line)
-    _ -> pure unit
+getActivePosInfo :: forall eff. Eff (MainEff eff) (Maybe { pos :: Position, uri :: DocumentUri, ed :: TextEditor })
+getActivePosInfo = 
+  getActiveTextEditor >>= maybe (pure Nothing) \ed -> do
+    pos <- getCursorBufferPosition ed
+    path <- getPath $ getDocument ed
+    uri <- filenameToUri path
+    pure $ Just { pos, uri, ed }
+
+caseSplit :: forall eff. Eff (MainEff eff) Unit
+caseSplit = launchAffAndRaise $ void $ do
+  liftEff getActivePosInfo >>= maybe (pure unit) \{ pos, uri } -> do
+      ty <- getInput (defaultInputOptions { prompt = toNullable $ Just "Parameter type" })
+      executeAff (cmdName caseSplitCmd) [ toForeign uri, toForeign $ getLine pos, toForeign $ getCharacter pos, toForeign ty ]
+
+addClause :: forall eff. Eff (MainEff eff) Unit
+addClause = launchAffAndRaise $ void $ do
+  liftEff getActivePosInfo >>= maybe (pure unit) \{ pos, uri } ->
+    executeAff (cmdName addClauseCmd) [ toForeign uri, toForeign $ getLine pos, toForeign $ getCharacter pos ]
+  

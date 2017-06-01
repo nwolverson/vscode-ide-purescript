@@ -1,5 +1,5 @@
-// module VSCode.Notifications
 "use strict";
+// module VSCode.Notifications
 Object.defineProperty(exports, "__esModule", { value: true });
 var vscode = require("vscode");
 exports.createOutputChannel = function (s) { return function () { return vscode.window.createOutputChannel(s); }; };

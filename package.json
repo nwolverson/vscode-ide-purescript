@@ -2,7 +2,7 @@
   "name": "ide-purescript",
   "displayName": "PureScript IDE",
   "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
-  "version": "0.9.3",
+  "version": "0.10.0-alpha.2",
   "publisher": "nwolverson",
   "author": {
     "name": "Nicholas Wolverson"
@@ -18,7 +18,7 @@
   "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
   "license": "MIT",
   "engines": {
-    "vscode": "^1.5.0"
+    "vscode": "^1.11.0"
   },
   "categories": [
     "Other"
@@ -44,6 +44,10 @@
       {
         "command": "purescript.caseSplit",
         "title": "PureScript: Case Split"
+      },
+      {
+        "command": "purescript.caseSplit-explicit",
+        "title": "PureScript: Case Split (explicit)"
       },
       {
         "command": "purescript.addClause",
@@ -97,7 +101,12 @@
         "purescript.packagePath": {
           "type": "string",
           "default": "bower_components",
-          "description": "Path to installed packages"
+          "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations."
+        },
+        "purescript.sourcePath": {
+          "type": "string",
+          "default": "src",
+          "description": "Path to application source root. Will be used to control globs passed to IDE server for source locations."
         },
         "purescript.buildCommand": {
           "type": "string",
@@ -154,22 +163,27 @@
     "build": "npm-run-all tsc:* psc:*",
     "tsc:ffi": "tsc -p src/VSCode/",
     "tsc:extension": "tsc -p ./",
+    "tsc:lsp": "tsc -p src/LanguageServer/",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "psc:src": "mkdirp out/src",
     "psc:build": "pulp build --no-psa --to out/src/bundle.js --skip-entry-point",
+    "psc:language-server": "pulp build --no-psa --to language-server/server.js -m LanguageServer.IdePurescript.Main",
     "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js"
   },
   "extensionDependencies": [
     "nwolverson.language-purescript"
   ],
   "devDependencies": {
+    "@types/node": "^7.0.23",
     "mkdirp": "^0.5.1",
     "npm-run-all": "^4.0.2",
     "typescript": "^2.2.2",
-    "vscode": "^1.1.0"
+    "vscode-languageserver": "^3.2.0"
   },
   "dependencies": {
     "striptags": "^3.0.1",
-    "which": "^1.2.9"
+    "vscode-languageclient": "^3.2.0",
+    "vscode": "^1.1.0",
+    "vscode-uri": "^1.0.0"
   }
 }

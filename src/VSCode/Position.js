@@ -1,5 +1,5 @@
-// module VSCode.Position
 "use strict";
+// module VSCode.Position
 Object.defineProperty(exports, "__esModule", { value: true });
 var vscode_1 = require("vscode");
 exports.getLine = function (p) { return p.line; };

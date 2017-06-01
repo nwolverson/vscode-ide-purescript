@@ -10,3 +10,16 @@ exports.register = function (command) { return function (callback) { return func
         return callback(args)();
     });
 }; }; };
+exports.execute = function (command) { return function (args) { return function () {
+    return (_a = vscode.commands).executeCommand.apply(_a, [command].concat(args));
+    var _a;
+}; }; };
+exports.executeCb = function (command) { return function (args) { return function (cb) { return function () {
+    return (_a = vscode.commands).executeCommand.apply(_a, [command].concat(args)).then(function (res) {
+        console.log(res);
+        cb(res);
+    }, function (err) {
+        console.error("Command error", err);
+    });
+    var _a;
+}; }; }; };
