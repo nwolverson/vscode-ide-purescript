@@ -16,6 +16,7 @@
     "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
     "license": "MIT",
     "main": "./server.js",
+    "bin": "./cli.js",
     "scripts": {
         "prepublish": "cd .. && npm run -s build"
     }

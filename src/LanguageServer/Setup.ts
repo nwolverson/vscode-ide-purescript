@@ -1,7 +1,7 @@
 import { IConnection, createConnection,InitializeParams, IPCMessageReader, IPCMessageWriter, TextDocuments, Location, Hover, TextDocumentSyncKind } from 'vscode-languageserver';
 
 exports.initConnection = (commands: string[]) => (cb: (arg: {params: InitializeParams, conn: IConnection}) => () => void) => (): IConnection => {
-    const conn = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+    const conn = createConnection();
     conn.listen();
     
     conn.onInitialize((params) => {
@@ -15,7 +15,10 @@ exports.initConnection = (commands: string[]) => (cb: (arg: {params: InitializeP
                 // Tell the client that the server works in FULL text document sync mode
                 textDocumentSync: TextDocumentSyncKind.Full,
                 // Tell the client that the server support code complete
-                completionProvider: true,
+                completionProvider: {
+                    resolveProvider: false,
+                    triggerCharacters: []
+                },
                 hoverProvider: true,
                 definitionProvider: true,
                 workspaceSymbolProvider: true,
