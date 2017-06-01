@@ -69,6 +69,13 @@ Arguments: document URI, line, character, type.
 
 Arguments: document URI, line, character.
 
+## Usage
+
+Use as a node module (as in vscode plugin) or via command line `purescript-language-server`. Protocol via command line option:
+- `--stdio`
+- `--node-ipc`
+- `--socket={number}`
+
 ## Config
 
 See [config defined in vscode plugin](https://github.com/nwolverson/vscode-ide-purescript/blob/master/package.json).
