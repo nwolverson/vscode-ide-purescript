@@ -68,7 +68,7 @@ main = do
       stopPscIdeServer = liftEff do
         join $ _.deactivate <$> unwrap <$> readRef state
         modifyRef state (over ServerState $ _ { port = Nothing, deactivate = pure unit })
-        liftEff $ logError Success "Stopped psc-ide server"
+        liftEff $ logError Success "Stopped IDE server"
 
       startPscIdeServer = do
         rootPath <- liftEff $ (_.root <<< unwrap) <$> readRef state
@@ -78,7 +78,7 @@ main = do
           { port: Just port, quit } -> do
             _ <- load port [] []
             liftEff $ modifyRef state (over ServerState $ _ { port = Just port, deactivate = quit })
-            liftEff $ logError Success "Started psc-ide server"
+            liftEff $ logError Success "Started IDE server"
           _ -> pure unit
 
       restartPscIdeServer = do
