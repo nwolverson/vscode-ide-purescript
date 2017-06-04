@@ -1,6 +1,6 @@
 /out/
 /bower_components/
-/node_modules/
+node_modules/
 /.pulp-cache/
 /output/
 /.psci*
