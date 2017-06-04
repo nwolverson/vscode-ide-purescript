@@ -13,7 +13,7 @@ import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (over, un, unwrap)
 import Data.Nullable (toMaybe, toNullable)
 import Data.Profunctor.Strong (first)
-import Data.StrMap (StrMap, empty, fromFoldable, insert, lookup, toUnfoldable)
+import Data.StrMap (StrMap, empty, fromFoldable, insert, lookup, toUnfoldable, keys)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import IdePurescript.Modules (Module, getModulesForFileTemp, initialModulesState)
@@ -148,6 +148,7 @@ main = do
     { pscErrors, diagnostics } <- getDiagnostics uri c s
     filename <- liftEff $ uriToFilename uri
     let fileDiagnostics = fromMaybe [] $ lookup filename diagnostics
+    liftEff $ log conn $ "Built with " <> show (length pscErrors) <> " issues for file: " <> show filename <> ", all diagnostic files: " <> show (keys diagnostics)
     liftEff $ writeRef state $ over ServerState (\s1 -> s1 { 
       diagnostics = insert (un DocumentUri uri) pscErrors (s1.diagnostics)
     , modulesFile = Nothing -- Force reload of modules on next request

@@ -21,6 +21,7 @@ import LanguageServer.IdePurescript.Config (addNpmPath, buildCommand, censorCode
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff)
 import LanguageServer.Types (Diagnostic(Diagnostic), DocumentStore, DocumentUri, Position(Position), Range(Range), Settings)
 import LanguageServer.Uri (uriToFilename)
+import Node.Path (resolve)
 
 positionToRange :: PscErrors.Position -> Range
 positionToRange ({ startLine, startColumn, endLine, endColumn}) =
@@ -38,8 +39,8 @@ collectByFirst x = fromFoldableWith (<>) $ mapMaybe f x
   f (Tuple (Just a) b) = Just (Tuple a [b])
   f _ = Nothing
 
-convertDiagnostics :: Settings -> PscResult -> DiagnosticResult
-convertDiagnostics settings { warnings, errors } =
+convertDiagnostics :: String -> Settings -> PscResult -> DiagnosticResult
+convertDiagnostics projectRoot settings { warnings, errors } =
   { diagnostics
   , pscErrors: errors <> warnings'
   }
@@ -51,23 +52,24 @@ convertDiagnostics settings { warnings, errors } =
   dummyRange = 
       Range { start: Position { line: 1, character: 1 }
             , end:   Position { line: 1, character: 1 } }
-  convertDiagnostic isError (PscError { errorCode, position, message, filename }) = Tuple filename $
-    Diagnostic
+  convertDiagnostic isError (PscError { errorCode, position, message, filename }) = Tuple 
+    (resolve [ projectRoot ] <$> filename)
+    (Diagnostic
       { range: maybe dummyRange positionToRange position
       , severity: toNullable $ Just $ if isError then 1 else 2 
       , code: toNullable $ Just $ errorCode
       , source: toNullable $ Just "PureScript"
       , message
-      }
+      })
 
 getDiagnostics :: forall eff. DocumentUri -> Settings -> ServerState (MainEff eff) -> Aff (MainEff eff) DiagnosticResult
 getDiagnostics uri settings state = do 
   filename <- liftEff $ uriToFilename uri
   case state of
-    ServerState { port: Just port } -> do
+    ServerState { port: Just port, root: Just root } -> do
       -- TODO: Status Indication?
       { errors, success } <- rebuild port filename
-      pure $ convertDiagnostics settings errors
+      pure $ convertDiagnostics root settings errors
     _ -> pure emptyDiagnostics
 
 censorWarnings :: Settings -> Array PscError -> Array PscError
@@ -84,7 +86,7 @@ fullBuild _ settings (ServerState { conn, root }) _ = do
     Just conn', Just directory, Just { head: cmd, tail: args } -> do
       res <- build { command: Command cmd args, directory, useNpmDir: addNpmPath settings }
       liftEff $ log conn' "Build complete"
-      pure $ convertDiagnostics settings res.errors
+      pure $ convertDiagnostics directory settings res.errors
     _, _, _ -> do
       liftEff $ maybe (pure unit) (\conn' -> log conn' "Error parsing build command") conn
       pure emptyDiagnostics
