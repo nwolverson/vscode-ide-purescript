@@ -1,190 +1,190 @@
 {
-  "name": "ide-purescript",
-  "displayName": "PureScript IDE",
-  "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
-  "version": "0.10.1",
-  "publisher": "nwolverson",
-  "author": {
-    "name": "Nicholas Wolverson"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/nwolverson/vscode-ide-purescript.git"
-  },
-  "bugs": {
-    "url": "https://github.com/nwolverson/vscode-ide-purescript/issues"
-  },
-  "icon": "images/ps_avatar2.png",
-  "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
-  "license": "MIT",
-  "engines": {
-    "vscode": "^1.11.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onLanguage:purescript"
-  ],
-  "main": "./out/src/extension",
-  "contributes": {
-    "commands": [
-      {
-        "command": "purescript.build",
-        "title": "PureScript: Build"
-      },
-      {
-        "command": "purescript.addImport",
-        "title": "PureScript: Add Import"
-      },
-      {
-        "command": "purescript.addExplicitImport",
-        "title": "PureScript: Add Explicit Import"
-      },
-      {
-        "command": "purescript.caseSplit",
-        "title": "PureScript: Case Split"
-      },
-      {
-        "command": "purescript.caseSplit-explicit",
-        "title": "PureScript: Case Split (explicit)"
-      },
-      {
-        "command": "purescript.addClause",
-        "title": "PureScript: Add Clause"
-      },
-      {
-        "command": "purescript.restartPscIde",
-        "title": "PureScript: Restart Psc-Ide-Server"
-      },
-      {
-        "command": "purescript.startPscIde",
-        "title": "PureScript: Start Psc-Ide-Server"
-      },
-      {
-        "command": "purescript.stopPscIde",
-        "title": "PureScript: Stop Psc-Ide-Server"
-      },
-      {
-        "command": "purescript.searchPursuit",
-        "title": "PureScript: Search Pursuit"
-      }
-    ],
-    "configuration": {
-      "title": "PureScript configuration",
-      "properties": {
-        "purescript.pursExe": {
-          "type": "string",
-          "default": "purs",
-          "description": "Location of purs executable (resolved wrt PATH)"
-        },
-        "purescript.useCombinedExe": {
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to use the new combined purs executable. This will default to true in the future then go away."
-        },
-        "purescript.pscIdeServerExe": {
-          "type": "string",
-          "default": "psc-ide-server",
-          "description": "Location of psc-ide server executable (resolved wrt PATH)"
-        },
-        "purescript.pscIdePort": {
-          "type": "integer",
-          "default": 4242,
-          "description": "Port to use for psc-ide"
-        },
-        "purescript.autoStartPscIde": {
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to automatically start psc-ide when editing a PureScript file (includes connecting to an existing running instance). If this is disabled, various features like autocomplete, tooltips, and other type info will not work until start command is run manually."
-        },
-        "purescript.packagePath": {
-          "type": "string",
-          "default": "bower_components",
-          "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations."
-        },
-        "purescript.sourcePath": {
-          "type": "string",
-          "default": "src",
-          "description": "Path to application source root. Will be used to control globs passed to IDE server for source locations."
-        },
-        "purescript.buildCommand": {
-          "type": "string",
-          "default": "pulp build -- --json-errors",
-          "description": "Build command to use with arguments. Not passed to shell. eg `pulp build -- --json-errors` (this default requires pulp >=10)"
-        },
-        "purescript.fastRebuild": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable psc-ide fast rebuild"
-        },
-        "purescript.censorWarnings": {
-          "title": "Censor warnings",
-          "description": "The warning codes to censor, both for fast rebuild and a full build. Unrelated to any psa setup. e.g.: [\"ShadowedName\",\"MissingTypeDeclaration\"]",
-          "type": "array",
-          "default": [],
-          "items": {
-            "type": "string"
-          }
-        },
-        "purescript.autocompleteAllModules": {
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to always autocomplete from all built modules, or just those imported in the file. Suggestions from all modules always available by explicitly triggering autocomplete."
-        },
-        "purescript.autocompleteAddImport": {
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to automatically add imported identifiers when accepting autocomplete result."
-        },
-        "purescript.addNpmPath": {
-          "type": "boolean",
-          "default": false,
-          "description": "Whether to add the local npm bin directory to the PATH for psc-ide-server and build command."
-        }
-      }
+    "name": "ide-purescript",
+    "displayName": "PureScript IDE",
+    "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
+    "version": "0.10.2",
+    "publisher": "nwolverson",
+    "author": {
+        "name": "Nicholas Wolverson"
     },
-    "keybindings": [
-      {
-        "command": "purescript.build",
-        "key": "shift+ctrl+b",
-        "mac": "shift+cmd+b",
-        "when": "editorTextFocus && editorLangId == 'purescript'"
-      }
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/nwolverson/vscode-ide-purescript.git"
+    },
+    "bugs": {
+        "url": "https://github.com/nwolverson/vscode-ide-purescript/issues"
+    },
+    "icon": "images/ps_avatar2.png",
+    "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.11.0"
+    },
+    "categories": [
+        "Other"
     ],
-    "breakpoints": [
-      {
-        "language": "purescript"
-      }
-    ]
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run -s build",
-    "build": "npm-run-all tsc:* psc:*",
-    "tsc:ffi": "tsc -p src/VSCode/",
-    "tsc:extension": "tsc -p ./",
-    "tsc:lsp": "tsc -p src/LanguageServer/",
-    "postinstall": "node ./node_modules/vscode/bin/install",
-    "psc:src": "mkdirp out/src",
-    "psc:build": "pulp build --no-psa --to out/src/bundle.js --skip-entry-point",
-    "psc:language-server": "pulp build --no-psa --to language-server/server.js -m LanguageServer.IdePurescript.Main",
-    "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js"
-  },
-  "extensionDependencies": [
-    "nwolverson.language-purescript"
-  ],
-  "devDependencies": {
-    "@types/node": "^7.0.23",
-    "mkdirp": "^0.5.1",
-    "npm-run-all": "^4.0.2",
-    "typescript": "^2.2.2",
-    "vscode-languageserver": "^3.2.0"
-  },
-  "dependencies": {
-    "purescript-language-server": "^0.1.1",
-    "striptags": "^3.0.1",
-    "vscode": "^1.1.0",
-    "vscode-languageclient": "^3.2.0",
-    "vscode-uri": "^1.0.0"
-  }
+    "activationEvents": [
+        "onLanguage:purescript"
+    ],
+    "main": "./out/src/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "purescript.build",
+                "title": "PureScript: Build"
+            },
+            {
+                "command": "purescript.addImport",
+                "title": "PureScript: Add Import"
+            },
+            {
+                "command": "purescript.addExplicitImport",
+                "title": "PureScript: Add Explicit Import"
+            },
+            {
+                "command": "purescript.caseSplit",
+                "title": "PureScript: Case Split"
+            },
+            {
+                "command": "purescript.caseSplit-explicit",
+                "title": "PureScript: Case Split (explicit)"
+            },
+            {
+                "command": "purescript.addClause",
+                "title": "PureScript: Add Clause"
+            },
+            {
+                "command": "purescript.restartPscIde",
+                "title": "PureScript: Restart Psc-Ide-Server"
+            },
+            {
+                "command": "purescript.startPscIde",
+                "title": "PureScript: Start Psc-Ide-Server"
+            },
+            {
+                "command": "purescript.stopPscIde",
+                "title": "PureScript: Stop Psc-Ide-Server"
+            },
+            {
+                "command": "purescript.searchPursuit",
+                "title": "PureScript: Search Pursuit"
+            }
+        ],
+        "configuration": {
+            "title": "PureScript configuration",
+            "properties": {
+                "purescript.pursExe": {
+                    "type": "string",
+                    "default": "purs",
+                    "description": "Location of purs executable (resolved wrt PATH)"
+                },
+                "purescript.useCombinedExe": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to use the new combined purs executable. This will default to true in the future then go away."
+                },
+                "purescript.pscIdeServerExe": {
+                    "type": "string",
+                    "default": "psc-ide-server",
+                    "description": "Location of psc-ide server executable (resolved wrt PATH)"
+                },
+                "purescript.pscIdePort": {
+                    "type": "integer",
+                    "default": 4242,
+                    "description": "Port to use for psc-ide"
+                },
+                "purescript.autoStartPscIde": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to automatically start psc-ide when editing a PureScript file (includes connecting to an existing running instance). If this is disabled, various features like autocomplete, tooltips, and other type info will not work until start command is run manually."
+                },
+                "purescript.packagePath": {
+                    "type": "string",
+                    "default": "bower_components",
+                    "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations."
+                },
+                "purescript.sourcePath": {
+                    "type": "string",
+                    "default": "src",
+                    "description": "Path to application source root. Will be used to control globs passed to IDE server for source locations."
+                },
+                "purescript.buildCommand": {
+                    "type": "string",
+                    "default": "pulp build -- --json-errors",
+                    "description": "Build command to use with arguments. Not passed to shell. eg `pulp build -- --json-errors` (this default requires pulp >=10)"
+                },
+                "purescript.fastRebuild": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable psc-ide fast rebuild"
+                },
+                "purescript.censorWarnings": {
+                    "title": "Censor warnings",
+                    "description": "The warning codes to censor, both for fast rebuild and a full build. Unrelated to any psa setup. e.g.: [\"ShadowedName\",\"MissingTypeDeclaration\"]",
+                    "type": "array",
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "purescript.autocompleteAllModules": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to always autocomplete from all built modules, or just those imported in the file. Suggestions from all modules always available by explicitly triggering autocomplete."
+                },
+                "purescript.autocompleteAddImport": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to automatically add imported identifiers when accepting autocomplete result."
+                },
+                "purescript.addNpmPath": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to add the local npm bin directory to the PATH for psc-ide-server and build command."
+                }
+            }
+        },
+        "keybindings": [
+            {
+                "command": "purescript.build",
+                "key": "shift+ctrl+b",
+                "mac": "shift+cmd+b",
+                "when": "editorTextFocus && editorLangId == 'purescript'"
+            }
+        ],
+        "breakpoints": [
+            {
+                "language": "purescript"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run -s build",
+        "build": "npm-run-all tsc:* psc:*",
+        "tsc:ffi": "tsc -p src/VSCode/",
+        "tsc:extension": "tsc -p ./",
+        "tsc:lsp": "tsc -p src/LanguageServer/",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "psc:src": "mkdirp out/src",
+        "psc:build": "pulp build --no-psa --to out/src/bundle.js --skip-entry-point",
+        "psc:language-server": "pulp build --no-psa --to language-server/server.js -m LanguageServer.IdePurescript.Main",
+        "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js"
+    },
+    "extensionDependencies": [
+        "nwolverson.language-purescript"
+    ],
+    "devDependencies": {
+        "@types/node": "^7.0.23",
+        "mkdirp": "^0.5.1",
+        "npm-run-all": "^4.0.2",
+        "typescript": "^2.2.2",
+        "vscode-languageserver": "^3.2.0"
+    },
+    "dependencies": {
+        "purescript-language-server": "^0.1.1",
+        "striptags": "^3.0.1",
+        "vscode": "^1.1.0",
+        "vscode-languageclient": "^3.2.0",
+        "vscode-uri": "^1.0.0"
+    }
 }
