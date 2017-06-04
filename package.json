@@ -175,6 +175,7 @@
   ],
   "devDependencies": {
     "@types/node": "^7.0.23",
+    "lerna": "^2.0.0-rc.5",
     "mkdirp": "^0.5.1",
     "npm-run-all": "^4.0.2",
     "typescript": "^2.2.2",
