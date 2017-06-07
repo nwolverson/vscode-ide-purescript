@@ -36,7 +36,7 @@ type MainEff eff =
 
 newtype ServerState eff = ServerState
   { port :: Maybe Int
-  , deactivate :: Eff eff Unit
+  , deactivate :: Aff eff Unit
   , root :: Maybe String
   , conn :: Maybe Connection
   , modules :: State

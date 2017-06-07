@@ -1,22 +1,23 @@
 import * as vscode from 'vscode';
 import { resolve } from 'path';
-import * as path from 'path';
 import { workspace, Disposable, ExtensionContext } from 'vscode';
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind } from 'vscode-languageclient';
-import * as lc from 'vscode-languageclient';
+import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind, ErrorAction, CloseAction } from 'vscode-languageclient';
 
 export function activate(context: vscode.ExtensionContext) {
     const ps = require('./bundle')();
-    const config = vscode.workspace.getConfiguration("purescript");
-    // The debug options for the server
-    const debugOptions = { execArgv: ["--nolazy", "--debug=6011"] };
     
     // If the extension is launched in debug mode then the debug server options are used
     // Otherwise the run options are used
-    const opts = { module: 'purescript-language-server', transport: TransportKind.ipc };
     const serverOptions: ServerOptions = {
-        run : opts,
-        debug: { ...opts, options: debugOptions }
+        run : { command: 'purescript-language-server', args: [ "--stdio"] },
+        debug: {
+            command: 'node',
+            args: [ "--inspect=6011", "--nolazy",
+                resolve(vscode.extensions.getExtension('nwolverson.ide-purescript').extensionPath,
+                    "./language-server/cli.js"),
+                "--stdio"
+            ]
+        }
     }
     
     // Options to control the language client
@@ -28,8 +29,8 @@ export function activate(context: vscode.ExtensionContext) {
             fileEvents: workspace.createFileSystemWatcher('**/*.purs')
         },
         errorHandler: { 
-            error: (e,m,c) => { console.error(e,m,c); return lc.ErrorAction.Continue  },
-            closed: () => lc.CloseAction.DoNotRestart
+            error: (e,m,c) => { console.error(e,m,c); return ErrorAction.Continue  },
+            closed: () => CloseAction.DoNotRestart
         }
     };
 	

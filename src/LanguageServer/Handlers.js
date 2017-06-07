@@ -14,3 +14,5 @@ exports.publishDiagnostics = function (conn) { return function (params) { return
 exports.applyEdit = function (conn) { return function (edit) { return function () { return conn.workspace.applyEdit(edit); }; }; };
 exports.onExecuteCommand = function (conn) { return registerHandler(conn.onExecuteCommand); };
 exports.onDidChangeWatchedFiles = function (conn) { return registerHandler(conn.onDidChangeWatchedFiles); };
+exports.onExit = function (conn) { return registerHandler(conn.onExit); };
+exports.onShutdown = function (conn) { return registerHandler(conn.onShutdown); };

@@ -21,7 +21,7 @@ import IdePurescript.PscErrors (PscError(..))
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
 import LanguageServer.Console (error, info, log, warn)
 import LanguageServer.DocumentStore (getDocument, onDidChangeContent, onDidSaveDocument)
-import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDidChangeWatchedFiles, onDocumentSymbol, onExecuteCommand, onHover, onWorkspaceSymbol, publishDiagnostics)
+import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDidChangeWatchedFiles, onDocumentSymbol, onExecuteCommand, onExit, onHover, onShutdown, onWorkspaceSymbol, publishDiagnostics)
 import LanguageServer.IdePurescript.Assist (addClause, caseSplit)
 import LanguageServer.IdePurescript.Build (collectByFirst, fullBuild, getDiagnostics)
 import LanguageServer.IdePurescript.CodeActions (getActions, onReplaceSuggestion)
@@ -36,6 +36,7 @@ import LanguageServer.Setup (InitParams(..), initConnection, initDocumentStore)
 import LanguageServer.TextDocument (getText, getUri)
 import LanguageServer.Types (Diagnostic, DocumentUri(..), FileChangeType(..), FileChangeTypeCode(..), FileEvent(..), Settings, TextDocumentIdentifier(..), intToFileChangeType)
 import LanguageServer.Uri (filenameToUri, uriToFilename)
+import Node.Process (onBeforeExit)
 import PscIde (load)
 
 defaultServerState :: forall eff. ServerState eff
@@ -65,9 +66,10 @@ main = do
   let launchAffLog = void <<< runAff (logError Error <<< show) (const $ pure unit)
 
   let stopPscIdeServer :: Aff (MainEff eff) Unit
-      stopPscIdeServer = liftEff do
-        join $ _.deactivate <$> unwrap <$> readRef state
-        modifyRef state (over ServerState $ _ { port = Nothing, deactivate = pure unit })
+      stopPscIdeServer = do
+        quit :: Aff _ Unit <- liftEff (_.deactivate <$> unwrap <$> readRef state)
+        quit
+        liftEff $ modifyRef state (over ServerState $ _ { port = Nothing, deactivate = pure unit })
         liftEff $ logError Success "Stopped IDE server"
 
       startPscIdeServer = do
@@ -130,6 +132,7 @@ main = do
   onWorkspaceSymbol conn $ runHandler "onWorkspaceSymbol" (const Nothing) getWorkspaceSymbols
   onHover conn $ runHandler "onHover" getTextDocUri (getTooltips documents)
   onCodeAction conn $ runHandler "onCodeAction" getTextDocUri (getActions documents)
+  onShutdown conn $ \_ -> fromAff stopPscIdeServer
 
   onDidChangeWatchedFiles conn $ \{ changes } -> do
     for_ changes \(FileEvent { uri, "type": FileChangeTypeCode n }) -> do
