@@ -134,6 +134,12 @@ completionItemKindToInt = case _ of
     File -> 17
     Reference -> 18
 
+newtype CompletionItemList = CompletionItemList
+  { isIncomplete :: Boolean
+  , items :: Array CompletionItem
+  }
+derive instance newtypeCompletionList :: Newtype CompletionItemList _
+
 newtype SymbolInformation = SymbolInformation
     { name :: String
     , kind :: Int

@@ -21,7 +21,7 @@ import IdePurescript.PscErrors (PscError(..))
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
 import LanguageServer.Console (error, info, log, warn)
 import LanguageServer.DocumentStore (getDocument, onDidChangeContent, onDidSaveDocument)
-import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDidChangeWatchedFiles, onDocumentSymbol, onExecuteCommand, onExit, onHover, onShutdown, onWorkspaceSymbol, publishDiagnostics)
+import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDidChangeWatchedFiles, onDocumentSymbol, onExecuteCommand, onHover, onShutdown, onWorkspaceSymbol, publishDiagnostics)
 import LanguageServer.IdePurescript.Assist (addClause, caseSplit)
 import LanguageServer.IdePurescript.Build (collectByFirst, fullBuild, getDiagnostics)
 import LanguageServer.IdePurescript.CodeActions (getActions, onReplaceSuggestion)
@@ -36,7 +36,6 @@ import LanguageServer.Setup (InitParams(..), initConnection, initDocumentStore)
 import LanguageServer.TextDocument (getText, getUri)
 import LanguageServer.Types (Diagnostic, DocumentUri(..), FileChangeType(..), FileChangeTypeCode(..), FileEvent(..), Settings, TextDocumentIdentifier(..), intToFileChangeType)
 import LanguageServer.Uri (filenameToUri, uriToFilename)
-import Node.Process (onBeforeExit)
 import PscIde (load)
 
 defaultServerState :: forall eff. ServerState eff
@@ -54,6 +53,7 @@ main :: forall eff. Eff (MainEff eff) Unit
 main = do
   state <- newRef defaultServerState
   config <- newRef (toForeign {})
+  gotConfig <- newRef false
 
   let logError :: Notify (MainEff eff)
       logError l s = do
@@ -67,12 +67,13 @@ main = do
 
   let stopPscIdeServer :: Aff (MainEff eff) Unit
       stopPscIdeServer = do
-        quit :: Aff _ Unit <- liftEff (_.deactivate <$> unwrap <$> readRef state)
+        quit <- liftEff (_.deactivate <$> unwrap <$> readRef state)
         quit
         liftEff $ modifyRef state (over ServerState $ _ { port = Nothing, deactivate = pure unit })
         liftEff $ logError Success "Stopped IDE server"
 
       startPscIdeServer = do
+        liftEff $ logError Info "Starting IDE server"
         rootPath <- liftEff $ (_.root <<< unwrap) <$> readRef state
         settings <- liftEff $ readRef config
         startRes <- startServer' settings rootPath logError logError
@@ -89,10 +90,15 @@ main = do
 
   conn <- initConnection commands $ \({ params: InitParams { rootPath }, conn }) ->  do
     modifyRef state (over ServerState $ _ { root = toMaybe rootPath })
-    launchAffLog startPscIdeServer
   modifyRef state (over ServerState $ _ { conn = Just conn })
 
-  onDidChangeConfiguration conn $ writeRef config <<< _.settings
+  onDidChangeConfiguration conn $ \{settings} -> do 
+    log conn "Got updated settings"
+    gotConfig' <- readRef gotConfig
+    writeRef config settings
+    when (not gotConfig') do
+      writeRef gotConfig true
+      launchAffLog startPscIdeServer
 
   log conn "PureScript Language Server started"
 
@@ -159,7 +165,7 @@ main = do
     liftEff $ publishDiagnostics conn { uri, diagnostics: fileDiagnostics }
 
   let onBuild docs c s arguments = do
-        { pscErrors, diagnostics } <- fullBuild docs c s arguments
+        { pscErrors, diagnostics } <- fullBuild logError docs c s arguments
         liftEff $ log conn $ "Built with " <> (show $ length pscErrors) <> " issues"
         pscErrorsMap <- liftEff $ collectByFirst <$> traverse (\(e@PscError { filename }) -> do
           uri <- maybe (pure Nothing) (\f -> Just <$> un DocumentUri <$> filenameToUri f) filename

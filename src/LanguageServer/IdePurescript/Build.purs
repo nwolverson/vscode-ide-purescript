@@ -1,7 +1,7 @@
 module LanguageServer.IdePurescript.Build where
 
 import Prelude
-import IdePurescript.PscErrors as PscErrors
+
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
 import Data.Array (filter, mapMaybe, notElem, uncons)
@@ -16,6 +16,8 @@ import Data.String.Regex.Flags (noFlags)
 import Data.Tuple (Tuple(..))
 import IdePurescript.Build (Command(..), build, rebuild)
 import IdePurescript.PscErrors (PscError(..), PscResult)
+import IdePurescript.PscErrors as PscErrors
+import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
 import LanguageServer.Console (log)
 import LanguageServer.IdePurescript.Config (addNpmPath, buildCommand, censorCodes)
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff)
@@ -78,16 +80,16 @@ censorWarnings settings = filter (flip notElem codes <<< getCode)
     getCode (PscError { errorCode }) = errorCode
     codes = censorCodes settings
       
-fullBuild :: forall eff. DocumentStore -> Settings -> ServerState (MainEff eff) -> Array Foreign -> Aff (MainEff eff) DiagnosticResult
-fullBuild _ settings (ServerState { conn, root }) _ = do
+fullBuild :: forall eff. Notify (MainEff eff) -> DocumentStore -> Settings -> ServerState (MainEff eff) -> Array Foreign -> Aff (MainEff eff) DiagnosticResult
+fullBuild logCb _ settings (ServerState { conn, root }) _ = do
   let command = buildCommand settings
   let buildCommand = either (const []) (\reg -> (split reg <<< trim) command) (regex "\\s+" noFlags)
   case conn, root, uncons buildCommand of
     Just conn', Just directory, Just { head: cmd, tail: args } -> do
-      res <- build { command: Command cmd args, directory, useNpmDir: addNpmPath settings }
-      liftEff $ log conn' "Build complete"
+      res <- build logCb { command: Command cmd args, directory, useNpmDir: addNpmPath settings }
+      liftEff $ logCb Info "Build complete"
       pure $ convertDiagnostics directory settings res.errors
     _, _, _ -> do
-      liftEff $ maybe (pure unit) (\conn' -> log conn' "Error parsing build command") conn
+      liftEff $ logCb Error "Error parsing build command"
       pure emptyDiagnostics
 

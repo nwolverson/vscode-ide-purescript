@@ -137,6 +137,24 @@
           "default": true,
           "description": "Whether to automatically add imported identifiers when accepting autocomplete result."
         },
+        "purescript.autocompleteLimit": {
+          "type": ["null", "integer" ],
+          "default": null,
+          "description": "Maximum number of results to fetch for an autocompletion request. May improve performance on large projects."
+        },
+        "purescript.autocompleteGrouped": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to group completions in autocomplete results. Requires compiler 0.11.6"
+        },
+        "purescript.importsPreferredModules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["Prelude"],
+          "description": "Module to prefer to insert when adding imports which have been re-exported. In order of preference, most preferred first."
+        },
         "purescript.addNpmPath": {
           "type": "boolean",
           "default": false,

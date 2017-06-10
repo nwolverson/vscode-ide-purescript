@@ -5,7 +5,7 @@ import Control.Monad.Eff (Eff, kind Effect)
 import Control.Promise (Promise)
 import Data.Foreign (Foreign)
 import Data.Nullable (Nullable)
-import LanguageServer.Types (CONN, Command, CompletionItem, Connection, Diagnostic, DocumentUri, FileEvent, Hover, Location, Position, Range, SymbolInformation, TextDocumentIdentifier, WorkspaceEdit)
+import LanguageServer.Types (CONN, Command, CompletionItem, Connection, Diagnostic, DocumentUri, FileEvent, Hover, Location, Position, Range, SymbolInformation, TextDocumentIdentifier, WorkspaceEdit, CompletionItemList)
 
 type TextDocumentPositionParams = { textDocument :: TextDocumentIdentifier, position :: Position }
 
@@ -26,7 +26,7 @@ type Res eff a = Eff (conn :: CONN | eff) (Promise a)
 
 foreign import onDefinition :: forall eff. Connection -> (TextDocumentPositionParams -> Res eff (Nullable Location)) -> Eff (conn :: CONN | eff) Unit
 
-foreign import onCompletion :: forall eff. Connection -> (TextDocumentPositionParams -> Res eff (Array CompletionItem)) -> Eff (conn :: CONN | eff) Unit
+foreign import onCompletion :: forall eff. Connection -> (TextDocumentPositionParams -> Res eff CompletionItemList) -> Eff (conn :: CONN | eff) Unit
 
 foreign import onHover :: forall eff. Connection -> (TextDocumentPositionParams -> Res eff (Nullable Hover)) -> Eff (conn :: CONN | eff) Unit
 

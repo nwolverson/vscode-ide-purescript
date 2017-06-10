@@ -1,7 +1,7 @@
 module LanguageServer.IdePurescript.Symbols where
 
 import Prelude
-import PscIde.Command as Command
+
 import Control.Monad.Aff (Aff, liftEff')
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Error.Class (throwError)
@@ -24,6 +24,8 @@ import LanguageServer.Types (DocumentStore, Location(..), Position(..), Range(..
 import LanguageServer.Uri (filenameToUri)
 import Node.Path (resolve)
 import PscIde (NET)
+import PscIde.Command (CompletionOptions(..))
+import PscIde.Command as Command
 
 convPosition :: Command.Position -> Position
 convPosition { line, column } = Position { line: line - 1, character: column - 1 }
@@ -73,7 +75,8 @@ getWorkspaceSymbols _ state { query } = do
 
 getSymbols :: forall eff. String -> Int -> String -> Array String -> Aff (net :: NET | eff) (Array SymbolInformation)
 getSymbols root port prefix modules = do
-  completions <- getCompletion port prefix Nothing Nothing modules (const [])    
+  let opts = CompletionOptions { maxResults: Nothing, groupReexports: true }
+  completions <- getCompletion port prefix Nothing Nothing modules (const []) opts
   res <- either throwError pure =<< (liftEff' $ traverse getInfo completions)
   pure $ catMaybes res
 
