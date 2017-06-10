@@ -10,7 +10,7 @@ import Data.Newtype (over, un, unwrap)
 import Data.Nullable (toNullable)
 import Data.String (length)
 import IdePurescript.Completion (SuggestionResult(..), SuggestionType(..), getSuggestions)
-import IdePurescript.Modules (getQualModule, getUnqualActiveModules)
+import IdePurescript.Modules (getAllActiveModules, getQualModule, getUnqualActiveModules)
 import IdePurescript.PscIde (getLoadedModules)
 import LanguageServer.DocumentStore (getDocument)
 import LanguageServer.Handlers (TextDocumentPositionParams)
@@ -37,9 +37,10 @@ getCompletions docs settings state ({ textDocument, position }) = do
                 else pure $ getUnqualActiveModules modules Nothing
             suggestions <- getSuggestions port' 
                 { line
-                , moduleInfo: { modules: usedModules, getQualifiedModule, mainModule: modules.main }
+                , moduleInfo: { modules: usedModules, getQualifiedModule, mainModule: modules.main, importedModules: getAllActiveModules modules }
                 , maxResults: Config.autocompleteLimit settings
                 , groupCompletions: Config.autocompleteGrouped settings
+                , preferredModules: Config.importsPreferredModules settings
                 }
             pure $ result $ convert uri <$> suggestions
         _ -> pure $ result []
@@ -61,21 +62,16 @@ getCompletions docs settings state ({ textDocument, position }) = do
       Type -> LS.Class
 
     convert _ (ModuleSuggestion { text, suggestType, prefix }) = completionItem text (convertSuggest suggestType)
-    convert uri (IdentSuggestion { mod, identifier, qualifier, suggestType, prefix, valueType, exportedFrom }) =
+    convert uri (IdentSuggestion { origMod, exportMod, identifier, qualifier, suggestType, prefix, valueType, exportedFrom }) =
         completionItem identifier (convertSuggest suggestType) 
         # over CompletionItem (_
           { detail = toNullable $ Just valueType
           , documentation = toNullable $ Just exportText
-          , command = toNullable $ Just $ addCompletionImport identifier (Just mod) uri
+          , command = toNullable $ Just $ addCompletionImport identifier (Just exportMod) uri
         --   , textEdit = toNullable $ Just edit
           })
         where
-        origMod = mod
-        exportMod = case exportedFrom of
-                        [] -> origMod
-                        [ _ ] -> origMod
-                        _ -> origMod -- TODO: Choose the correct reexport
-        exportText = if exportMod == origMod then mod else exportMod <> " (re-exported from " <> origMod <> ")"
+        exportText = if exportMod == origMod then origMod else exportMod <> " (re-exported from " <> origMod <> ")"
 
         edit = TextEdit
             { range: Range

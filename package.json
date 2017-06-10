@@ -144,7 +144,7 @@
         },
         "purescript.autocompleteGrouped": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Whether to group completions in autocomplete results. Requires compiler 0.11.6"
         },
         "purescript.importsPreferredModules": {
