@@ -28,5 +28,3 @@ startServer' settings root cb logCb =
   where
     globs = [Config.srcPath settings <> "/**/*.purs", Config.packagePath settings <> "/**/*.purs"]
     exe = if Config.usePurs settings then Config.pursExe settings else Config.serverExe settings
-  
-

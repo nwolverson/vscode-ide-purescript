@@ -1,20 +1,26 @@
 module LanguageServer.IdePurescript.Config where
 
 import Prelude
+
 import Control.Monad.Except (runExcept)
 import Data.Either (either)
 import Data.Foreign (F, Foreign, readArray, readBoolean, readInt, readString)
 import Data.Foreign.Index ((!))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Traversable (traverse)
 
-getConfig :: forall a. (Foreign -> F a) -> String -> a -> Foreign -> a
-getConfig readValue key default settings = do
-    either (const default) id $ runExcept val
+getConfigMaybe :: forall a. (Foreign -> F a) -> String -> Foreign -> Maybe a
+getConfigMaybe readValue key settings = do
+    either (const Nothing) Just $ runExcept val
     where
         val = do
             ps <- settings ! "purescript"
             res <- ps ! key
             readValue res
+
+getConfig :: forall a. (Foreign -> F a) -> String -> a -> Foreign -> a
+getConfig readValue key default settings = 
+    fromMaybe default $ getConfigMaybe readValue key settings
 
 getBoolean :: String -> Boolean -> Foreign -> Boolean
 getBoolean = getConfig readBoolean
@@ -37,7 +43,7 @@ pscIdePort :: ConfigFn Int
 pscIdePort = getInt "pscIdePort" 4242
 
 autoCompleteAllModules :: ConfigFn Boolean
-autoCompleteAllModules = getBoolean "autocompleteAllModules" true 
+autoCompleteAllModules = getBoolean "autocompleteAllModules" true
 
 buildCommand :: ConfigFn String
 buildCommand = getString "buildCommand" "pulp build -- --json-errors"
@@ -62,3 +68,12 @@ autoStartPscIde = getBoolean "autoStartPscIde" true
 
 autocompleteAddImport :: ConfigFn Boolean
 autocompleteAddImport = getBoolean "autocompleteAddImport" true
+
+autocompleteGrouped :: ConfigFn Boolean
+autocompleteGrouped = getBoolean "autocompleteGrouped" false
+
+autocompleteLimit :: ConfigFn (Maybe Int)
+autocompleteLimit = getConfigMaybe readInt "autocompleteLimit"
+
+importsPreferredModules :: ConfigFn (Array String)
+importsPreferredModules = getConfig (readArray >=> traverse readString) "importsPreferredModules" []
