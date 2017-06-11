@@ -187,7 +187,8 @@
     "psc:build": "pulp build --no-psa --to out/src/bundle.js --skip-entry-point",
     "psc:language-server": "pulp build --no-psa --to language-server/server.js -m LanguageServer.IdePurescript.Main",
     "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js",
-    "lerna": "lerna publish --skip-npm && (cd language-server && npm publish) && vsce publish"
+    "lerna": "lerna publish --skip-npm && (cd language-server && npm publish) && vsce publish",
+    "lerna:force": "lerna publish --force-publish=* --skip-npm && (cd language-server && npm publish) && vsce publish"
   },
   "extensionDependencies": [
     "nwolverson.language-purescript"
