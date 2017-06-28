@@ -23,8 +23,8 @@ addCompletionImport :: forall eff. Notify (MainEff eff) -> DocumentStore -> Sett
 addCompletionImport log docs config state args = do
   let shouldAddImport = autocompleteAddImport config
       ServerState { port, modules, conn } = state
-  case port, (runExcept <<< readString) <$> args of
-    Just port', [ Right identifier, mod', Right uri ] -> do
+  case port, (runExcept <<< readString) <$> args, shouldAddImport of
+    Just port', [ Right identifier, mod', Right uri ], true -> do
       let mod'' = either (const Nothing) Just mod'
       doc <- liftEff $ getDocument docs (DocumentUri uri)
       version <- liftEff $ getVersion doc
@@ -41,8 +41,8 @@ addCompletionImport log docs config state args = do
           log Warning "Found ambiguous imports"
           pure $ toForeign $ (\(C.TypeInfo { module' }) -> module') <$> imps
         FailedImport -> log Error "Failed to import" $> successResult
-    _, args' -> do
-      liftEff $ log Info $ show args'
+    _, args', _ -> do
+      when shouldAddImport $ liftEff $ log Info $ show args'
       pure successResult
 
     where
