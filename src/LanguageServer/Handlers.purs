@@ -46,6 +46,6 @@ foreign import publishDiagnostics :: forall eff. Connection -> PublishDiagnostic
 
 foreign import applyEdit :: forall eff. Connection -> WorkspaceEdit -> Eff (conn :: CONN | eff) Unit
 
-foreign import onExit :: forall eff. Connection -> (Unit -> Eff (conn :: CONN | eff) Unit) -> Eff (conn :: CONN | eff) Unit
+foreign import onExit :: forall eff. Connection -> (Eff (conn :: CONN | eff) Unit) -> Eff (conn :: CONN | eff) Unit
 
-foreign import onShutdown :: forall eff. Connection -> (Unit -> Res eff Unit) -> Eff (conn :: CONN | eff) Unit
+foreign import onShutdown :: forall eff. Connection -> (Res eff Unit) -> Eff (conn :: CONN | eff) Unit

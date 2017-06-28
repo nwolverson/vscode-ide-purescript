@@ -101,7 +101,7 @@ main = do
       launchAffLog startPscIdeServer
 
   log conn "PureScript Language Server started"
-
+  
   documents <- initDocumentStore conn
 
   let showModule :: Module -> String
@@ -138,7 +138,7 @@ main = do
   onWorkspaceSymbol conn $ runHandler "onWorkspaceSymbol" (const Nothing) getWorkspaceSymbols
   onHover conn $ runHandler "onHover" getTextDocUri (getTooltips documents)
   onCodeAction conn $ runHandler "onCodeAction" getTextDocUri (getActions documents)
-  onShutdown conn $ \_ -> fromAff stopPscIdeServer
+  onShutdown conn $ fromAff stopPscIdeServer
 
   onDidChangeWatchedFiles conn $ \{ changes } -> do
     for_ changes \(FileEvent { uri, "type": FileChangeTypeCode n }) -> do

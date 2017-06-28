@@ -1,7 +1,16 @@
-import { RequestHandler, IConnection, createConnection, IPCMessageReader, IPCMessageWriter, TextDocuments,Location,  DefinitionRequest, TextDocumentPositionParams, CompletionItem, Hover, DocumentSymbolParams, PublishDiagnosticsParams, WorkspaceEdit } from 'vscode-languageserver';
+import { RequestHandler, RequestHandler0, NotificationHandler, NotificationHandler0, IConnection, createConnection, IPCMessageReader, IPCMessageWriter, TextDocuments,Location,  DefinitionRequest, TextDocumentPositionParams, CompletionItem, Hover, DocumentSymbolParams, PublishDiagnosticsParams, WorkspaceEdit } from 'vscode-languageserver';
 
 let registerHandler = <T1,T2>(registerF: (handler: RequestHandler<T1, T2, void>) => void) =>
     (f: (args: T1) => () => T2) => () => registerF(x => f(x)());
+
+let registerHandler0 = <T>(registerF: (handler: RequestHandler0<T, void>) => void) =>
+    (f: () => T) => () => registerF(f);
+
+let registerNotificationHandler = <T>(registerF: (handler: NotificationHandler<T>) => void) =>
+    (f: (args: T) => () => void) => () => registerF(x => f(x)());
+
+let registerNotificationHandler0 = <T>(registerF: (handler: NotificationHandler0) => void) =>
+    (f: () => void) => () => registerF(f);
 
 export const onDefinition = (conn: IConnection) => registerHandler(conn.onDefinition);
 
@@ -15,7 +24,7 @@ export const onWorkspaceSymbol = (conn: IConnection) => registerHandler(conn.onW
 
 export const onCodeAction = (conn: IConnection) => registerHandler(conn.onCodeAction);
 
-export const onDidChangeConfiguration = (conn: IConnection) => registerHandler(conn.onDidChangeConfiguration);
+export const onDidChangeConfiguration = (conn: IConnection) => registerNotificationHandler(conn.onDidChangeConfiguration);
 
 export const publishDiagnostics = (conn: IConnection) => (params: PublishDiagnosticsParams) => () => conn.sendDiagnostics(params);
 
@@ -23,9 +32,9 @@ export const applyEdit = (conn: IConnection) => (edit: WorkspaceEdit) => () => c
 
 export const onExecuteCommand = (conn: IConnection) => registerHandler(conn.onExecuteCommand);
 
-export const onDidChangeWatchedFiles = (conn: IConnection) => registerHandler(conn.onDidChangeWatchedFiles);
+export const onDidChangeWatchedFiles = (conn: IConnection) => registerNotificationHandler(conn.onDidChangeWatchedFiles);
 
-export const onExit = (conn: IConnection) => registerHandler(conn.onExit);
+export const onExit = (conn: IConnection) => registerNotificationHandler0(conn.onExit);
 
-export const onShutdown = (conn: IConnection) => registerHandler(conn.onShutdown);
+export const onShutdown = (conn: IConnection) => registerHandler0(conn.onShutdown);
 
