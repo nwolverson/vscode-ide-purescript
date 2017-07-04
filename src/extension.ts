@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { resolve } from 'path';
 import * as path from 'path';
 import { workspace, Disposable, ExtensionContext } from 'vscode';
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind } from 'vscode-languageclient';
+import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind, RevealOutputChannelOn } from 'vscode-languageclient';
 import * as lc from 'vscode-languageclient';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -42,6 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
             configurationSection: 'purescript',
             fileEvents: workspace.createFileSystemWatcher('**/*.purs')
         },
+        revealOutputChannelOn: RevealOutputChannelOn.Never,
         errorHandler: { 
             error: (e,m,c) => { console.error(e,m,c); return lc.ErrorAction.Continue  },
             closed: () => lc.CloseAction.DoNotRestart
