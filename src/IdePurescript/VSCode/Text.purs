@@ -1,7 +1,8 @@
 module IdePurescript.VSCode.Text where
 
 import Prelude
-import Data.Array (findIndex, length, null, reverse, slice, zip)
+
+import Data.Array (findIndex, last, length, null, reverse, slice, zip)
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), joinWith, split)
 import Data.Tuple (uncurry)
@@ -18,9 +19,12 @@ makeWorkspaceEdit uri version range newText = workspaceEdit [ edit ]
 -- | In particular the scenario of inserting text in the middle AC -> ABC becomes an edit of B only.
 makeMinimalWorkspaceEdit :: DocumentUri -> Number -> String -> String -> Maybe WorkspaceEdit
 makeMinimalWorkspaceEdit uri version oldText newText =
-  let oldLines = split (Pattern "\n") oldText
-      newLines = split (Pattern "\n") newText
-      
+  let newLines = split (Pattern "\n") newText
+      oldLines = case split (Pattern "\n") oldText of
+        -- Add imports adds a newline to the end of the file always, giving bad diffs
+        xs | last xs /= Just "" && last newLines == Just "" -> xs <> [""]
+        xs -> xs
+
       range text l1 l2 = Range
         { start: Position { line: l1, character: 0 },
           end: Position { line: length text - l2 + 1, character: 0 }
@@ -33,6 +37,7 @@ makeMinimalWorkspaceEdit uri version oldText newText =
       e a b = Just $ makeWorkspaceEdit uri version a b
       oldLen = length oldLines
       newLen = length newLines
+
   in case firstDiff, lastDiff of
       Just n, Just m
         | oldLen - m >= n && newLen - m >= n
@@ -40,5 +45,4 @@ makeMinimalWorkspaceEdit uri version oldText newText =
       Nothing, Nothing
         | oldLen == newLen -> Nothing
       _, _ -> e (range oldLines 0 0) newText
-
 
