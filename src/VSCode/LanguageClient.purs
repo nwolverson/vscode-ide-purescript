@@ -18,3 +18,4 @@ foreign import sendCommandImpl :: forall eff a. LanguageClient -> String -> Null
 sendCommand :: forall eff. LanguageClient -> String -> Nullable (Array Foreign) -> Aff (command :: COMMAND | eff) Foreign 
 sendCommand lc cmd args = makeAff $ sendCommandImpl lc cmd args
 
+foreign import onNotification0 :: forall eff a. LanguageClient -> String -> Eff (command :: COMMAND | eff) Unit -> Eff (command :: COMMAND | eff) Unit

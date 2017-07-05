@@ -21,7 +21,7 @@ import IdePurescript.PscErrors (PscError(..))
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
 import LanguageServer.Console (error, info, log, warn)
 import LanguageServer.DocumentStore (getDocument, onDidChangeContent, onDidSaveDocument)
-import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDidChangeWatchedFiles, onDocumentSymbol, onExecuteCommand, onHover, onShutdown, onWorkspaceSymbol, publishDiagnostics)
+import LanguageServer.Handlers (onCodeAction, onCompletion, onDefinition, onDidChangeConfiguration, onDidChangeWatchedFiles, onDocumentSymbol, onExecuteCommand, onHover, onShutdown, onWorkspaceSymbol, publishDiagnostics, sendDiagnosticsBegin, sendDiagnosticsEnd)
 import LanguageServer.IdePurescript.Assist (addClause, caseSplit)
 import LanguageServer.IdePurescript.Build (collectByFirst, fullBuild, getDiagnostics)
 import LanguageServer.IdePurescript.CodeActions (getActions, onReplaceSuggestion)
@@ -154,6 +154,7 @@ main = do
     let uri = getUri document
     c <- liftEff $ readRef config
     s <- liftEff $ readRef state
+    liftEff $ sendDiagnosticsBegin conn
     { pscErrors, diagnostics } <- getDiagnostics uri c s
     filename <- liftEff $ uriToFilename uri
     let fileDiagnostics = fromMaybe [] $ lookup filename diagnostics
@@ -163,8 +164,10 @@ main = do
     , modulesFile = Nothing -- Force reload of modules on next request
     }) s
     liftEff $ publishDiagnostics conn { uri, diagnostics: fileDiagnostics }
+    liftEff $ sendDiagnosticsEnd conn
 
   let onBuild docs c s arguments = do
+        liftEff $ sendDiagnosticsBegin conn
         { pscErrors, diagnostics } <- fullBuild logError docs c s arguments
         liftEff $ log conn $ "Built with " <> (show $ length pscErrors) <> " issues"
         pscErrorsMap <- liftEff $ collectByFirst <$> traverse (\(e@PscError { filename }) -> do
@@ -175,6 +178,7 @@ main = do
         liftEff $ for_ (toUnfoldable diagnostics :: Array (Tuple String (Array Diagnostic))) \(Tuple filename fileDiagnostics) -> do
           uri <- filenameToUri filename
           publishDiagnostics conn { uri, diagnostics: fileDiagnostics }
+        liftEff $ sendDiagnosticsEnd conn
 
   let noResult = toForeign $ toNullable Nothing
   let voidHandler :: forall a. CommandHandler eff a -> CommandHandler eff Foreign
