@@ -1,7 +1,7 @@
 module LanguageServer.IdePurescript.Imports where
 
 import Prelude
-import PscIde.Command as C
+
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Except (runExcept)
@@ -18,6 +18,7 @@ import LanguageServer.IdePurescript.Config (autocompleteAddImport)
 import LanguageServer.IdePurescript.Types (MainEff, ServerState(..))
 import LanguageServer.TextDocument (getText, getVersion)
 import LanguageServer.Types (DocumentStore, DocumentUri(..), Settings)
+import PscIde.Command as C
 
 addCompletionImport :: forall eff. Notify (MainEff eff) -> DocumentStore -> Settings -> ServerState (MainEff eff) -> Array Foreign -> Aff (MainEff eff) Foreign
 addCompletionImport log docs config state args = do
@@ -40,12 +41,11 @@ addCompletionImport log docs config state args = do
         AmbiguousImport imps ->  do
           log Warning "Found ambiguous imports"
           pure $ toForeign $ (\(C.TypeInfo { module' }) -> module') <$> imps
-        FailedImport -> log Error "Failed to import" $> successResult
+        -- Failed import is not unusual - e.g. already existing import will hit this case.
+        FailedImport -> pure successResult
     _, args', _ -> do
       when shouldAddImport $ liftEff $ log Info $ show args'
       pure successResult
 
     where
     successResult = toForeign $ toNullable Nothing
-
-
