@@ -2,7 +2,7 @@
   "name": "ide-purescript",
   "displayName": "PureScript IDE",
   "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
-  "version": "0.11.3",
+  "version": "0.11.4",
   "publisher": "nwolverson",
   "author": {
     "name": "Nicholas Wolverson"
@@ -207,7 +207,7 @@
     "vscode-languageserver": "^3.2.0"
   },
   "dependencies": {
-    "purescript-language-server": "^0.2.0",
+    "purescript-language-server": "^0.2.1",
     "striptags": "^3.0.1",
     "vscode": "^1.1.0",
     "vscode-languageclient": "^3.2.0",
