@@ -67,7 +67,9 @@ getCompletions docs settings state ({ textDocument, position }) = do
         # over CompletionItem (_
           { detail = toNullable $ Just valueType
           , documentation = toNullable $ Just exportText
-          , command = toNullable $ Just $ addCompletionImport identifier (Just exportMod) uri
+          , command = toNullable $ case qualifier of
+                Nothing -> Just $ addCompletionImport identifier (Just exportMod) uri
+                Just _ -> Nothing
         --   , textEdit = toNullable $ Just edit
           })
         where
