@@ -5,7 +5,7 @@ import Control.Monad.Eff (Eff, kind Effect)
 import Control.Promise (Promise)
 import Data.Foreign (Foreign)
 import Data.Nullable (Nullable)
-import LanguageServer.Types (CONN, Command, CompletionItem, Connection, Diagnostic, DocumentUri, FileEvent, Hover, Location, Position, Range, SymbolInformation, TextDocumentIdentifier, WorkspaceEdit, CompletionItemList)
+import LanguageServer.Types (CONN, Command, CompletionItemList, Connection, Diagnostic, DocumentUri, FileEvent, Hover, Location, Position, Range, SymbolInformation, TextDocumentIdentifier, WorkspaceEdit)
 
 type TextDocumentPositionParams = { textDocument :: TextDocumentIdentifier, position :: Position }
 

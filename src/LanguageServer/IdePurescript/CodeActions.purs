@@ -4,7 +4,7 @@ import Prelude
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Except (runExcept)
-import Data.Array (catMaybes, concat, mapMaybe)
+import Data.Array (catMaybes, mapMaybe)
 import Data.Either (Either(..))
 import Data.Foreign (F, Foreign, readInt, readString)
 import Data.Foreign.Index ((!))

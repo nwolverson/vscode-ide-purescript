@@ -18,7 +18,6 @@ import IdePurescript.Build (Command(..), build, rebuild)
 import IdePurescript.PscErrors (PscError(..), PscResult)
 import IdePurescript.PscErrors as PscErrors
 import IdePurescript.PscIdeServer (ErrorLevel(..), Notify)
-import LanguageServer.Console (log)
 import LanguageServer.IdePurescript.Config (addNpmPath, buildCommand, censorCodes)
 import LanguageServer.IdePurescript.Types (ServerState(..), MainEff)
 import LanguageServer.Types (Diagnostic(Diagnostic), DocumentStore, DocumentUri, Position(Position), Range(Range), Settings)
@@ -92,4 +91,3 @@ fullBuild logCb _ settings (ServerState { conn, root }) _ = do
     _, _, _ -> do
       liftEff $ logCb Error "Error parsing build command"
       pure emptyDiagnostics
-
