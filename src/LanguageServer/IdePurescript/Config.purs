@@ -77,3 +77,6 @@ autocompleteLimit = getConfigMaybe readInt "autocompleteLimit"
 
 importsPreferredModules :: ConfigFn (Array String)
 importsPreferredModules = getConfig (readArray >=> traverse readString) "importsPreferredModules" []
+
+fastRebuild :: ConfigFn Boolean
+fastRebuild = getBoolean "fastRebuild" true

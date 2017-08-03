@@ -1,12 +1,13 @@
 module LanguageServer.IdePurescript.Main where
 
 import Prelude
+
 import Control.Monad.Aff (Aff, runAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Ref (modifyRef, newRef, readRef, writeRef)
 import Control.Promise (Promise, fromAff)
-import Data.Array (length)
+import Data.Array ((\\), length)
 import Data.Foldable (for_)
 import Data.Foreign (Foreign, toForeign)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -27,6 +28,7 @@ import LanguageServer.IdePurescript.Build (collectByFirst, fullBuild, getDiagnos
 import LanguageServer.IdePurescript.CodeActions (getActions, onReplaceSuggestion)
 import LanguageServer.IdePurescript.Commands (addClauseCmd, addCompletionImportCmd, buildCmd, caseSplitCmd, cmdName, commands, replaceSuggestionCmd, restartPscIdeCmd, startPscIdeCmd, stopPscIdeCmd)
 import LanguageServer.IdePurescript.Completion (getCompletions)
+import LanguageServer.IdePurescript.Config (fastRebuild)
 import LanguageServer.IdePurescript.Imports (addCompletionImport)
 import LanguageServer.IdePurescript.Server (retry, startServer')
 import LanguageServer.IdePurescript.Symbols (getDefinition, getDocumentSymbols, getWorkspaceSymbols)
@@ -154,31 +156,38 @@ main = do
     let uri = getUri document
     c <- liftEff $ readRef config
     s <- liftEff $ readRef state
-    liftEff $ sendDiagnosticsBegin conn
-    { pscErrors, diagnostics } <- getDiagnostics uri c s
-    filename <- liftEff $ uriToFilename uri
-    let fileDiagnostics = fromMaybe [] $ lookup filename diagnostics
-    liftEff $ log conn $ "Built with " <> show (length pscErrors) <> " issues for file: " <> show filename <> ", all diagnostic files: " <> show (keys diagnostics)
-    liftEff $ writeRef state $ over ServerState (\s1 -> s1 { 
-      diagnostics = insert (un DocumentUri uri) pscErrors (s1.diagnostics)
-    , modulesFile = Nothing -- Force reload of modules on next request
-    }) s
-    liftEff $ publishDiagnostics conn { uri, diagnostics: fileDiagnostics }
-    liftEff $ sendDiagnosticsEnd conn
+
+    when (fastRebuild c) do 
+      liftEff $ sendDiagnosticsBegin conn
+      { pscErrors, diagnostics } <- getDiagnostics uri c s
+      filename <- liftEff $ uriToFilename uri
+      let fileDiagnostics = fromMaybe [] $ lookup filename diagnostics
+      liftEff $ log conn $ "Built with " <> show (length pscErrors) <> " issues for file: " <> show filename <> ", all diagnostic files: " <> show (keys diagnostics)
+      liftEff $ writeRef state $ over ServerState (\s1 -> s1 { 
+        diagnostics = insert (un DocumentUri uri) pscErrors (s1.diagnostics)
+      , modulesFile = Nothing -- Force reload of modules on next request
+      }) s
+      liftEff $ publishDiagnostics conn { uri, diagnostics: fileDiagnostics }
+      liftEff $ sendDiagnosticsEnd conn
 
   let onBuild docs c s arguments = do
         liftEff $ sendDiagnosticsBegin conn
         { pscErrors, diagnostics } <- fullBuild logError docs c s arguments
-        liftEff $ log conn $ "Built with " <> (show $ length pscErrors) <> " issues"
-        pscErrorsMap <- liftEff $ collectByFirst <$> traverse (\(e@PscError { filename }) -> do
-          uri <- maybe (pure Nothing) (\f -> Just <$> un DocumentUri <$> filenameToUri f) filename
-          pure $ Tuple uri e)
-            pscErrors
-        liftEff $ writeRef state $ over ServerState (_ { diagnostics = pscErrorsMap }) s
-        liftEff $ for_ (toUnfoldable diagnostics :: Array (Tuple String (Array Diagnostic))) \(Tuple filename fileDiagnostics) -> do
-          uri <- filenameToUri filename
-          publishDiagnostics conn { uri, diagnostics: fileDiagnostics }
-        liftEff $ sendDiagnosticsEnd conn
+        liftEff do
+          log conn $ "Built with " <> (show $ length pscErrors) <> " issues"
+          pscErrorsMap <- collectByFirst <$> traverse (\(e@PscError { filename }) -> do
+            uri <- maybe (pure Nothing) (\f -> Just <$> un DocumentUri <$> filenameToUri f) filename
+            pure $ Tuple uri e)
+              pscErrors
+          prevErrors <- _.diagnostics <$> un ServerState <$> readRef state
+          let nonErrorFiles :: Array String
+              nonErrorFiles = keys prevErrors \\ keys pscErrorsMap
+          writeRef state $ over ServerState (_ { diagnostics = pscErrorsMap }) s
+          for_ (toUnfoldable diagnostics :: Array (Tuple String (Array Diagnostic))) \(Tuple filename fileDiagnostics) -> do
+            uri <- filenameToUri filename
+            publishDiagnostics conn { uri, diagnostics: fileDiagnostics }
+          for_ (map DocumentUri nonErrorFiles) \uri -> publishDiagnostics conn { uri, diagnostics: [] }
+          sendDiagnosticsEnd conn
 
   let noResult = toForeign $ toNullable Nothing
   let voidHandler :: forall a. CommandHandler eff a -> CommandHandler eff Foreign
