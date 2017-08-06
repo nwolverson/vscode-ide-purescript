@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
-import Data.Array as Arr
+import Data.Array (length) as Arr
 import Data.Maybe (Maybe(..))
 import Data.Newtype (over, un, unwrap)
 import Data.Nullable (toNullable)
@@ -67,9 +67,7 @@ getCompletions docs settings state ({ textDocument, position }) = do
         # over CompletionItem (_
           { detail = toNullable $ Just valueType
           , documentation = toNullable $ Just exportText
-          , command = toNullable $ case qualifier of
-                Nothing -> Just $ addCompletionImport identifier (Just exportMod) uri
-                Just _ -> Nothing
+          , command = toNullable $ Just $ addCompletionImport identifier (Just exportMod) qualifier uri
         --   , textEdit = toNullable $ Just edit
           })
         where

@@ -13,7 +13,8 @@
   "dependencies": {
     "purescript-console": "^3.0.0",
     "purescript-ide-purescript-core": "0.12.1",
-    "purescript-aff-promise": "^0.5.0"
+    "purescript-aff-promise": "^0.5.0",
+    "purescript-errors": "^3.0.0"
   },
   "devDependencies": {
     "purescript-node-process": "^4.0.0"

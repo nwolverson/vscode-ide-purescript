@@ -2,10 +2,11 @@ module LanguageServer.IdePurescript.Imports where
 
 import Prelude
 
+import Control.Error.Util (hush)
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Except (runExcept)
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Foreign (Foreign, readString, toForeign)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toNullable)
@@ -25,12 +26,11 @@ addCompletionImport log docs config state args = do
   let shouldAddImport = autocompleteAddImport config
       ServerState { port, modules, conn } = state
   case port, (runExcept <<< readString) <$> args, shouldAddImport of
-    Just port', [ Right identifier, mod', Right uri ], true -> do
-      let mod'' = either (const Nothing) Just mod'
+    Just port', [ Right identifier, mod', qual', Right uri ], true -> do
       doc <- liftEff $ getDocument docs (DocumentUri uri)
       version <- liftEff $ getVersion doc
       text <- liftEff $ getText doc
-      { state: modulesState', result } <- addExplicitImport modules port' uri text mod'' identifier
+      { state: modulesState', result } <- addExplicitImport modules port' uri text (hush mod') (hush qual') identifier
       liftEff $ case result of
         UpdatedImports newText -> do
           let edit = makeMinimalWorkspaceEdit (DocumentUri uri) version text newText

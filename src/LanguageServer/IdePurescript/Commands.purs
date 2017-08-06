@@ -23,9 +23,9 @@ addClauseCmd = CommandInfo "Add clause (explicit position/cmd)" "addClause-expli
 addCompletionImportCmd :: CommandInfo
 addCompletionImportCmd = CommandInfo "Add completion import" "addCompletionImport"
 
-addCompletionImport :: String -> Maybe String -> DocumentUri -> Command
-addCompletionImport ident mod uri = c addCompletionImportCmd $
-  Just [ toForeign ident, toForeign $ toNullable mod, toForeign uri ]
+addCompletionImport :: String -> Maybe String -> Maybe String -> DocumentUri -> Command
+addCompletionImport ident mod qual uri = c addCompletionImportCmd $
+  Just [ toForeign ident, toForeign $ toNullable mod, toForeign $ toNullable qual, toForeign uri ]
 
 replaceSuggestionCmd :: CommandInfo
 replaceSuggestionCmd = CommandInfo "Apply Suggestion" "replaceSuggestion"
