@@ -1,0 +1,9 @@
+{
+    "name": "vscode-ide-purescript",
+    "set": "ide-0.12-dev-1",
+    "source": "https://github.com/nwolverson/package-sets.git",
+    "depends": [
+        "ide-purescript-core",
+	"language-server"
+    ]
+}

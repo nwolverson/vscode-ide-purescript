@@ -1,0 +1,1 @@
+Much of the bindings in this folder are probably unused in this package due to moving to use of the language server. They may be moved out (or removed if they go stale) at some point.

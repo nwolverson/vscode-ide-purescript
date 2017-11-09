@@ -18,7 +18,7 @@
   "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
   "license": "MIT",
   "engines": {
-    "vscode": "^1.11.0"
+    "vscode": "^1.16.0"
   },
   "categories": [
     "Other"
@@ -191,31 +191,25 @@
     "build": "npm-run-all tsc:* psc:*",
     "tsc:ffi": "tsc -p src/VSCode/",
     "tsc:extension": "tsc -p ./",
-    "tsc:lsp": "tsc -p src/LanguageServer/",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "psc:src": "mkdirp out/src",
-    "psc:build": "pulp build --no-psa --to out/src/bundle.js --skip-entry-point",
-    "psc:language-server": "pulp build --no-psa --to language-server/server.js -m LanguageServer.IdePurescript.Main",
-    "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js",
-    "lerna": "lerna publish --skip-npm && (cd language-server && npm publish) && vsce publish",
-    "lerna:force": "lerna publish --force-publish=* --skip-npm && (cd language-server && npm publish) && vsce publish"
+    "psc:build": "pulp --psc-package build --to out/src/bundle.js --skip-entry-point",
+    "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js"
   },
   "extensionDependencies": [
     "nwolverson.language-purescript"
   ],
   "devDependencies": {
     "@types/node": "7.0.32",
-    "lerna": "^2.0.0-rc.5",
     "mkdirp": "^0.5.1",
     "npm-run-all": "^4.0.2",
-    "typescript": "~2.4.1",
-    "vscode-languageserver": "^3.2.0"
+    "typescript": "~2.4.1"
   },
   "dependencies": {
     "purescript": "^0.11.6",
     "purescript-language-server": "https://github.com/nwolverson/purescript-language-server#b9f3eaad458ae85bfb9e591e29c14eeb9b533431",
     "striptags": "^3.0.1",
-    "vscode": "^1.1.0",
+    "vscode": "^1.1.6",
     "vscode-languageclient": "^3.2.0",
     "vscode-uri": "^1.0.0"
   }
