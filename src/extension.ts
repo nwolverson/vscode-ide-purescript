@@ -6,7 +6,7 @@ import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, T
 import * as lc from 'vscode-languageclient';
 
 export function activate(context: vscode.ExtensionContext) {
-    const ps = require('./bundle')();
+    const activatePS = require('./bundle');
 
     // If the extension is launched in debug mode then the debug server options are used
     // Otherwise the run options are used
@@ -32,9 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
     const client = new LanguageClient('PureScript', 'IDE PureScript', serverOptions, clientOptions);
 
 	const disposable = client.start();
-    client.onReady().then(() => {
-        ps.activate(client)();
-    });
+    client.onReady().then(() => activatePS(client));
     
 	// Push the disposable to the context's subscriptions so that the 
 	// client can be deactivated on extension deactivation

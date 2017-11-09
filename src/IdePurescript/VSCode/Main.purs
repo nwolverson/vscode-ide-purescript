@@ -3,8 +3,7 @@ module IdePurescript.VSCode.Main where
 import Prelude
 
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (liftEff)
-import Control.Promise (Promise, fromAff)
+import Control.Monad.Eff.Uncurried (EffFn1, mkEffFn1)
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Imports (addIdentImport)
 import IdePurescript.VSCode.Types (MainEff)
@@ -23,24 +22,19 @@ showStatus status = do
               BuildSuccess -> "$(check)"
   setStatusBarMessage $ icon <> " PureScript"
 
-main :: forall eff. Eff (MainEff eff)
-  { activate :: LanguageClient -> Eff (MainEff eff) (Promise Unit)
-  }
-main = do
-  let cmd s f = register ("purescript." <> s) (\_ -> f)
-  
-  let initialise client = fromAff $ do
-        liftEff do
-          -- cmd "addImport" $ withPort $ addModuleImportCmd modulesState
-          cmd "addExplicitImport" $ addIdentImport client
-          cmd "caseSplit" $ caseSplit
-          cmd "addClause" $ addClause
 
-          onNotification0 client "textDocument/diagnosticsBegin" $ showStatus Building
-          onNotification0 client "textDocument/diagnosticsEnd" $ showStatus BuildSuccess
+main :: forall eff. EffFn1 (MainEff eff) LanguageClient Unit
+main = mkEffFn1 initialise
+  where 
+    cmd s f = register ("purescript." <> s) (\_ -> f)
+    initialise client = do
+      -- cmd "addImport" $ withPort $ addModuleImportCmd modulesState
+      cmd "addExplicitImport" $ addIdentImport client
+      cmd "caseSplit" $ caseSplit
+      cmd "addClause" $ addClause
 
-          -- cmd "searchPursuit" $ withPort searchPursuit
+      onNotification0 client "textDocument/diagnosticsBegin" $ showStatus Building
+      onNotification0 client "textDocument/diagnosticsEnd" $ showStatus BuildSuccess
 
-  pure $ {
-      activate: initialise
-    }
+      -- cmd "searchPursuit" $ withPort searchPursuit
+
