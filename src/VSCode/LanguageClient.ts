@@ -10,4 +10,4 @@ export const sendCommandImpl = (client: LanguageClient) => (command: string) => 
         });
 
 export const onNotification0 = (client: LanguageClient) => (notification: string) => (cb: () => {}) => () =>
-    client.onNotification(new NotificationType0(notification), cb);
+    client.onNotification(notification, cb);
