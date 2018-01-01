@@ -2,7 +2,7 @@
 
 This package provides editor support for PureScript projects in Visual Studio Code, similar to the corresponding
  [atom plugin](https://github.com/nwolverson/atom-ide-purescript). Now based on a common
- [PureScript based core](https://github.com/nwolverson/purescript-ide-purescript-core)! Basic syntax highlighting support
+ [PureScript language server](https://github.com/nwolverson/purescript-language-server)! Basic syntax highlighting support
  is provided by the separate package [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript) 
  which should be installed automatically as a dependency. 
 
@@ -22,11 +22,9 @@ Package should trigger on opening a `.purs` file.
 This package makes use of the [`purs ide server`](https://github.com/purescript/purescript/tree/master/psc-ide) (previously `psc-ide`) for most functionality, with `purs compile` (by default via `pulp`) for the explicit
 build command. All this is via a Language Server Protocol implementation, [purescript-language-server](https://github.com/nwolverson/purescript-language-server).
 
-This package will automatically start `purs ide server` in your project
-directory (port is configurable) and kill it when closing, if for some reason
-you want a longer running server process you should be able to start that before
-starting `code`. *Multiple projects currently not supported!* `purs ide client` is not used,
-communication is via direct socket connection.
+This package will launch a `purescript-language-server` process, which will automatically (but this is configurable) start `purs ide server` in your project directory and kill it when closing. Start/stop and restart commands are provided for the IDE server in case required (eg after changing config or updating compiler version).
+
+Multi-root workspaces should be supported.
 
 For all functions provided by the IDE server you will need to build your project first!
 
