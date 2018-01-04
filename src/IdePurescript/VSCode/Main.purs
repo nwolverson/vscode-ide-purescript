@@ -6,6 +6,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Uncurried (EffFn1, mkEffFn1)
 import IdePurescript.VSCode.Assist (addClause, caseSplit)
 import IdePurescript.VSCode.Imports (addIdentImport)
+import IdePurescript.VSCode.Pursuit (searchPursuit, searchPursuitModules)
 import IdePurescript.VSCode.Types (MainEff)
 import VSCode.Command (register)
 import VSCode.LanguageClient (LanguageClient, onNotification0)
@@ -36,5 +37,6 @@ main = mkEffFn1 initialise
       onNotification0 client "textDocument/diagnosticsBegin" $ showStatus Building
       onNotification0 client "textDocument/diagnosticsEnd" $ showStatus BuildSuccess
 
-      -- cmd "searchPursuit" $ withPort searchPursuit
+      cmd "searchPursuit" $ searchPursuit
+      cmd "searchPursuitModules" $ searchPursuitModules
 

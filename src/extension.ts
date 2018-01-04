@@ -14,7 +14,7 @@ export function activate(context: ExtensionContext) {
     
     // Options to control the language client
     const clientOptions = (folder: WorkspaceFolder): LanguageClientOptions => ({
-        // Register the server for plain text documents
+        // Register only for PureScript documents in the given root folder
         documentSelector: [
             { scheme: 'file', language: 'purescript', pattern: `${folder.uri.fsPath}/**/*` }
         ],

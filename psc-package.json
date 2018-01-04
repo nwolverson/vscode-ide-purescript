@@ -1,6 +1,6 @@
 {
     "name": "vscode-ide-purescript",
-    "set": "ide-0.12-dev-5",
+    "set": "ide-0.12-dev-7",
     "source": "https://github.com/nwolverson/package-sets.git",
     "depends": [
         "ide-purescript-core",

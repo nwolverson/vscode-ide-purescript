@@ -1,11 +1,15 @@
 module IdePurescript.VSCode.Types where
 
 import Prelude
+
 import Control.Monad.Aff (runAff, Aff)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
+import Control.Monad.Eff.Exception (EXCEPTION)
+import Control.Monad.Eff.Random (RANDOM)
 import Control.Monad.Eff.Ref (REF)
+import Network.HTTP.Affjax (AJAX)
 import Node.Buffer (BUFFER)
 import Node.ChildProcess (CHILD_PROCESS)
 import Node.FS (FS)
@@ -17,11 +21,10 @@ import VSCode.Notifications (NOTIFY)
 import VSCode.TextDocument (EDITOR)
 import VSCode.Window (WINDOW)
 import VSCode.Workspace (WORKSPACE)
-import Control.Monad.Eff.Exception (EXCEPTION)
-import Control.Monad.Eff.Random (RANDOM)
 
 type MainEff a =
-  ( exception :: EXCEPTION
+  ( ajax :: AJAX
+  , exception :: EXCEPTION
   , random :: RANDOM
   , buffer :: BUFFER
   , fs :: FS
