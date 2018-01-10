@@ -105,12 +105,17 @@
         "purescript.packagePath": {
           "type": "string",
           "default": "bower_components",
-          "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations."
+          "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations.  Change requires psc-ide server restart."
+        },
+        "purescript.addPscPackageSources": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to add psc-package sources to the globs passed to the IDE server for source locations (specifically the output of `psc-package sources`, if this is a psc-package project). Update due to adding packages/changing package set requires psc-ide server restart."
         },
         "purescript.sourcePath": {
           "type": "string",
           "default": "src",
-          "description": "Path to application source root. Will be used to control globs passed to IDE server for source locations."
+          "description": "Path to application source root. Will be used to control globs passed to IDE server for source locations. Change requires psc-ide server restart."
         },
         "purescript.buildCommand": {
           "type": "string",
