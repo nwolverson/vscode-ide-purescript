@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.0
+
+* Pursuit search restored and Pursuit module search added (scope to actually do something on selection at some point).
+
 ## 0.12.0
 
 * Multi-root workspace support
