@@ -39,8 +39,12 @@ which offers similar LaTeX based input vi a lookup command.
 
 ## Build
 
-'PureScript Build' command will build your project using the command line `pulp build --no-psa --json-errors`.
-Version 0.8.0+ of the PureScript compiler is required, as well as version 8.0.0 of `pulp` (for the `--no-psa` flag...).
+'PureScript Build' command will build your project using the command line `pulp build -- --json-errors`.
+Version 0.8.0+ of the PureScript compiler is required, as well as version 10.0.0 of `pulp` (with earlier versions remove `--`).
+
+Alternative build commands can be used by setting `purescript.buildCommand`:
+
+* For `pulp` with `psc-package`: `pulp --psc-package build -- --json-errors`
 
 Error suggestions are provided for some compiler errors, try alt/cmd and `.`.
 
@@ -58,9 +62,11 @@ Hovering over an identifier will show a tooltip with its type.
 This is really stupid, and only cares that you hover over a word regardless of context, you will get some false positives
 (eg doesn't see local definitions, just the globals that should be visible in a given module).
 
+Hovering over a qualifier of a qualified identifier will show the associated module name.
+
 ## Pursuit lookup
 
-TODO - make this work again.
+Commands "Search Pursuit" and "Search Pursuit Modules" are available to search for identifiers or modules/packages on Pursuit.
 
 ## PSCI
 
