@@ -1,15 +1,23 @@
 import { workspace, Disposable, ExtensionContext, OutputChannel, WorkspaceFolder, Uri, TextDocument, window  } from 'vscode';
 import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind, RevealOutputChannelOn, ErrorAction, CloseAction } from 'vscode-languageclient';
+import { resolve } from 'path';
 
 const clients: Map<string, LanguageClient> = new Map();
 
 export function activate(context: ExtensionContext) {
     const activatePS = require('./bundle');
 
-    // If the extension is launched in debug mode then the debug server options are used
-    // Otherwise the run options are used
     const opts = { module: 'purescript-language-server', transport: TransportKind.ipc };
-    const serverOptions: ServerOptions = opts;
+    const serverOptions: ServerOptions =
+        {
+            run: opts,
+            debug: { ...opts, options: {
+                execArgv: [
+                    "--nolazy",
+                    "--inspect=6009"
+                ]
+            }}
+        }
     const output = window.createOutputChannel("IDE PureScript");
     
     // Options to control the language client
