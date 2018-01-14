@@ -183,6 +183,11 @@
           "type": "boolean",
           "default": false,
           "description": "Whether to set the editor-mode flag on the IDE server"
+        },
+        "purescript.polling": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to set the polling flag on the IDE server"
         }
       }
     },
