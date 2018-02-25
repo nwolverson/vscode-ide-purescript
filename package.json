@@ -169,6 +169,11 @@
           ],
           "description": "Module to prefer to insert when adding imports which have been re-exported. In order of preference, most preferred first."
         },
+        "purescript.preludeModule": {
+          "type": "string",
+          "default": "Prelude",
+          "description": "Module to consider as your default prelude, if an auto-complete suggestion comes from this module it will be imported unqualified."
+        },
         "purescript.addNpmPath": {
           "type": "boolean",
           "default": false,
