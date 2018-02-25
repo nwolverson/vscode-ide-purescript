@@ -24,7 +24,7 @@ build command. All this is via a Language Server Protocol implementation, [pures
 
 This package will launch a `purescript-language-server` process, which will automatically (but this is configurable) start `purs ide server` in your project directory and kill it when closing. Start/stop and restart commands are provided for the IDE server in case required (eg after changing config or updating compiler version).
 
-Multi-root workspaces should be supported.
+Multi-root workspaces should be supported via a multiple language server approach.
 
 For all functions provided by the IDE server you will need to build your project first!
 
