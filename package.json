@@ -212,6 +212,7 @@
     "tsc:extension": "tsc -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "psc:src": "mkdirp out/src",
+    "psc:update": "psc-package update",
     "psc:build": "pulp --psc-package build --to out/src/bundle.js --skip-entry-point",
     "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js"
   },
@@ -222,6 +223,7 @@
     "@types/node": "7.0.32",
     "mkdirp": "^0.5.1",
     "npm-run-all": "^4.0.2",
+    "psc-package": "^0.2.5",
     "typescript": "~2.4.1"
   },
   "dependencies": {
