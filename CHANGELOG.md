@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.17.0
+
+* Updates from `purescript-language-server` version `0.9.0`:
+  - Add documentation to hover tooltips https://github.com/nwolverson/purescript-language-server/pull/25 [@Krzysztof-Cieslak](https://github.com/Krzysztof-Cieslak)
+  - Make compiler fixes (particularly import fixes) not leave extra blank lines https://github.com/nwolverson/purescript-language-server/issues/13
+  - Fix `preludeModule` adding a prelude import if it is already imported explicitly https://github.com/nwolverson/purescript-language-server/issues/26
+  - Ensure IDE server dependencies are reloaded on full build (particularly in case of editor mode) https://github.com/nwolverson/purescript-language-server/issues/19
+  - Fix completion edits in some circumstances https://github.com/nwolverson/vscode-ide-purescript/issues/96
+
 ## 0.16.0
 
 * Updates from `purescript-language-server` version `0.8.0`:
