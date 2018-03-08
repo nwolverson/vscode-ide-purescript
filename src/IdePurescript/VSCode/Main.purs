@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Uncurried (EffFn1, mkEffFn1)
-import IdePurescript.VSCode.Assist (addClause, caseSplit)
+import IdePurescript.VSCode.Assist (addClause, caseSplit, typedHole)
 import IdePurescript.VSCode.Imports (addIdentImport)
 import IdePurescript.VSCode.Pursuit (searchPursuit, searchPursuitModules)
 import IdePurescript.VSCode.Types (MainEff)
@@ -27,16 +27,17 @@ showStatus status = do
 main :: forall eff. EffFn1 (MainEff eff) LanguageClient Unit
 main = mkEffFn1 initialise
   where 
-    cmd s f = register ("purescript." <> s) (\_ -> f)
+    cmdA s f = register ("purescript." <> s) f
+    cmd s f = cmdA s (\_ -> f)
     initialise client = do
       -- cmd "addImport" $ withPort $ addModuleImportCmd modulesState
       cmd "addExplicitImport" $ addIdentImport client
       cmd "caseSplit" $ caseSplit
       cmd "addClause" $ addClause
+      cmdA "typedHole" $ typedHole
 
       onNotification0 client "textDocument/diagnosticsBegin" $ showStatus Building
       onNotification0 client "textDocument/diagnosticsEnd" $ showStatus BuildSuccess
 
       cmd "searchPursuit" $ searchPursuit
       cmd "searchPursuitModules" $ searchPursuitModules
-
