@@ -193,6 +193,11 @@
           "type": "boolean",
           "default": false,
           "description": "Whether to set the polling flag on the IDE server"
+        },
+        "purescript.outputDirectory": {
+          "type": "string",
+          "default": null,
+          "description": "Override purs ide output directory (output/ if not specified). This should match up to your build command"
         }
       }
     },
