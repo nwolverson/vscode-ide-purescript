@@ -1,7 +1,7 @@
 {
   "name": "ide-purescript",
   "displayName": "PureScript IDE",
-  "description": "PureScript IntelliSense, tooltip, errors with psc-ide",
+  "description": "PureScript IntelliSense, tooltip, errors, code actions with language-server-purescript/purs IDE server",
   "version": "0.18.0",
   "publisher": "nwolverson",
   "author": {
@@ -55,15 +55,15 @@
       },
       {
         "command": "purescript.restartPscIde",
-        "title": "PureScript: Restart Psc-Ide-Server"
+        "title": "PureScript: Restart/Reconnect purs IDE server"
       },
       {
         "command": "purescript.startPscIde",
-        "title": "PureScript: Start Psc-Ide-Server"
+        "title": "PureScript: Start/Connect purs IDE server"
       },
       {
         "command": "purescript.stopPscIde",
-        "title": "PureScript: Stop Psc-Ide-Server"
+        "title": "PureScript: Stop/Disconnect purs IDE server"
       },
       {
         "command": "purescript.searchPursuit",
@@ -90,22 +90,22 @@
         "purescript.pscIdeServerExe": {
           "type": "string",
           "default": "psc-ide-server",
-          "description": "Location of psc-ide server executable (resolved wrt PATH)"
+          "description": "Location of legacy psc-ide-server executable (resolved wrt PATH)"
         },
         "purescript.pscIdePort": {
-          "type": "integer",
-          "default": 4242,
-          "description": "Port to use for psc-ide"
+          "type": ["integer", "null"],
+          "description": "Port to use for purs IDE server (whether an existing server or to start a new one). By default a random port is chosen (or an existing port in .psc-ide-port if present), if this is specified no attempt will be made to select an alternative port on failure.",
+          "default": null
         },
         "purescript.autoStartPscIde": {
           "type": "boolean",
           "default": true,
-          "description": "Whether to automatically start psc-ide when editing a PureScript file (includes connecting to an existing running instance). If this is disabled, various features like autocomplete, tooltips, and other type info will not work until start command is run manually."
+          "description": "Whether to automatically start/connect to purs IDE server when editing a PureScript file (includes connecting to an existing running instance). If this is disabled, various features like autocomplete, tooltips, and other type info will not work until start command is run manually."
         },
         "purescript.packagePath": {
           "type": "string",
           "default": "bower_components",
-          "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations.  Change requires psc-ide server restart."
+          "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations.  Change requires IDE server restart."
         },
         "purescript.addPscPackageSources": {
           "type": "boolean",
@@ -115,7 +115,7 @@
         "purescript.sourcePath": {
           "type": "string",
           "default": "src",
-          "description": "Path to application source root. Will be used to control globs passed to IDE server for source locations. Change requires psc-ide server restart."
+          "description": "Path to application source root. Will be used to control globs passed to IDE server for source locations. Change requires IDE server restart."
         },
         "purescript.buildCommand": {
           "type": "string",
@@ -125,7 +125,7 @@
         "purescript.fastRebuild": {
           "type": "boolean",
           "default": true,
-          "description": "Enable psc-ide fast rebuild"
+          "description": "Enable purs IDE server fast rebuild"
         },
         "purescript.censorWarnings": {
           "title": "Censor warnings",
@@ -177,12 +177,12 @@
         "purescript.addNpmPath": {
           "type": "boolean",
           "default": false,
-          "description": "Whether to add the local npm bin directory to the PATH for psc-ide-server and build command."
+          "description": "Whether to add the local npm bin directory to the PATH for purs IDE server and build command."
         },
         "purescript.pscIdelogLevel": {
           "type": "string",
           "default": "",
-          "description": "Log level for purs ide"
+          "description": "Log level for purs IDE server"
         },
         "purescript.editorMode": {
           "type": "boolean",
