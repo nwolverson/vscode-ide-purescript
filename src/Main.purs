@@ -6,5 +6,5 @@ import IdePurescript.VSCode.Main (main) as M
 import IdePurescript.VSCode.Types (MainEff)
 import VSCode.LanguageClient (LanguageClient)
 
-main :: forall eff. EffFn1 (MainEff eff) LanguageClient Unit
+main :: forall eff. EffFn1 (MainEff eff) LanguageClient _
 main = M.main

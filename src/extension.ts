@@ -1,8 +1,12 @@
-import { workspace, Disposable, ExtensionContext, OutputChannel, WorkspaceFolder, Uri, TextDocument, window  } from 'vscode';
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind, RevealOutputChannelOn, ErrorAction, CloseAction } from 'vscode-languageclient';
+import { workspace, Disposable, ExtensionContext, OutputChannel, WorkspaceFolder, Uri, TextDocument, window, commands  } from 'vscode';
+import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind, RevealOutputChannelOn, ErrorAction, CloseAction, ExecuteCommandRequest } from 'vscode-languageclient';
 import { resolve } from 'path';
+import { debug } from 'util';
+
+type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
 
 const clients: Map<string, LanguageClient> = new Map();
+const commandCode: Map<string, ExtensionCommands> = new Map();
 
 export function activate(context: ExtensionContext) {
     const activatePS = require('./bundle');
@@ -36,8 +40,52 @@ export function activate(context: ExtensionContext) {
         errorHandler: { 
             error: (e,m,c) => { console.error(e,m,c); return ErrorAction.Continue  },
             closed: () => CloseAction.DoNotRestart
+        },
+        initializationOptions: {
+            executeCommandProvider: false
         }
     });
+
+    let commandNames: string[] = [
+        "caseSplit-explicit",
+        "addClause-explicit",
+        "addCompletionImport",
+        "addModuleImport",
+        "replaceSuggestion",
+        "replaceAllSuggestions",
+        "build",
+        "typedHole-explicit",
+        "startPscIde",
+        "stopPscIde",
+        "restartPscIde",
+        "getAvailableModules",
+        "search",
+        "fixTypo"
+    ].map(x => `purescript.${x}`);
+
+    commandNames.forEach(command => {
+        commands.registerTextEditorCommand(command, (ed, edit, ...args) => {
+            const wf = workspace.getWorkspaceFolder(ed.document.uri);
+            if (!wf) {return;}
+            const lc = clients.get(wf.uri.toString());
+            if (!lc) {
+                output.appendLine("Didn't find language client for " + ed.document.uri);
+                return;
+            }
+            lc.sendRequest(ExecuteCommandRequest.type, { command, arguments: args });
+        });
+    })
+
+    const extensionCmd = (cmdName: string) => (ed, edit, ...args) => {
+        const wf = workspace.getWorkspaceFolder(ed.document.uri);
+        if (!wf) { return; }
+        const cmds = commandCode.get(wf.uri.toString());
+        if (!cmds) {
+            output.appendLine("Didn't find language client for " + ed.document.uri);
+            return;
+        }
+        cmds[cmdName](args);
+    }
 
     function didOpenTextDocument(document: TextDocument): void {
         if (document.languageId !== 'purescript' || document.uri.scheme !== 'file') {
@@ -51,12 +99,28 @@ export function activate(context: ExtensionContext) {
         }
         
         if (!clients.has(folder.uri.toString())) {
-            const client = new LanguageClient('PureScript', 'IDE PureScript', serverOptions, clientOptions(folder));
-            client.registerProposedFeatures();
+            try {
+                output.appendLine("Launching new language client for " + folder.uri.toString());
+                const client = new LanguageClient('PureScript', 'IDE PureScript', serverOptions, clientOptions(folder));
+                client.registerProposedFeatures();
+            
+                client.onReady().then(async () => {
+                    output.appendLine("Activated lc for "+ folder.uri.toString());
+                    const cmds: ExtensionCommands = activatePS(client);
+                    const cmdNames = await commands.getCommands();
+                    commandCode.set(folder.uri.toString(), cmds);
+                    Promise.all(Object.keys(cmds).map(async cmd => {
+                        if (cmdNames.indexOf(cmd) === -1) {
+                            commands.registerTextEditorCommand(cmd, extensionCmd(cmd));
+                        }
+                    }));
+                }).catch(err => output.appendLine(err));
 
-            client.onReady().then(() => activatePS(client));
-            client.start();
-            clients.set(folder.uri.toString(), client);
+                client.start();
+                clients.set(folder.uri.toString(), client);
+            } catch (e) {
+                output.appendLine(e);
+            }
         }
     }
 
