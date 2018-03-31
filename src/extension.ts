@@ -59,8 +59,7 @@ export function activate(context: ExtensionContext) {
         "stopPscIde",
         "restartPscIde",
         "getAvailableModules",
-        "search",
-        "fixTypo"
+        "search"
     ].map(x => `purescript.${x}`);
 
     commandNames.forEach(command => {

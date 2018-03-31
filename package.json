@@ -80,52 +80,62 @@
         "purescript.pursExe": {
           "type": "string",
           "default": "purs",
-          "description": "Location of purs executable (resolved wrt PATH)"
+          "description": "Location of purs executable (resolved wrt PATH)",
+          "scope": "resource"
         },
         "purescript.useCombinedExe": {
           "type": "boolean",
           "default": true,
-          "description": "Whether to use the new combined purs executable. This will default to true in the future then go away."
+          "description": "Whether to use the new combined purs executable. This will default to true in the future then go away.",
+          "scope": "resource"
         },
         "purescript.pscIdeServerExe": {
           "type": "string",
           "default": "psc-ide-server",
-          "description": "Location of legacy psc-ide-server executable (resolved wrt PATH)"
+          "description": "Location of legacy psc-ide-server executable (resolved wrt PATH)",
+          "scope": "resource"
         },
         "purescript.pscIdePort": {
           "type": ["integer", "null"],
           "description": "Port to use for purs IDE server (whether an existing server or to start a new one). By default a random port is chosen (or an existing port in .psc-ide-port if present), if this is specified no attempt will be made to select an alternative port on failure.",
-          "default": null
+          "default": null,
+          "scope": "resource"
         },
         "purescript.autoStartPscIde": {
           "type": "boolean",
           "default": true,
-          "description": "Whether to automatically start/connect to purs IDE server when editing a PureScript file (includes connecting to an existing running instance). If this is disabled, various features like autocomplete, tooltips, and other type info will not work until start command is run manually."
+          "description": "Whether to automatically start/connect to purs IDE server when editing a PureScript file (includes connecting to an existing running instance). If this is disabled, various features like autocomplete, tooltips, and other type info will not work until start command is run manually.",
+          "scope": "resource"
         },
         "purescript.packagePath": {
           "type": "string",
           "default": "bower_components",
-          "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations.  Change requires IDE server restart."
+          "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations.  Change requires IDE server restart.",
+          "scope": "resource"
         },
         "purescript.addPscPackageSources": {
           "type": "boolean",
           "default": false,
-          "description": "Whether to add psc-package sources to the globs passed to the IDE server for source locations (specifically the output of `psc-package sources`, if this is a psc-package project). Update due to adding packages/changing package set requires psc-ide server restart."
+          "description": "Whether to add psc-package sources to the globs passed to the IDE server for source locations (specifically the output of `psc-package sources`, if this is a psc-package project). Update due to adding packages/changing package set requires psc-ide server restart.",
+          "scope": "resource"
         },
         "purescript.sourcePath": {
           "type": "string",
           "default": "src",
-          "description": "Path to application source root. Will be used to control globs passed to IDE server for source locations. Change requires IDE server restart."
+          "description": "Path to application source root. Will be used to control globs passed to IDE server for source locations. Change requires IDE server restart.",
+          "scope": "resource"
         },
         "purescript.buildCommand": {
           "type": "string",
           "default": "pulp build -- --json-errors",
-          "description": "Build command to use with arguments. Not passed to shell. eg `pulp build -- --json-errors` (this default requires pulp >=10)"
+          "description": "Build command to use with arguments. Not passed to shell. eg `pulp build -- --json-errors` (this default requires pulp >=10)",
+          "scope": "resource"
         },
         "purescript.fastRebuild": {
           "type": "boolean",
           "default": true,
-          "description": "Enable purs IDE server fast rebuild"
+          "description": "Enable purs IDE server fast rebuild",
+          "scope": "resource"
         },
         "purescript.censorWarnings": {
           "title": "Censor warnings",
@@ -134,17 +144,20 @@
           "default": [],
           "items": {
             "type": "string"
-          }
+          },
+          "scope": "resource"
         },
         "purescript.autocompleteAllModules": {
           "type": "boolean",
           "default": true,
-          "description": "Whether to always autocomplete from all built modules, or just those imported in the file. Suggestions from all modules always available by explicitly triggering autocomplete."
+          "description": "Whether to always autocomplete from all built modules, or just those imported in the file. Suggestions from all modules always available by explicitly triggering autocomplete.",
+          "scope": "resource"
         },
         "purescript.autocompleteAddImport": {
           "type": "boolean",
           "default": true,
-          "description": "Whether to automatically add imported identifiers when accepting autocomplete result."
+          "description": "Whether to automatically add imported identifiers when accepting autocomplete result.",
+          "scope": "resource"
         },
         "purescript.autocompleteLimit": {
           "type": [
@@ -152,12 +165,14 @@
             "integer"
           ],
           "default": null,
-          "description": "Maximum number of results to fetch for an autocompletion request. May improve performance on large projects."
+          "description": "Maximum number of results to fetch for an autocompletion request. May improve performance on large projects.",
+          "scope": "resource"
         },
         "purescript.autocompleteGrouped": {
           "type": "boolean",
           "default": true,
-          "description": "Whether to group completions in autocomplete results. Requires compiler 0.11.6"
+          "description": "Whether to group completions in autocomplete results. Requires compiler 0.11.6",
+          "scope": "resource"
         },
         "purescript.importsPreferredModules": {
           "type": "array",
@@ -167,37 +182,44 @@
           "default": [
             "Prelude"
           ],
-          "description": "Module to prefer to insert when adding imports which have been re-exported. In order of preference, most preferred first."
+          "description": "Module to prefer to insert when adding imports which have been re-exported. In order of preference, most preferred first.",
+          "scope": "resource"
         },
         "purescript.preludeModule": {
           "type": "string",
           "default": "Prelude",
-          "description": "Module to consider as your default prelude, if an auto-complete suggestion comes from this module it will be imported unqualified."
+          "description": "Module to consider as your default prelude, if an auto-complete suggestion comes from this module it will be imported unqualified.",
+          "scope": "resource"
         },
         "purescript.addNpmPath": {
           "type": "boolean",
           "default": false,
-          "description": "Whether to add the local npm bin directory to the PATH for purs IDE server and build command."
+          "description": "Whether to add the local npm bin directory to the PATH for purs IDE server and build command.",
+          "scope": "resource"
         },
         "purescript.pscIdelogLevel": {
           "type": "string",
           "default": "",
-          "description": "Log level for purs IDE server"
+          "description": "Log level for purs IDE server",
+          "scope": "resource"
         },
         "purescript.editorMode": {
           "type": "boolean",
           "default": false,
-          "description": "Whether to set the editor-mode flag on the IDE server"
+          "description": "Whether to set the editor-mode flag on the IDE server",
+          "scope": "resource"
         },
         "purescript.polling": {
           "type": "boolean",
           "default": false,
-          "description": "Whether to set the polling flag on the IDE server"
+          "description": "Whether to set the polling flag on the IDE server",
+          "scope": "resource"
         },
         "purescript.outputDirectory": {
           "type": "string",
           "default": null,
-          "description": "Override purs ide output directory (output/ if not specified). This should match up to your build command"
+          "description": "Override purs ide output directory (output/ if not specified). This should match up to your build command",
+          "scope": "resource"
         }
       }
     },
