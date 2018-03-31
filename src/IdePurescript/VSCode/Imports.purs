@@ -1,27 +1,26 @@
 module IdePurescript.VSCode.Imports where
 
 import Prelude
+
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Ref (Ref, readRef)
 import Control.Monad.Except (runExcept)
 import Data.Either (Either(..))
-import Data.Foreign (readArray, readString)
+import Data.Foreign (readArray, readString, toForeign)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toNullable)
 import Data.Traversable (traverse)
-import IdePurescript.Modules (State, addModuleImport)
-import IdePurescript.PscIde (getAvailableModules)
 import IdePurescript.VSCode.Assist (getActivePosInfo)
 import IdePurescript.VSCode.Editor (identifierAtCursor)
-import IdePurescript.VSCode.Types (MainEff, launchAffAndRaise, launchAffSilent)
-import LanguageServer.IdePurescript.Commands (addCompletionImport)
+import IdePurescript.VSCode.Types (MainEff, launchAffAndRaise)
+import LanguageServer.IdePurescript.Commands (addCompletionImport, addModuleImportCmd, cmdName, getAvailableModulesCmd)
 import LanguageServer.Types (Command(..), DocumentUri)
+import LanguageServer.Uri (filenameToUri)
 import VSCode.Input (showQuickPick, defaultInputOptions, getInput)
 import VSCode.LanguageClient (LanguageClient, sendCommand)
-import VSCode.TextDocument (getText, getPath)
-import VSCode.TextEditor (setText, getDocument)
+import VSCode.TextDocument (getPath)
+import VSCode.TextEditor (getDocument)
 import VSCode.Window (getActiveTextEditor)
 
 addIdentImport :: forall eff. LanguageClient -> Eff (MainEff eff) Unit
@@ -42,22 +41,18 @@ addIdentImport client = launchAffAndRaise $ void $ do
           -> showQuickPick arr >>= maybe (pure unit) (addIdentImportMod ident uri <<< Just)
         _ -> pure unit
 
--- TODO: How to implement via server
-addModuleImportCmd :: forall eff. Ref State -> Int -> Eff (MainEff eff) Unit
-addModuleImportCmd modulesState port =
-  launchAffSilent $ do
-    modules <- getAvailableModules port
-    mod <- showQuickPick modules
-    state <- liftEff $ readRef modulesState
-    ed <- liftEff $ getActiveTextEditor
-    case mod, ed of
-      Just moduleName, Just ed' -> do
-        path <- liftEff $ getPath $ getDocument $ ed'
-        text <- liftEff $ getText $ getDocument $ ed'
-        do
-          output <- addModuleImport state port path text moduleName
-          case output of
-            Just { result } -> do
-              void $ setText ed' result
-            _ -> pure unit
-      _, _ -> pure unit
+addModuleImport :: forall eff. LanguageClient -> Eff (MainEff eff) Unit
+addModuleImport client = launchAffAndRaise $ void $ do
+  modulesForeign <- sendCommand client (cmdName getAvailableModulesCmd) (toNullable Nothing)
+  ed <- liftEff $ getActiveTextEditor
+  case runExcept $ readArray modulesForeign, ed of
+    Right arr1, Just ed
+      | Right modules <- runExcept $ traverse readString arr1
+      -> do
+        pick <- showQuickPick modules
+        uri <- liftEff $ filenameToUri =<< (getPath $ getDocument ed)
+        case pick of
+          Just modName -> void $ sendCommand client (cmdName addModuleImportCmd)
+            (toNullable $ Just [ toForeign modName, toForeign $ toNullable Nothing, toForeign uri ])
+          _ -> pure unit
+    _, _ -> pure unit

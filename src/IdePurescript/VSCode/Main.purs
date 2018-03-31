@@ -9,7 +9,7 @@ import Data.StrMap (StrMap)
 import Data.StrMap as StrMap
 import Data.Tuple (Tuple(..))
 import IdePurescript.VSCode.Assist (addClause, caseSplit, fixTypo, typedHole)
-import IdePurescript.VSCode.Imports (addIdentImport)
+import IdePurescript.VSCode.Imports (addIdentImport, addModuleImport)
 import IdePurescript.VSCode.Pursuit (searchPursuit, searchPursuitModules)
 import IdePurescript.VSCode.Types (MainEff)
 import VSCode.LanguageClient (LanguageClient, onNotification0)
@@ -38,6 +38,7 @@ main = mkEffFn1 initialise
 
       pure $ StrMap.fromFoldable
         [ cmd "addExplicitImport" $ addIdentImport client
+        , cmd "addImport" $ addModuleImport client
         , cmd "caseSplit" $ caseSplit
         , cmd "addClause" $ addClause
         , cmdA "typedHole" $ typedHole
@@ -45,6 +46,3 @@ main = mkEffFn1 initialise
         , cmd "searchPursuitModules" $ searchPursuitModules
         , cmdA "fixTypo" $ fixTypo client
         ]
-
-      -- cmd "addImport" $ withPort $ addModuleImportCmd modulesState
-
