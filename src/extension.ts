@@ -28,7 +28,8 @@ export function activate(context: ExtensionContext) {
     const clientOptions = (folder: WorkspaceFolder): LanguageClientOptions => ({
         // Register only for PureScript documents in the given root folder
         documentSelector: [
-            { scheme: 'file', language: 'purescript', pattern: `${folder.uri.fsPath}/**/*` }
+            { scheme: 'file', language: 'purescript', pattern: `${folder.uri.fsPath}/**/*` },
+            ...folder.index === 0 ? [ { scheme: 'untitled', language: 'purescript' } ] : []
         ],
         workspaceFolder: folder,
         synchronize: {
@@ -62,10 +63,23 @@ export function activate(context: ExtensionContext) {
         "search"
     ].map(x => `purescript.${x}`);
 
+    const getWorkspaceFolder = (doc: TextDocument) => {
+        if (doc.uri.scheme === 'file') {
+            const wf = workspace.getWorkspaceFolder(doc.uri);
+            if (wf) {
+                return wf;
+            }
+        }
+        if (workspace.workspaceFolders.length > 0) {
+            return workspace.workspaceFolders[0];
+        }
+        return null;
+    }
+
     commandNames.forEach(command => {
         commands.registerTextEditorCommand(command, (ed, edit, ...args) => {
-            const wf = workspace.getWorkspaceFolder(ed.document.uri);
-            if (!wf) {return;}
+            const wf = getWorkspaceFolder(ed.document);
+            if (!wf) { return; }
             const lc = clients.get(wf.uri.toString());
             if (!lc) {
                 output.appendLine("Didn't find language client for " + ed.document.uri);
@@ -76,7 +90,7 @@ export function activate(context: ExtensionContext) {
     })
 
     const extensionCmd = (cmdName: string) => (ed, edit, ...args) => {
-        const wf = workspace.getWorkspaceFolder(ed.document.uri);
+        const wf = getWorkspaceFolder(ed.document);
         if (!wf) { return; }
         const cmds = commandCode.get(wf.uri.toString());
         if (!cmds) {
