@@ -96,7 +96,10 @@
           "scope": "resource"
         },
         "purescript.pscIdePort": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "description": "Port to use for purs IDE server (whether an existing server or to start a new one). By default a random port is chosen (or an existing port in .psc-ide-port if present), if this is specified no attempt will be made to select an alternative port on failure.",
           "default": null,
           "scope": "resource"
