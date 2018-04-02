@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.18.2
+
+* Updates from `purescript-language-server` version `0.10.2`:
+  - Add warning/build option on missing output directory - https://github.com/nwolverson/purescript-language-server/commit/83e7f2b884915100318bb6a06eb5b59fd7e39354
+
+## 0.18.1
+
+* Updates from `purescript-language-server` version `0.10.1`:
+  - Respect `pscIdePort` config - when absent port will be auto-chosen, when present server will be found or started on that port
+  - Respect `autoStartPscIde` config
+  - Make `executeCommandProvider` optional
+  - `fixTypo` position fix
+
 ## 0.18.0
 
 * Updates from `purescript-language-server` version `0.10.0`:
