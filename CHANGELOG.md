@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.19.0
+
+* Updates from `purescript-language-server` version `0.11.0`:
+  - Add find references command (requires purs 0.12). Currently works at the value level
+
 ## 0.18.2
 
 * Updates from `purescript-language-server` version `0.10.2`:
