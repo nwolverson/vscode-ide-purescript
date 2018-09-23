@@ -1,10 +1,13 @@
 module Main where
 
+
 import Prelude
-import Control.Monad.Eff.Uncurried (EffFn1)
+
+import Effect.Uncurried (EffectFn1)
+import Foreign (Foreign)
+import Foreign.Object (Object)
 import IdePurescript.VSCode.Main (main) as M
-import IdePurescript.VSCode.Types (MainEff)
 import VSCode.LanguageClient (LanguageClient)
 
-main :: forall eff. EffFn1 (MainEff eff) LanguageClient _
+main :: EffectFn1 LanguageClient (Object (EffectFn1 (Array Foreign) Unit))
 main = M.main

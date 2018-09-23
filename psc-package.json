@@ -1,9 +1,9 @@
 {
     "name": "vscode-ide-purescript",
-    "set": "ide-0.12-dev-7",
-    "source": "https://github.com/nwolverson/package-sets.git",
+    "set": "ide-20180815-2",
+    "source": "https://github.com/nwolverson/spacchetti.git",
     "depends": [
-        "ide-purescript-core",
-        "language-server"
+        "language-server",
+        "pursuit-lookup"
     ]
 }

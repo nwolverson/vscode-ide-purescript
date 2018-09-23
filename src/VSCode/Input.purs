@@ -1,10 +1,12 @@
-module VSCode.Input (DIALOG, InputBoxOptions, defaultInputOptions, getInput, showQuickPick, showQuickPickItems, QuickPickItem, showQuickPickItemsOpt) where
+module VSCode.Input (InputBoxOptions, defaultInputOptions, getInput, showQuickPick, showQuickPickItems, QuickPickItem, showQuickPickItemsOpt) where
 
 import Prelude
-import Control.Monad.Aff (Aff, makeAff)
-import Control.Monad.Eff (Eff, kind Effect)
+
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toNullable)
+import Effect (Effect)
+import Effect.Aff (Aff, makeAff, nonCanceler)
 
 type InputBoxOptions = {
     prompt:: Nullable String
@@ -13,12 +15,10 @@ type InputBoxOptions = {
   , validateInput:: Nullable (String -> Nullable String)
 }
 
-foreign import data DIALOG :: Effect
+foreign import showInputBox :: InputBoxOptions -> (String -> Effect Unit) -> Effect Unit
 
-foreign import showInputBox :: forall eff. InputBoxOptions -> (String -> Eff (dialog :: DIALOG | eff) Unit) -> Eff (dialog :: DIALOG | eff) Unit
-
-getInput :: forall eff. InputBoxOptions -> Aff (dialog :: DIALOG | eff) String
-getInput opts = makeAff $ \_ succ -> showInputBox opts succ
+getInput :: InputBoxOptions -> Aff String
+getInput opts = makeAff $ \cb -> showInputBox opts (cb <<< Right) $> nonCanceler
 
 defaultInputOptions :: InputBoxOptions
 defaultInputOptions =
@@ -29,11 +29,11 @@ defaultInputOptions =
     , validateInput: toNullable Nothing
     }
 
-foreign import showQuickPickImpl :: forall eff. Array String -> Maybe String -> (String -> Maybe String) -> (Maybe String -> Eff (dialog :: DIALOG | eff) Unit) -> Eff (dialog :: DIALOG | eff) Unit
+foreign import showQuickPickImpl :: Array String -> Maybe String -> (String -> Maybe String) -> (Maybe String -> Effect Unit) -> Effect Unit
 
-foreign import showQuickPickItemsImpl :: forall eff. Array QuickPickItem -> Maybe QuickPickItem -> (QuickPickItem -> Maybe QuickPickItem) -> (Maybe QuickPickItem -> Eff (dialog :: DIALOG | eff) Unit) -> Eff (dialog :: DIALOG | eff) Unit
+foreign import showQuickPickItemsImpl :: Array QuickPickItem -> Maybe QuickPickItem -> (QuickPickItem -> Maybe QuickPickItem) -> (Maybe QuickPickItem -> Effect Unit) -> Effect Unit
 
-foreign import showQuickPickItemsOptImpl :: forall eff. Array QuickPickItem -> QuickPickOptions -> Maybe QuickPickItem -> (QuickPickItem -> Maybe QuickPickItem) -> (Maybe QuickPickItem -> Eff (dialog :: DIALOG | eff) Unit) -> Eff (dialog :: DIALOG | eff) Unit
+foreign import showQuickPickItemsOptImpl :: Array QuickPickItem -> QuickPickOptions -> Maybe QuickPickItem -> (QuickPickItem -> Maybe QuickPickItem) -> (Maybe QuickPickItem -> Effect Unit) -> Effect Unit
 
 type QuickPickOptions = {
   placeHolder :: Nullable String
@@ -45,11 +45,11 @@ type QuickPickItem = {
   label :: String
 }
 
-showQuickPick :: forall eff. Array String -> Aff (dialog :: DIALOG | eff) (Maybe String)
-showQuickPick items = makeAff $ \_ succ -> showQuickPickImpl items Nothing Just succ 
+showQuickPick :: Array String -> Aff (Maybe String)
+showQuickPick items = makeAff $ \cb -> showQuickPickImpl items Nothing Just (cb <<< Right) $> nonCanceler 
 
-showQuickPickItems :: forall eff. Array QuickPickItem -> Aff (dialog :: DIALOG | eff) (Maybe QuickPickItem)
-showQuickPickItems items = makeAff $ \_ succ -> showQuickPickItemsImpl items Nothing Just succ 
+showQuickPickItems :: Array QuickPickItem -> Aff (Maybe QuickPickItem)
+showQuickPickItems items = makeAff $ \cb -> showQuickPickItemsImpl items Nothing Just (cb <<< Right) $> nonCanceler 
 
-showQuickPickItemsOpt :: forall eff. Array QuickPickItem -> QuickPickOptions -> Aff (dialog :: DIALOG | eff) (Maybe QuickPickItem)
-showQuickPickItemsOpt items opt = makeAff $ \_ succ -> showQuickPickItemsOptImpl items opt Nothing Just succ 
+showQuickPickItemsOpt :: Array QuickPickItem -> QuickPickOptions -> Aff (Maybe QuickPickItem)
+showQuickPickItemsOpt items opt = makeAff $ \cb -> showQuickPickItemsOptImpl items opt Nothing Just (cb <<< Right) $> nonCanceler 

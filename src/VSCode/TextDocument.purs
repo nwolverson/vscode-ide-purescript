@@ -1,20 +1,19 @@
 module VSCode.TextDocument where
 
 import Prelude
-import Control.Monad.Eff (Eff, kind Effect)
-import VSCode.Range (Range)
+
+import Effect (Effect)
 import VSCode.Position (Position)
+import VSCode.Range (Range)
 
 foreign import data TextDocument :: Type
 
-foreign import data EDITOR :: Effect
+foreign import getPath :: TextDocument -> Effect String
 
-foreign import getPath :: forall eff. TextDocument -> Eff (editor :: EDITOR | eff) String
+foreign import getText :: TextDocument -> Effect String
 
-foreign import getText :: forall eff. TextDocument -> Eff (editor :: EDITOR | eff) String
+foreign import getTextInRange :: TextDocument -> Range -> Effect String
 
-foreign import getTextInRange :: forall eff. TextDocument -> Range -> Eff (editor :: EDITOR | eff) String
+foreign import lineAtPosition :: TextDocument -> Position -> Effect String
 
-foreign import lineAtPosition :: forall eff. TextDocument -> Position -> Eff (editor :: EDITOR | eff) String
-
-foreign import openTextDocument :: forall eff. String -> (TextDocument -> Eff (editor :: EDITOR | eff) Unit) ->  Eff (editor :: EDITOR | eff) Unit
+foreign import openTextDocument :: String -> (TextDocument -> Effect Unit) ->  Effect Unit

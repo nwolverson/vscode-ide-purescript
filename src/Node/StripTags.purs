@@ -1,8 +1,5 @@
 module Node.StripTags where
 
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Exception (EXCEPTION)
+import Effect (Effect)
 
--- Arbitrary effect, not sure what it might do...
-foreign import stripTags :: forall e. String -> Eff (exception :: EXCEPTION | e) String
-
+foreign import stripTags :: String -> Effect String

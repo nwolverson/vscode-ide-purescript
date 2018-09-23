@@ -1,17 +1,16 @@
-import { workspace, Disposable, ExtensionContext, OutputChannel, WorkspaceFolder, Uri, TextDocument, window, commands  } from 'vscode';
-import { LanguageClient, LanguageClientOptions, SettingMonitor, ServerOptions, TransportKind, RevealOutputChannelOn, ErrorAction, CloseAction, ExecuteCommandRequest } from 'vscode-languageclient';
-import { resolve } from 'path';
-import { debug } from 'util';
+import { workspace, ExtensionContext, WorkspaceFolder, TextDocument, window, commands  } from 'vscode';
+import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind, RevealOutputChannelOn, ErrorAction, CloseAction, ExecuteCommandRequest } from 'vscode-languageclient';
 
 type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
 
 const clients: Map<string, LanguageClient> = new Map();
 const commandCode: Map<string, ExtensionCommands> = new Map();
 
-export function activate(context: ExtensionContext) {
+export function activate() {
     const activatePS = require('./bundle');
 
-    const opts = { module: 'purescript-language-server', transport: TransportKind.ipc };
+    const module = require.resolve('purescript-language-server')
+    const opts = { module, transport: TransportKind.ipc };
     const serverOptions: ServerOptions =
         {
             run: opts,
@@ -114,7 +113,7 @@ export function activate(context: ExtensionContext) {
         if (!clients.has(folder.uri.toString())) {
             try {
                 output.appendLine("Launching new language client for " + folder.uri.toString());
-                const client = new LanguageClient('PureScript', 'IDE PureScript', serverOptions, clientOptions(folder));
+                const client = new LanguageClient('purescript', 'IDE PureScript', serverOptions, clientOptions(folder));
                 client.registerProposedFeatures();
             
                 client.onReady().then(async () => {

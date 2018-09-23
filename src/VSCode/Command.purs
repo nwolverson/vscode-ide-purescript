@@ -1,19 +1,18 @@
 module VSCode.Command where
 
 import Prelude
-import Control.Monad.Aff (Aff, makeAff)
-import Control.Monad.Eff (Eff, kind Effect)
+
 import Control.Promise (Promise)
-import Data.Foreign (Foreign)
+import Data.Either (Either(..))
+import Effect (Effect)
+import Effect.Aff (Aff, makeAff, nonCanceler)
+import Foreign (Foreign)
 
-foreign import data COMMAND :: Effect
+foreign import register :: String -> (Array Foreign -> Effect Unit) -> Effect Unit
 
-foreign import register :: forall eff. String -> (Array Foreign -> Eff (command :: COMMAND | eff) Unit) -> Eff (command :: COMMAND | eff) Unit
+foreign import execute :: String -> Array Foreign -> Effect (Promise Unit)
 
-foreign import execute :: forall eff. String -> Array Foreign -> Eff (command :: COMMAND | eff) (Promise Unit)
+foreign import executeCb :: forall a. String -> Array Foreign -> (a -> Effect Unit) -> Effect Unit
 
-foreign import executeCb :: forall eff a. String -> Array Foreign -> (a -> Eff (command :: COMMAND | eff) Unit) -> Eff (command :: COMMAND | eff) Unit
-
-executeAff :: forall eff a. String -> Array Foreign -> Aff (command :: COMMAND | eff) a
-executeAff a b =
-  makeAff \err succ -> executeCb a b succ
+executeAff :: forall a. String -> Array Foreign -> Aff a
+executeAff a b = makeAff \cb -> executeCb a b (cb <<< Right) $> nonCanceler

@@ -1,30 +1,32 @@
 module VSCode.TextEditor (TextEditor, setText, setTextInRange, setTextViaDiff, getDocument) where
 
 import Prelude
-import VSCode.TextDocument (TextDocument, EDITOR)
+
+import Data.Either (Either(..))
+import Effect (Effect)
+import Effect.Aff (Aff, makeAff, nonCanceler)
 import VSCode.Range (Range)
-import Control.Monad.Eff (Eff, kind Effect)
-import Control.Monad.Aff (Aff, makeAff)
+import VSCode.TextDocument (TextDocument)
     
 foreign import data TextEditor :: Type
 
-foreign import setTextImpl :: forall eff. TextEditor -> String -> (Boolean -> Eff (editor :: EDITOR | eff) Unit) -> Eff (editor :: EDITOR | eff) Unit
+foreign import setTextImpl :: TextEditor -> String -> (Boolean -> Effect Unit) -> Effect Unit
 
 -- | Replace the entire editor text in one edit operation
-setText :: forall eff. TextEditor -> String -> Aff (editor :: EDITOR | eff) Boolean
-setText ed s = makeAff $ \_ succ -> setTextImpl ed s succ
+setText :: TextEditor -> String -> Aff Boolean
+setText ed s = makeAff $ \cb -> setTextImpl ed s (cb <<< Right) $> nonCanceler
 
-foreign import setTextViaDiffImpl :: forall eff. TextEditor -> String -> (Boolean -> Eff (editor :: EDITOR | eff) Unit) -> Eff (editor :: EDITOR | eff) Unit
+foreign import setTextViaDiffImpl :: TextEditor -> String -> (Boolean -> Effect Unit) -> Effect Unit
 
 -- | Replace the entire editor text where it has changed in the middle as an edit just of that middle part. Assumes a single changed region. 
-setTextViaDiff :: forall eff. TextEditor -> String -> Aff (editor :: EDITOR | eff) Boolean
-setTextViaDiff ed s = makeAff $ \_ succ -> setTextViaDiffImpl ed s succ
+setTextViaDiff :: TextEditor -> String -> Aff Boolean
+setTextViaDiff ed s = makeAff $ \cb -> setTextViaDiffImpl ed s (cb <<< Right) $> nonCanceler
 
 
-foreign import setTextInRangeImpl :: forall eff. TextEditor -> String -> Range -> (Boolean -> Eff (editor :: EDITOR | eff) Unit) -> Eff (editor :: EDITOR | eff) Unit
+foreign import setTextInRangeImpl :: TextEditor -> String -> Range -> (Boolean -> Effect Unit) -> Effect Unit
 
 -- | Replace the editor text in a given range with the supplied text
-setTextInRange :: forall eff. TextEditor -> String -> Range -> Aff (editor :: EDITOR | eff) Boolean
-setTextInRange ed s range = makeAff $ \_ succ -> setTextInRangeImpl ed s range succ
+setTextInRange :: TextEditor -> String -> Range -> Aff Boolean
+setTextInRange ed s range = makeAff $ \cb -> setTextInRangeImpl ed s range (cb <<< Right) $> nonCanceler
 
 foreign import getDocument :: TextEditor -> TextDocument

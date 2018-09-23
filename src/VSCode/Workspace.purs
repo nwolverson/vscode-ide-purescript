@@ -1,14 +1,12 @@
 module VSCode.Workspace where
 
-import Control.Monad.Eff (Eff, kind Effect)
-import Data.Foreign
+import Effect (Effect)
+import Foreign (Foreign)
 
 foreign import data Configuration :: Type
 
-foreign import data WORKSPACE :: Effect
+foreign import getConfiguration :: String -> Effect Configuration
 
-foreign import getConfiguration :: forall eff. String -> Eff (workspace :: WORKSPACE | eff) Configuration
+foreign import getValue :: Configuration -> String -> Effect Foreign
 
-foreign import getValue :: forall eff. Configuration -> String -> Eff (workspace :: WORKSPACE | eff) Foreign
-
-foreign import rootPath :: forall eff. Eff (workspace :: WORKSPACE | eff) String
+foreign import rootPath :: Effect String

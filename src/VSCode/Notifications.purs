@@ -1,22 +1,21 @@
 module VSCode.Notifications where
 
-import Prelude (Unit)
-import Control.Monad.Eff
+import Prelude
 
-foreign import data NOTIFY :: Effect
+import Effect (Effect)
 
 foreign import data OutputChannel :: Type
 
-foreign import createOutputChannel :: forall eff. String -> Eff (notify :: NOTIFY | eff) OutputChannel
+foreign import createOutputChannel :: String -> Effect OutputChannel
 
-foreign import appendOutput :: forall eff. OutputChannel -> String -> Eff (notify :: NOTIFY | eff) Unit
+foreign import appendOutput :: OutputChannel -> String -> Effect Unit
 
-foreign import appendOutputLine :: forall eff. OutputChannel -> String -> Eff (notify :: NOTIFY | eff) Unit
+foreign import appendOutputLine :: OutputChannel -> String -> Effect Unit
 
-foreign import clearOutput :: forall eff. OutputChannel -> Eff (notify :: NOTIFY | eff) Unit
+foreign import clearOutput :: OutputChannel -> Effect Unit
 
-foreign import showError :: forall eff. String -> Eff (notify :: NOTIFY | eff) Unit
+foreign import showError :: String -> Effect Unit
 
-foreign import showInfo :: forall eff. String -> Eff (notify :: NOTIFY | eff) Unit
+foreign import showInfo :: String -> Effect Unit
 
-foreign import showWarning :: forall eff. String -> Eff (notify :: NOTIFY | eff) Unit
+foreign import showWarning :: String -> Effect Unit

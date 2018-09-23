@@ -11,15 +11,15 @@ exports.register = function (command) { return function (callback) { return func
     });
 }; }; };
 exports.execute = function (command) { return function (args) { return function () {
-    return (_a = vscode.commands).executeCommand.apply(_a, [command].concat(args));
     var _a;
+    return (_a = vscode.commands).executeCommand.apply(_a, [command].concat(args));
 }; }; };
 exports.executeCb = function (command) { return function (args) { return function (cb) { return function () {
+    var _a;
     return (_a = vscode.commands).executeCommand.apply(_a, [command].concat(args)).then(function (res) {
         console.log(res);
         cb(res);
     }, function (err) {
         console.error("Command error", err);
     });
-    var _a;
 }; }; }; };

@@ -1,22 +1,20 @@
-module VSCode.Window (getActiveTextEditor, getCursorBufferPosition, getSelectionRange, setStatusBarMessage, WINDOW) where
+module VSCode.Window (getActiveTextEditor, getCursorBufferPosition, getSelectionRange, setStatusBarMessage) where
 
 import Prelude
-import Control.Monad.Eff (Eff, kind Effect)
+
 import Data.Maybe (Maybe(Just, Nothing))
-import VSCode.Range (Range)
+import Effect (Effect)
 import VSCode.Position (Position)
-import VSCode.TextDocument (EDITOR)
+import VSCode.Range (Range)
 import VSCode.TextEditor (TextEditor)
 
-foreign import data WINDOW :: Effect
+foreign import getActiveTextEditorImpl :: Maybe TextEditor -> (TextEditor -> Maybe TextEditor) -> Effect (Maybe TextEditor)
 
-foreign import getActiveTextEditorImpl :: forall eff. Maybe TextEditor -> (TextEditor -> Maybe TextEditor) -> Eff eff (Maybe TextEditor)
-
-getActiveTextEditor :: forall eff. Eff eff (Maybe TextEditor)
+getActiveTextEditor :: Effect (Maybe TextEditor)
 getActiveTextEditor = getActiveTextEditorImpl Nothing Just
 
-foreign import getCursorBufferPosition :: forall eff. TextEditor -> Eff (editor :: EDITOR | eff) Position
+foreign import getCursorBufferPosition :: TextEditor -> Effect Position
 
-foreign import getSelectionRange :: forall eff. TextEditor -> Eff (editor :: EDITOR | eff) Range
+foreign import getSelectionRange :: TextEditor -> Effect Range
 
-foreign import setStatusBarMessage :: forall eff. String -> Eff (window :: WINDOW | eff) Unit
+foreign import setStatusBarMessage :: String -> Effect Unit

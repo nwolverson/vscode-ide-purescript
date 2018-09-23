@@ -1,21 +1,21 @@
 module VSCode.LanguageClient where
 
 import Prelude
-import Control.Monad.Aff (Aff, makeAff)
-import Control.Monad.Eff (Eff, kind Effect)
-import Control.Monad.Eff.Exception (Error)
-import Data.Foreign (Foreign)
+
+import Data.Either (Either(..))
 import Data.Nullable (Nullable)
-import VSCode.Command (COMMAND)
+import Effect (Effect)
+import Effect.Aff (Aff, Error, makeAff, nonCanceler)
+import Foreign (Foreign)
 
 foreign import data LanguageClient :: Type
 
-foreign import sendCommandImpl :: forall eff a. LanguageClient -> String -> Nullable (Array Foreign) ->
-  (Error -> Eff (command :: COMMAND | eff) Unit) ->
-  (a -> Eff (command :: COMMAND | eff) Unit) -> 
-  Eff (command :: COMMAND | eff) Unit
+foreign import sendCommandImpl :: forall a. LanguageClient -> String -> Nullable (Array Foreign) ->
+  (Error -> Effect Unit) ->
+  (a -> Effect Unit) -> 
+  Effect Unit
 
-sendCommand :: forall eff. LanguageClient -> String -> Nullable (Array Foreign) -> Aff (command :: COMMAND | eff) Foreign 
-sendCommand lc cmd args = makeAff $ sendCommandImpl lc cmd args
+sendCommand :: LanguageClient -> String -> Nullable (Array Foreign) -> Aff Foreign 
+sendCommand lc cmd args = makeAff $ \cb -> sendCommandImpl lc cmd args (cb <<< Left) (cb <<< Right) $> nonCanceler
 
-foreign import onNotification0 :: forall eff a. LanguageClient -> String -> Eff (command :: COMMAND | eff) Unit -> Eff (command :: COMMAND | eff) Unit
+foreign import onNotification0 :: LanguageClient -> String -> Effect Unit -> Effect Unit

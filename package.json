@@ -18,7 +18,7 @@
     "homepage": "https://github.com/nwolverson/vscode-ide-purescript",
     "license": "MIT",
     "engines": {
-        "vscode": "^1.16.0"
+        "vscode": "^1.27.0"
     },
     "categories": [
         "Other"
@@ -223,6 +223,17 @@
                     "default": null,
                     "description": "Override purs ide output directory (output/ if not specified). This should match up to your build command",
                     "scope": "resource"
+                },
+                "purescript.trace.server": {
+                    "scope": "window",
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Traces the communication between VSCode and the PureScript language service."
                 }
             }
         },
@@ -247,7 +258,7 @@
         "tsc:extension": "tsc -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install",
         "psc:src": "mkdirp out/src",
-        "psc:update": "psc-package update",
+        "psc:update": "psc-package install",
         "psc:build": "pulp --psc-package build --to out/src/bundle.js --skip-entry-point",
         "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js"
     },
@@ -255,18 +266,17 @@
         "nwolverson.language-purescript"
     ],
     "devDependencies": {
-        "@types/node": "9.4.6",
+        "@types/node": "10.10.3",
         "mkdirp": "^0.5.1",
-        "npm-run-all": "^4.0.2",
-        "psc-package": "^0.2.5",
-        "typescript": "~2.7.1"
+        "npm-run-all": "^4.1.3",
+        "psc-package": "^0.3.2",
+        "typescript": "~3.0.3"
     },
     "dependencies": {
-        "purescript-language-server": "^0.11.0",
-        "striptags": "^3.0.1",
-        "vscode": "^1.1.10",
-        "vscode-languageclient": "^3.5.0",
-        "vscode-uri": "^1.0.0",
+        "striptags": "^3.1.1",
+        "vscode": "^1.1.21",
+        "vscode-languageclient": "^5.1.0",
+        "vscode-uri": "^1.0.6",
         "xhr2": "^0.1.4"
     }
 }
