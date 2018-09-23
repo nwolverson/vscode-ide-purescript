@@ -273,6 +273,7 @@
         "typescript": "~3.0.3"
     },
     "dependencies": {
+        "purescript-language-server": "^0.12.1",
         "striptags": "^3.1.1",
         "vscode": "^1.1.21",
         "vscode-languageclient": "^5.1.0",
