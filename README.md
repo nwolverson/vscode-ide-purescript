@@ -37,6 +37,10 @@ See [input-assist](https://github.com/freebroccolo/vscode-input-assist) for Unic
 on autocomplete which is known to work with this extension, alternatively [unicode-latex](https://github.com/ojsheikh/unicode-latex)
 which offers similar LaTeX based input vi a lookup command.
 
+### Key bindings
+
+The only key binding supplied out of the box is Shift+Ctrl+B (or Shift+Cmd+B) for the full "Build" command. Although this is only enabled inside PureScript-language text editors, it does conflict with the built-in Build command. This can be edited, and other keybinds added, in the VS Code Keyboard Shortcuts preferences.
+
 ## Build
 
 'PureScript Build' command will build your project using the command line `pulp build -- --json-errors`.
