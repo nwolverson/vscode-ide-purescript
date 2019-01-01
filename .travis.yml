@@ -1,11 +1,11 @@
 language: node_js
 dist: trusty
 sudo: required
-node_js: 6
+node_js: 8
 env:
   - PATH=$HOME/purescript:$PATH
 install:
-  - wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/v0.11.6/linux64.tar.gz
+  - wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/v0.12.1/linux64.tar.gz
   - tar -xvf $HOME/purescript.tar.gz -C $HOME/
   - chmod a+x $HOME/purescript
   - npm install -g psc-package pulp
