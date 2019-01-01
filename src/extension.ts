@@ -9,9 +9,8 @@ const commandCode: Map<string, ExtensionCommands> = new Map();
 export function activate() {
     const activatePS = require('./bundle');
 
-    // For debugging:
-    // const module = require.resolve('purescript-language-server')
-    const opts = { module: 'purescript-language-server', transport: TransportKind.ipc };
+    const module = require.resolve('purescript-language-server');
+    const opts = { module, transport: TransportKind.ipc };
     const serverOptions: ServerOptions =
         {
             run: opts,
