@@ -122,6 +122,12 @@
                     "description": "Whether to add psc-package sources to the globs passed to the IDE server for source locations (specifically the output of `psc-package sources`, if this is a psc-package project). Update due to adding packages/changing package set requires psc-ide server restart.",
                     "scope": "resource"
                 },
+                "purescript.addSpagoSources": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to add spago sources to the globs passed to the IDE server for source locations (specifically the output of `spago sources`, if this is a spago project). Update due to adding packages/changing package set requires psc-ide server restart.",
+                    "scope": "resource"
+                },
                 "purescript.sourcePath": {
                     "type": "string",
                     "default": "src",
