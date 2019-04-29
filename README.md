@@ -43,12 +43,31 @@ The only key binding supplied out of the box is Shift+Ctrl+B (or Shift+Cmd+B) fo
 
 ## Build
 
+### With Pulp (default)
+
 'PureScript Build' command will build your project using the command line `pulp build -- --json-errors`.
 Version 0.8.0+ of the PureScript compiler is required, as well as version 10.0.0 of `pulp` (with earlier versions remove `--`).
 
-Alternative build commands can be used by setting `purescript.buildCommand`:
+For `pulp` with `psc-package`, add the following configuration to your `settings.json`:
+```
+{
+  "purescript.addNpmPath": true,
+  "purescript.buildCommand": "pulp --psc-package build -- --json-errors"
+}
+```
 
-* For `pulp` with `psc-package`: `pulp --psc-package build -- --json-errors`
+### With Spago
+
+For `spago` with `psc-package`, add the following configuration to your `settings.json`:
+```
+{
+  "purescript.addSpagoSources": true,
+  "purescript.addNpmPath": true,
+  "purescript.buildCommand": "spago build -- --json-errors"
+}
+```
+
+Be sure to `Restart/Reconnect purs IDE server` following such changes.
 
 Error suggestions are provided for some compiler errors, try alt/cmd and `.`.
 
