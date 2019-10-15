@@ -63,13 +63,19 @@ For `spago` with `psc-package`, add the following configuration to your `setting
 {
   "purescript.addSpagoSources": true,
   "purescript.addNpmPath": true,
-  "purescript.buildCommand": "spago build -- --json-errors"
+  "purescript.buildCommand": "spago build --purs-args --json-errors"
 }
 ```
 
+### Common Build Information
+
 Be sure to `Restart/Reconnect purs IDE server` following such changes.
 
-Error suggestions are provided for some compiler errors, try alt/cmd and `.`.
+A rebuild is automatically triggered when saving a `.purs` file.
+
+Note the following default vscode bindings for processing build errors:
+* `F8` cycles through errors.
+* `CTRL + .` or `CMD + .` shows suggested fixes. The compiler sometimes provides these suggestions.
 
 ## Autocomplete
 
