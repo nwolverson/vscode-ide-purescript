@@ -2,9 +2,7 @@
 
 This package provides editor support for PureScript projects in Visual Studio Code, similar to the corresponding
  [atom plugin](https://github.com/nwolverson/atom-ide-purescript). Now based on a common
- [PureScript language server](https://github.com/nwolverson/purescript-language-server)! Basic syntax highlighting support
- is provided by the separate package [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript) 
- which should be installed automatically as a dependency. 
+ [PureScript language server](https://github.com/nwolverson/purescript-language-server)! 
 
 This package provides:
 
@@ -15,23 +13,19 @@ This package provides:
 - [x] Go to symbol
 - [x] Go to definition
 
-Package should trigger on opening a `.purs` file.
+The extension [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript) provides basic syntax highlighting support - it is required but should be installed automatically as a dependency. This package will start on opening a `.purs` file, and automatically trigger a rebuild on saving a `.purs` file.
 
 ## Installation and General Use
 
 This package makes use of the [`purs ide server`](https://github.com/purescript/purescript/tree/master/psc-ide) (previously `psc-ide`) for most functionality, with `purs compile` (by default via `pulp`) for the explicit
-build command. All this is via a Language Server Protocol implementation, [purescript-language-server](https://github.com/nwolverson/purescript-language-server).
+build command. All this is via a Language Server Protocol implementation, [purescript-language-server](https://github.com/nwolverson/purescript-language-server). Multi-root workspaces should be supported via a multiple language server approach.
 
 This package will launch a `purescript-language-server` process, which will automatically (but this is configurable) start `purs ide server` in your project directory and kill it when closing. Start/stop and restart commands are provided for the IDE server in case required (eg after changing config or updating compiler version).
 
-Multi-root workspaces should be supported via a multiple language server approach.
+For all functions provided by the IDE server you will need to build your project first! This can either be via the built-in
+build command, or via an external tool - but if you do build externally, you should be sure to `Restart/Reconnect purs IDE server` (accessed through `CTRL+SHIFT+P`/`CMD+SHIFT+P`) afterwards, or the IDE server will not be able to pick up any changes.
 
-For all functions provided by the IDE server you will need to build your project first! A rebuild is automatically triggered when saving a `.purs` file.
-
-The extension [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript)
-is required but should be installed automatically. The package will start on opening a `.purs` file.
-
-Be sure to `Restart/Reconnect purs IDE server` (accessed through `CTRL+SHIFT+P`/`CMD+SHIFT+P`) after following the below configuration steps for `pulp` or `spago`.
+You can configure building with `pulp` (optionally with `psc-package`) or `spago` by following the below configuration steps, after which you should also `Restart/Reconnect purs IDE server`.
 
 ### With Pulp (default)
 
