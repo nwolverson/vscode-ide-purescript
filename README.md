@@ -63,7 +63,7 @@ For `spago` with `psc-package`, add the following configuration to your `setting
 {
   "purescript.addSpagoSources": true,
   "purescript.addNpmPath": true,
-  "purescript.buildCommand": "spago build -- --json-errors"
+  "purescript.buildCommand": "spago build -u --json-errors"
 }
 ```
 
