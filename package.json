@@ -273,9 +273,7 @@
         "tsc:extension": "tsc -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install",
         "psc:src": "mkdirp out/src",
-        "psc:update": "psc-package install",
-        "psc:build": "pulp --psc-package build --to out/src/bundle.js --skip-entry-point",
-        "psc:entry": "echo module.exports = PS.Main.main >> out/src/bundle.js"
+        "psc:build": "spago bundle-module --to out/src/bundle.js"
     },
     "extensionDependencies": [
         "nwolverson.language-purescript"
@@ -287,7 +285,7 @@
         "typescript": "~3.0.3"
     },
     "dependencies": {
-        "purescript-language-server": "^0.12.7",
+        "purescript-language-server": "^0.12.9",
         "striptags": "^3.1.1",
         "vscode": "^1.1.21",
         "vscode-languageclient": "^5.1.0",
