@@ -93,14 +93,14 @@ typedHole args = launchAffAndRaise $ void $ do
       | Just uri <- args !! 1
       , Just range <- args !! 2
       , tail <- drop 3 args -> 
-    case runExcept $ readString head, readTypeInfo <$> tail of
-      Right name, args' -> void $ runMaybeT $ do
-        let items = (map makeItem args')
-        item :: QuickPickItem <- MaybeT $ showQuickPickItemsOpt items { placeHolder : toNullable $ Just $ "Filter hole suggestions for " <> name}
-        index :: Int <- MaybeT $ pure $ findIndex (eqQuickPickItem item) items
-        arg :: TypeInfo <- MaybeT $ pure $ args' !! index
-        liftAff $ executeAff ("purescript.typedHole-explicit") [ head, uri, range, unsafeToForeign arg ]
-      _, _ -> pure unit
+      case runExcept $ readString head, readTypeInfo <$> tail of
+        Right name, args' -> void $ runMaybeT $ do
+          let items = (map makeItem args')
+          item :: QuickPickItem <- MaybeT $ showQuickPickItemsOpt items { placeHolder : toNullable $ Just $ "Filter hole suggestions for " <> name}
+          index :: Int <- MaybeT $ pure $ findIndex (eqQuickPickItem item) items
+          arg :: TypeInfo <- MaybeT $ pure $ args' !! index
+          liftAff $ executeAff ("purescript.typedHole-explicit") [ head, uri, range, unsafeToForeign arg ]
+        _, _ -> pure unit
     _ -> pure unit
   where
   readTypeInfo :: Foreign -> TypeInfo
