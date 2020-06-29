@@ -1,5 +1,6 @@
 import { workspace, ExtensionContext, WorkspaceFolder, TextDocument, window, commands  } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind, RevealOutputChannelOn, ErrorAction, CloseAction, ExecuteCommandRequest } from 'vscode-languageclient';
+import { ConfigurationFeature } from 'vscode-languageclient/lib/configuration';
 
 type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
 

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.lineAtPosition = exports.getTextInRange = exports.getText = exports.getPath = exports.openTextDocument = void 0;
 var vscode = require("vscode");
 exports.openTextDocument = function (fileName) { return function (cb) { return function () {
     return vscode.workspace.openTextDocument(fileName).then(function (doc) { return cb(doc)(); });

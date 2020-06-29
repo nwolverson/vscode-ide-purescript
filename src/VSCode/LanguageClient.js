@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.onNotification0 = exports.sendCommandImpl = void 0;
 var vscode_languageclient_1 = require("vscode-languageclient");
 exports.sendCommandImpl = function (client) { return function (command) { return function (args) {
     return function (errCb) { return function (cb) { return function () {

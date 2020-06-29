@@ -24,7 +24,7 @@ import VSCode.TextEditor (getDocument)
 import VSCode.Window (getActiveTextEditor)
 
 addIdentImport :: LanguageClient -> Effect Unit
-addIdentImport client = launchAffAndRaise $ void $ do
+addIdentImport client = launchAffAndRaise $ void $ do 
   liftEffect getActivePosInfo >>= maybe (pure unit) \{ pos, uri, ed } -> do
     atCursor <- liftEffect $ identifierAtCursor ed
     let defaultIdent = maybe "" _.word atCursor

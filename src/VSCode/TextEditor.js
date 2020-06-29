@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getDocument = exports.setTextInRangeImpl = exports.setTextViaDiffImpl = exports.setTextImpl = void 0;
 var vscode_1 = require("vscode");
 exports.setTextImpl = function (ed) { return function (text) { return function (cb) { return function () {
     return ed.edit(function (builder) { return builder.replace(new vscode_1.Range(0, 0, ed.document.lineCount, 0), text); })
