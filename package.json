@@ -203,13 +203,13 @@
                 "purescript.editorMode": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Whether to set the editor-mode flag on the IDE server",
+                    "description": "(DEPRECATED - ignored from purs 0.13.8) Whether to set the editor-mode flag on the IDE server",
                     "scope": "resource"
                 },
                 "purescript.polling": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Whether to set the polling flag on the IDE server",
+                    "description": "(DEPRECATED - ignored from purs 0.13.8) Whether to set the polling flag on the IDE server",
                     "scope": "resource"
                 },
                 "purescript.outputDirectory": {
