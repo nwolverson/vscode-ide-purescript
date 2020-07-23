@@ -100,7 +100,7 @@
                 },
                 "purescript.packagePath": {
                     "type": "string",
-                    "default": "bower_components",
+                    "default": "",
                     "description": "Path to installed packages. Will be used to control globs passed to IDE server for source locations.  Change requires IDE server restart.",
                     "scope": "resource"
                 },
@@ -112,7 +112,7 @@
                 },
                 "purescript.addSpagoSources": {
                     "type": "boolean",
-                    "default": false,
+                    "default": true,
                     "description": "Whether to add spago sources to the globs passed to the IDE server for source locations (specifically the output of `spago sources`, if this is a spago project). Update due to adding packages/changing package set requires psc-ide server restart.",
                     "scope": "resource"
                 },
@@ -124,7 +124,7 @@
                 },
                 "purescript.buildCommand": {
                     "type": "string",
-                    "default": "pulp build -- --json-errors",
+                    "default": "spago build --purs-args --json-errors",
                     "description": "Build command to use with arguments. Not passed to shell. eg `pulp build -- --json-errors` (this default requires pulp >=10)",
                     "scope": "resource"
                 },
@@ -214,7 +214,7 @@
                 },
                 "purescript.outputDirectory": {
                     "type": "string",
-                    "default": null,
+                    "default": "",
                     "description": "Override purs ide output directory (output/ if not specified). This should match up to your build command",
                     "scope": "resource"
                 },
