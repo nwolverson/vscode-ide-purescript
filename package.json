@@ -83,18 +83,6 @@
                     "description": "Location of purs executable (resolved wrt PATH)",
                     "scope": "resource"
                 },
-                "purescript.useCombinedExe": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Whether to use the new combined purs executable. This will default to true in the future then go away.",
-                    "scope": "resource"
-                },
-                "purescript.pscIdeServerExe": {
-                    "type": "string",
-                    "default": "psc-ide-server",
-                    "description": "Location of legacy psc-ide-server executable (resolved wrt PATH)",
-                    "scope": "resource"
-                },
                 "purescript.pscIdePort": {
                     "type": [
                         "integer",
