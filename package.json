@@ -23,9 +23,12 @@
     "categories": [
         "Other"
     ],
+    "keywords": [ "purescript", "purs" ],
     "activationEvents": [
-        "onLanguage:purescript"
-    ],
+        "onLanguage:purescript",
+        "workspaceContains:src/**/*.purs",
+        "workspaceContains:spago.dhall"
+        ],
     "main": "./out/src/extension",
     "contributes": {
         "commands": [
