@@ -91,3 +91,8 @@ Commands "Search Pursuit" and "Search Pursuit Modules" are available to search f
 ## PSCI
 
 No particular support. Suggest you open a PSCI in the integrated terminal.
+
+## Development
+
+To develop (rather than use) this extension, see [the instructions](https://github.com/nwolverson/purescript-language-server/blob/master/README.md#development) in `purescript-language-server`.
+
