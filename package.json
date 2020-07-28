@@ -220,7 +220,7 @@
                 },
                 "purescript.outputDirectory": {
                     "type": "string",
-                    "default": "",
+                    "default": "output/",
                     "description": "Override purs ide output directory (output/ if not specified). This should match up to your build command",
                     "scope": "resource"
                 },
