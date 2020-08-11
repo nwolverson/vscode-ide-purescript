@@ -153,7 +153,7 @@ let additions = { pursuit-lookup =
        , repo =
            "https://github.com/nwolverson/purescript-language-server.git"
        , version =
-           "73d926282a3a0f1e8ca98631c45aed49594d4f8a"
+           "5a564cc4eb88a1581e5b42fc16afae580b16eaa4"
        }
 }
     
