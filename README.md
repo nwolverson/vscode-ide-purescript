@@ -31,7 +31,7 @@ build command, or via an external tool - but if you do build externally, you sho
 
 If you open CTRL+SHIFT+P, then type 'purescript', you will get the following menu.
 
-The menu image comes in the next commit.
+![command-menu](https://user-images.githubusercontent.com/1215420/89945576-3ab68a00-dc2a-11ea-9486-93db4ef2741a.png)
 
 You can configure building with `pulp` (optionally with `psc-package`) or `spago` by following the configuration steps below, after which you should also `Restart/Reconnect purs IDE server`.
 
