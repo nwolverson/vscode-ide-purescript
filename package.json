@@ -52,10 +52,6 @@
                 "title": "PureScript: Case Split"
             },
             {
-                "command": "purescript.caseSplit-explicit",
-                "title": "PureScript: Case Split (explicit)"
-            },
-            {
                 "command": "purescript.addClause",
                 "title": "PureScript: Add Clause"
             },
