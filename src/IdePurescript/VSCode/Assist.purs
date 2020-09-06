@@ -1,4 +1,4 @@
-module IdePurescript.VSCode.Assist (caseSplit, addClause, getActivePosInfo, typedHole, fixTypo) where
+module IdePurescript.VSCode.Assist (caseSplit, addClause, getActivePosInfo, typedHole) where
 
 import Prelude
 
@@ -56,32 +56,6 @@ addClause = launchAffAndRaise $ void $ do
   liftEffect getActivePosInfo >>= maybe (pure unit) \{ pos, uri } ->
     executeAff (cmdName addClauseCmd) [ unsafeToForeign uri, unsafeToForeign $ getLine pos, unsafeToForeign $ getCharacter pos ]
 
-fixTypo :: LanguageClient -> Array Foreign -> Effect Unit
-fixTypo client args = launchAffAndRaise $ void $ go Nothing
-  where
-  go :: Maybe Foreign -> Aff Unit
-  go choice =
-    case args of 
-      [ uriRaw, line, col ]
-        | Right uri <- runExcept $ readString uriRaw -> void $ do
-            res' <- sendCommand client "purescript.fixTypo" (toNullable $ Just $ args <> Array.fromFoldable (unsafeToForeign <$> choice))
-            case runExcept $ readArray res' >>= traverse decodeTypoResult of
-              Right arr | Array.length arr > 0 -> do
-                let items = (map makeItem arr)
-                pick <- showQuickPickItemsOpt items { placeHolder : toNullable $ Just $ "identifier" }
-                maybe (pure unit) (go <<< Just <<< encodeTypoResult <<< fromItem) pick
-              _ -> pure unit
-      _ -> pure unit
-
-  makeItem :: TypoResult -> QuickPickItem
-  makeItem (TypoResult { identifier, mod }) = 
-    { description: ""
-    , detail: mod
-    , label: identifier }
-
-  fromItem :: QuickPickItem -> TypoResult
-  fromItem ({ detail, label }) = TypoResult { identifier: label, mod: detail}
-  
 eqQuickPickItem :: QuickPickItem -> QuickPickItem -> Boolean
 eqQuickPickItem {description, detail, label} {description: desc2, detail: detail2, label: label2} =
   description == desc2 && detail == detail2 && label == label2
