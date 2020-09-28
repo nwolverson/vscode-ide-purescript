@@ -1,8 +1,7 @@
 # ide-purescript package for VS Code
 
-This package provides editor support for PureScript projects in Visual Studio Code, similar to the corresponding
- [atom plugin](https://github.com/nwolverson/atom-ide-purescript). Now based on a common
- [PureScript language server](https://github.com/nwolverson/purescript-language-server)! 
+This package provides editor support for PureScript projects in Visual Studio Code, based on the
+ [PureScript language server](https://github.com/nwolverson/purescript-language-server).
 
 This package provides:
 
@@ -12,6 +11,7 @@ This package provides:
 - [x] Type info tooltips
 - [x] Go to symbol
 - [x] Go to definition
+- [x] Formatting (via `purty`)
 
 The extension [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript) provides basic syntax highlighting support - it is required but should be installed automatically as a dependency. This package will start on opening a `.purs` file, and automatically trigger a rebuild on saving a `.purs` file.
 
