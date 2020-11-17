@@ -55,7 +55,7 @@ For `spago` with `psc-package`, add the following configuration to your `setting
 
 ### Suggested extensions
 
-See [input-assist](https://github.com/freebroccolo/vscode-input-assist) for Unicode input assistance
+See [input-assist](https://github.com/darinmorrison/vscode-input-assist) for Unicode input assistance
 on autocomplete which is known to work with this extension, alternatively [unicode-latex](https://github.com/ojsheikh/unicode-latex)
 which offers similar LaTeX based input vi a lookup command.
 
