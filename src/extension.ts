@@ -1,7 +1,5 @@
-import { workspace, ExtensionContext, WorkspaceFolder, TextDocument, window, commands  } from 'vscode';
-import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind, RevealOutputChannelOn, ErrorAction, CloseAction, ExecuteCommandRequest } from 'vscode-languageclient';
-import { ConfigurationFeature } from 'vscode-languageclient/lib/configuration';
-
+import { commands, TextDocument, window, workspace, WorkspaceFolder } from 'vscode';
+import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind } from 'vscode-languageclient';
 type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
 
 const clients: Map<string, LanguageClient> = new Map();
@@ -60,7 +58,9 @@ export function activate() {
         "stopPscIde",
         "restartPscIde",
         "getAvailableModules",
-        "search"
+        "search",
+        "fixTypo",
+        "organiseImports"
     ].map(x => `purescript.${x}`);
 
     const getWorkspaceFolder = (doc: TextDocument) => {

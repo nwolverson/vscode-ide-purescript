@@ -1,21 +1,21 @@
 # ide-purescript package for VS Code
 
-This package provides editor support for PureScript projects in Visual Studio Code, similar to the corresponding
- [atom plugin](https://github.com/nwolverson/atom-ide-purescript). Now based on a common
- [PureScript language server](https://github.com/nwolverson/purescript-language-server)! 
+This package provides editor support for PureScript projects in Visual Studio Code, based on the
+ [PureScript language server](https://github.com/nwolverson/purescript-language-server).
 
-This package provides:
+Features:
 
--  [x] [Autocompletion](#autocomplete)
--  [x] Quick-fix support for certain warnings
--  [x] [Build and error reporting](#build-and-error-reporting)
--  [x] [Case split](#case-split)
--  [x] [Add clause](#add-clause)
--  [x] [Tooltips](#tooltips)
--  [x] [Go to symbol](#go-to-symbol)
--  [x] [Go to definitions](#go-to-definitions)
--  [x] [Pursuit lookup](#pursuit-lookup)
--  [x] [PSCI](#psci)
+- [x] [Autocompletion](#autocomplete)
+- [x] Quick-fix support for certain warnings
+- [x] [Build and error reporting](#build-and-error-reporting)
+- [x] [Case split](#case-split)
+- [x] [Add clause](#add-clause)
+- [x] [Type info tooltips](#tooltips)
+- [x] [Go to symbol](#go-to-symbol)
+- [x] [Go to definition](#go-to-definition)
+- [x] [Pursuit lookup](#pursuit-lookup)
+- [x] [PSCI](#psci)
+- [x] Formatting (via `purty`)
 
 The extension [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript) provides basic syntax highlighting support - it is required but should be installed automatically as a dependency. This package will start on opening a `.purs` file, and automatically trigger a rebuild on saving a `.purs` file.
 
@@ -26,12 +26,8 @@ build command. All this is via a Language Server Protocol implementation, [pures
 
 This package will launch a `purescript-language-server` process, which will automatically (but this is configurable) start `purs ide server` in your project directory and kill it when closing. Start/stop and restart commands are provided for the IDE server in case required (eg after changing config or updating compiler version).
 
-For all functions provided by the IDE server you will need to build your project first! This can either be via the built-in
+Functionality provided by the IDE server won't work until you build your project. This can either be via the built-in
 build command, or via an external tool - but if you do build externally, you should be sure to `Restart/Reconnect purs IDE server` (accessed through `CTRL+SHIFT+P`/`CMD+SHIFT+P`) afterwards, or the IDE server will not be able to pick up any changes.
-
-If you open CTRL+SHIFT+P, then type 'purescript', you will get the following menu.
-
-![command-menu](https://user-images.githubusercontent.com/1215420/89945576-3ab68a00-dc2a-11ea-9486-93db4ef2741a.png)
 
 You can configure building with `pulp` (optionally with `psc-package`) or `spago` by following the configuration steps below, after which you should also `Restart/Reconnect purs IDE server`.
 
@@ -63,7 +59,7 @@ For `spago` with `psc-package`, add the following configuration to your `setting
 
 ### Suggested extensions
 
-See [input-assist](https://github.com/freebroccolo/vscode-input-assist) for Unicode input assistance
+See [input-assist](https://github.com/darinmorrison/vscode-input-assist) for Unicode input assistance
 on autocomplete which is known to work with this extension, alternatively [unicode-latex](https://github.com/ojsheikh/unicode-latex)
 which offers similar LaTeX based input vi a lookup command.
 
@@ -77,10 +73,17 @@ The following default vscode bindings are helpful for processing build errors:
 
 We will suggest you to add keyboard bindings for commands that you use frequently, which you can do through the menu item `File > Properties > Keyboard Shortcuts`.
 
+### Access to commands
+
+To see all the commands provided by this package,
+locate the `View > Command palette` in menu and type 'purescript'.
+The contents vary but you'll get something like this.
+
+![command-menu](https://user-images.githubusercontent.com/1215420/89945576-3ab68a00-dc2a-11ea-9486-93db4ef2741a.png)
+
 ## Autocomplete
 
-Provided from [`purs ide server`](https://github.com/purescript/purescript/tree/master/psc-ide). Make sure
-your project is built first.
+Provided from [`purs ide server`](https://github.com/purescript/purescript/tree/master/psc-ide). Make sure your project is built first.
 
 Completions will be sourced from modules imported in the current file.
 
@@ -93,34 +96,41 @@ if you are not sure which `settings.json` it is, pick the Spago -one.
 ## Case split
 
 The case split expands the case under the cursor.
-If you add this under a shortcut, you can quickly autocomplete large case clauses.
+It allows you to auto-complete large case clauses.
+
+ ![demonstration](https://user-images.githubusercontent.com/1215420/99907505-c211a000-2ce5-11eb-98f3-f7955b36f889.gif)
 
 ## Add clause
 
 The add clause reads the type declaration under the cursor
-and inserts an empty template under it.
-You can then fill this template.
-This is best in combination with the case split.
+and inserts an empty template.
+
+ ![demonstration](https://user-images.githubusercontent.com/1215420/99907495-b58d4780-2ce5-11eb-8fa4-4d3f6f402560.gif)
 
 ## Tooltips
 
-Hovering over an identifier will show a tooltip with its type.
+Hovering over an identifier will show a tooltip with its type. Over a qualifier of a qualified identifier it will show the associated module name.
 
-This feature is really stupid, only caring that you hover over a word regardless of context, you will get some false positives
+This feature disregards a context where the word appears,
+which means you will get some false positives
 (eg doesn't see local definitions, just the globals that should be visible in a given module).
 
-Hovering over a qualifier of a qualified identifier will show the associated module name.
+ ![demonstration](https://user-images.githubusercontent.com/1215420/99907514-cf2e8f00-2ce5-11eb-87e0-764b4d333c06.gif)
 
 ## Go to symbol
 
-The go to symbol can be found from the go to menu.
+'Go to symbol' locates definition of a symbol by its name.
 
-## Go to definitions
+ ![demonstration](https://user-images.githubusercontent.com/1215420/99907511-cb027180-2ce5-11eb-9fa1-4ee5db77ff44.gif)
+
+## Go to definition
 
 Hyperclick goto-definition functionality is supported. This is available with `purs` version
 0.9.2 and above, and like tooltips/autocomplete works on identifiers bound at the top level.
 
 In case source positions are not up to date, they may not be updated on rebuild, try rebuilding or restarting psc-ide server.
+
+ ![demonstration](https://user-images.githubusercontent.com/1215420/99907507-c76eea80-2ce5-11eb-8528-44c965e4abb6.gif)
 
 ## Pursuit lookup
 
