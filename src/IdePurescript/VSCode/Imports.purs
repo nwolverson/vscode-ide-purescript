@@ -53,8 +53,9 @@ addModuleImport client = launchAffAndRaise $ void $ do
         uri <- liftEffect $ filenameToUri =<< (getPath $ getDocument ed)
         atCursor <- liftEffect $ identifierAtCursor ed
         qual <- pure $ toNullable $ _.qualifier =<< atCursor
+        ident <- pure $ toNullable $ map _.word $ atCursor
         case pick of
           Just modName -> void $ sendCommand client (cmdName addModuleImportCmd)
-            (toNullable $ Just [ unsafeToForeign modName, unsafeToForeign qual, unsafeToForeign uri ])
+            (toNullable $ Just [ unsafeToForeign modName, unsafeToForeign qual, unsafeToForeign ident, unsafeToForeign uri ])
           _ -> pure unit
     _, _ -> pure unit
