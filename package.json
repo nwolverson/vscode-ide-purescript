@@ -20,7 +20,6 @@
     "engines": {
         "vscode": "^1.51.0"
     },
-    "enableProposedApi": true,
     "categories": [
         "Other"
     ],
@@ -142,7 +141,7 @@
                 "purescript.buildCommand": {
                     "type": "string",
                     "default": "spago build --purs-args --json-errors",
-                    "description": "Build command to use with arguments. Not passed to shell. eg `pulp build -- --json-errors` (this default requires pulp >=10)",
+                    "description": "Build command to use with arguments. Not passed to shell. eg `spago build --purs-args --json-errors`",
                     "scope": "resource"
                 },
                 "purescript.fastRebuild": {

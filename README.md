@@ -17,7 +17,7 @@ The extension [language-purescript](https://marketplace.visualstudio.com/items/n
 
 ## Installation and General Use
 
-This package makes use of the [`purs ide server`](https://github.com/purescript/purescript/tree/master/psc-ide) (previously `psc-ide`) for most functionality, with `purs compile` (by default via `pulp`) for the explicit
+This package makes use of the [`purs ide server`](https://github.com/purescript/purescript/tree/master/psc-ide) (previously `psc-ide`) for most functionality, with `purs compile` (by default via `spago`) for the explicit
 build command. All this is via a Language Server Protocol implementation, [purescript-language-server](https://github.com/nwolverson/purescript-language-server). Multi-root workspaces should be supported via a multiple language server approach.
 
 This package will launch a `purescript-language-server` process, which will automatically (but this is configurable) start `purs ide server` in your project directory and kill it when closing. Start/stop and restart commands are provided for the IDE server in case required (eg after changing config or updating compiler version).
@@ -27,7 +27,22 @@ build command, or via an external tool - but if you do build externally, you sho
 
 You can configure building with `pulp` (optionally with `psc-package`) or `spago` by following the below configuration steps, after which you should also `Restart/Reconnect purs IDE server`.
 
-### With Pulp (default)
+### With Spago (default)
+
+`PureScript: Build` command will build your project using the command line `spago build --purs-args --json-errors`.
+
+Note that prior to spago version `0.10.0.0`, `--` was used to separate purs args at the end of the command line.
+
+For `spago` with `psc-package`, add the following configuration to your `settings.json`:
+```
+{
+  "purescript.addSpagoSources": true,
+  "purescript.addNpmPath": true,
+  "purescript.buildCommand": "spago build --purs-args --json-errors"
+}
+```
+
+### With Pulp
 
 `PureScript: Build` command will build your project using the command line `pulp build -- --json-errors`.
 Version 0.8.0+ of the PureScript compiler is required, as well as version 10.0.0 of `pulp` (with earlier versions remove `--`).
@@ -40,18 +55,6 @@ For `pulp` with `psc-package`, add the following configuration to your `settings
 }
 ```
 
-### With Spago
-
-Note that `--` was replaced by `--purs-args` in spago version `0.10.0.0`.
-
-For `spago` with `psc-package`, add the following configuration to your `settings.json`:
-```
-{
-  "purescript.addSpagoSources": true,
-  "purescript.addNpmPath": true,
-  "purescript.buildCommand": "spago build --purs-args --json-errors"
-}
-```
 
 ### Suggested extensions
 
