@@ -28,17 +28,18 @@ addIdentImport client = launchAffAndRaise $ void $ do
   liftEffect getActivePosInfo >>= maybe (pure unit) \{ pos, uri, ed } -> do
     atCursor <- liftEffect $ identifierAtCursor ed
     let defaultIdent = maybe "" _.word atCursor
+        qual = _.qualifier =<< atCursor
     ident <- getInput (defaultInputOptions { prompt = toNullable $ Just "Identifier", value = toNullable $ Just defaultIdent })
-    addIdentImportMod ident uri Nothing
+    addIdentImportMod ident qual uri Nothing
   where
-    addIdentImportMod :: String -> DocumentUri -> Maybe String -> Aff Unit
-    addIdentImportMod ident uri mod = do
-      let Command { command, arguments } = addCompletionImport ident mod Nothing uri
+    addIdentImportMod :: String -> Maybe String -> DocumentUri -> Maybe String -> Aff Unit
+    addIdentImportMod ident qual uri mod = do
+      let Command { command, arguments } = addCompletionImport ident mod qual uri
       res <- sendCommand client command arguments
       case runExcept $ readArray res of
         Right forArr
           | Right arr <- runExcept $ traverse readString forArr
-          -> showQuickPick arr >>= maybe (pure unit) (addIdentImportMod ident uri <<< Just)
+          -> showQuickPick arr >>= maybe (pure unit) (addIdentImportMod ident qual uri <<< Just)
         _ -> pure unit
 
 addModuleImport :: LanguageClient -> Effect Unit
