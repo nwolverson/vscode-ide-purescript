@@ -34,7 +34,7 @@ addIdentImport client = launchAffAndRaise $ void $ do
   where
     addIdentImportMod :: String -> Maybe String -> DocumentUri -> Maybe String -> Aff Unit
     addIdentImportMod ident qual uri mod = do
-      let Command { command, arguments } = addCompletionImport ident mod qual uri
+      let Command { command, arguments } = addCompletionImport ident mod qual uri ""
       res <- sendCommand client command arguments
       case runExcept $ readArray res of
         Right forArr
