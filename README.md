@@ -19,6 +19,8 @@ Features:
 
 The extension [language-purescript](https://marketplace.visualstudio.com/items/nwolverson.language-purescript) provides basic syntax highlighting support - it is required but should be installed automatically as a dependency. This package will start on opening a `.purs` file, and automatically trigger a rebuild on saving a `.purs` file.
 
+See [troubleshooting](#troubleshooting) in case of issues.
+
 ## Installation and General Use
 
 This package makes use of the [`purs ide server`](https://github.com/purescript/purescript/tree/master/psc-ide) (previously `psc-ide`) for most functionality, with `purs compile` (by default via `spago`) for the explicit
@@ -142,6 +144,24 @@ Commands "Search Pursuit" and "Search Pursuit Modules" are available to search f
 ## PSCI
 
 No particular support. Suggest you open a PSCI in the integrated terminal.
+
+## Troubleshooting
+
+Generally the Output pane ("IDE PureScript" option in the dropdown) may give useful information if something is going wrong. Useful concepts:
+
+### Rebuilding
+
+To ensure the latest information is available to the Language Server, rebuilding may be required. This can either be the "Build Command" in VS Code, or an external build followed by "Restart/Reconnect purs IDE server".
+
+### Common errors
+
+#### Module not found
+
+This normally means either the code is not built, or there is a version mismatch. To rebuild, see above. 
+
+In some cases your build process and VS Code may be hitting different purs versions. The VS Code extension/language server will find purs in your PATH, but that includes the npm local path if the corresponding option is set, which may differ from an external build process. You may need to launch `code` from a terminal containing the correct `PATH`.
+
+Check the "Output" pane, at the very top after the Language Server starts it will list out the purs binary being used, you can check it's the one you expect. 
 
 ## Development
 
