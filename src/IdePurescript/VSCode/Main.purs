@@ -14,7 +14,7 @@ import IdePurescript.VSCode.Pursuit (searchPursuit, searchPursuitModules)
 import VSCode.LanguageClient (LanguageClient, onNotification0)
 import VSCode.Window (setStatusBarMessage)
 
-data Status = Building | BuildFailure | BuildErrors | BuildSuccess
+data Status = Building | BuildFailure | BuildErrors | BuildSuccess | Cleaning | CleanSuccess | CleanFailure
 
 showStatus :: Status -> Effect Unit
 showStatus status = do
@@ -23,6 +23,9 @@ showStatus status = do
               BuildFailure -> "$(bug)"
               BuildErrors -> "$(check)"
               BuildSuccess -> "$(check)"
+              Cleaning -> "$(beaker)"
+              CleanSuccess -> "$(check)"
+              CleanFailure -> "$(bug)"
   setStatusBarMessage $ icon <> " PureScript"
 
 main :: EffectFn1 LanguageClient (Object (EffectFn1 (Array Foreign) Unit))
@@ -33,6 +36,8 @@ main = mkEffectFn1 initialise
     initialise client = do
       onNotification0 client "textDocument/diagnosticsBegin" $ showStatus Building
       onNotification0 client "textDocument/diagnosticsEnd" $ showStatus BuildSuccess
+      onNotification0 client "textDocument/cleanBegin" $ showStatus Cleaning
+      onNotification0 client "textDocument/cleanEnd" $ showStatus CleanSuccess
 
       pure $ Object.fromFoldable
         [ cmd "addExplicitImport" $ addIdentImport client

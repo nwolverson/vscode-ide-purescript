@@ -7,3 +7,4 @@ node_modules/
 /src/.webpack.js
 /.psc-package/
 .spago/
+.psc-ide-port
