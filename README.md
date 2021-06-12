@@ -68,6 +68,16 @@ See [input-assist](https://github.com/darinmorrison/vscode-input-assist) for Uni
 on autocomplete which is known to work with this extension, alternatively [unicode-latex](https://github.com/ojsheikh/unicode-latex)
 which offers similar LaTeX based input vi a lookup command.
 
+### Suggested configuration
+
+Watching directories like `.spago`, `output` can be slow and on occasion cause issues. Consider also `files.exclude` and `search.exclude`.
+
+```
+    "files.watcherExclude": {
+       "**/.spago/**": true
+    }
+```
+
 ### Key bindings
 
 The only key binding supplied out of the box is Shift+Ctrl+B (or Shift+Cmd+B) for the full "Build" command. Although this is only enabled inside PureScript-language text editors, it does conflict with the built-in Build command. This can be edited, and other keybinds added, in the VS Code Keyboard Shortcuts preferences.
