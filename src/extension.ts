@@ -53,6 +53,7 @@ export function activate() {
         "replaceSuggestion",
         "replaceAllSuggestions",
         "build",
+        "clean",
         "typedHole-explicit",
         "startPscIde",
         "stopPscIde",

@@ -40,6 +40,10 @@
                 "title": "PureScript: Build"
             },
             {
+                "command": "purescript.clean",
+                "title": "PureScript: Clean"
+            },
+            {
                 "command": "purescript.addImport",
                 "title": "PureScript: Add Import"
             },
