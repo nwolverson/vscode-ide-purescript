@@ -1,5 +1,5 @@
 import { commands, TextDocument, window, workspace, WorkspaceFolder } from 'vscode';
-import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind } from 'vscode-languageclient';
+import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind, WorkspaceFoldersRequest } from 'vscode-languageclient';
 type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
 
 const clients: Map<string, LanguageClient> = new Map();
@@ -101,17 +101,7 @@ export function activate() {
         cmds[cmdName](args);
     }
 
-    function didOpenTextDocument(document: TextDocument): void {
-        if (document.languageId !== 'purescript' || document.uri.scheme !== 'file') {
-            return;
-        }
-
-        const folder = workspace.getWorkspaceFolder(document.uri);
-        if (!folder) {
-            console.log("Didn't find workspace folder for " + document.uri);
-            return;
-        }
-        
+    function addClient(folder: WorkspaceFolder) {
         if (!clients.has(folder.uri.toString())) {
             try {
                 output.appendLine("Launching new language client for " + folder.uri.toString());
@@ -138,6 +128,19 @@ export function activate() {
         }
     }
 
+    function didOpenTextDocument(document: TextDocument): void {
+        if (document.languageId !== 'purescript' || document.uri.scheme !== 'file') {
+            return;
+        }
+
+        const folder = workspace.getWorkspaceFolder(document.uri);
+        if (!folder) {
+            output.appendLine("Didn't find workspace folder for " + document.uri);
+            return;
+        }
+        addClient(folder);
+    }
+
     workspace.onDidOpenTextDocument(didOpenTextDocument);
     workspace.textDocuments.forEach(didOpenTextDocument);
     workspace.onDidChangeWorkspaceFolders((event) => {
@@ -149,6 +152,15 @@ export function activate() {
             }
         }
     });
+    if (clients.size == 0) {
+        if (workspace.workspaceFolders.length == 1) {
+            output.appendLine("Only one folder in workspace, starting language server");
+            // The extension must be activated because there are Purs files in there
+            addClient(workspace.workspaceFolders[0]);
+        } else if (workspace.workspaceFolders.length > 1) {
+            output.appendLine("More than one folder in workspace, open a PureScript file to start language server");
+        }
+    }
 }
 export function deactivate(): Thenable<void> {
 	let promises: Thenable<void>[] = [];
