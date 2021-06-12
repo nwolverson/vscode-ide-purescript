@@ -116,50 +116,37 @@ let additions =
   }
 -------------------------------
 -}
-
-
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.13.8-20200831/packages.dhall sha256:cdb3529cac2cd8dd780f07c80fd907d5faceae7decfcaa11a12037df68812c83
+      https://github.com/purescript/package-sets/releases/download/psc-0.14.1-20210516/packages.dhall sha256:f5e978371d4cdc4b916add9011021509c8d869f4c3f6d0d2694c0e03a85046c8
 
 let overrides = {=}
 
-let additions = { pursuit-lookup =
-       { dependencies =
-           [ "argonaut",
-        "affjax",
-        "argonaut-codecs",
-        "prelude"
-           ]
-       , repo =
-           "https://github.com/nwolverson/purescript-pursuit-lookup.git"
-       , version =
-           "44283e54c8e7d033a714ee4d20d1dbfd0e2fd8d4"
-       }
-    , psc-ide = upstream.psc-ide // { version = "v17.0.0" }
-
-    , language-server =
-     { dependencies =
-        [ "aff-promise"
-        , "console"
-        , "effect"
-        , "errors"
-        , "foreign-generic"
-        , "node-child-process"
-        , "node-fs-aff"
-        , "node-process"
-        , "psc-ide"
-        , "psci-support"
-        , "stringutils"
-        , "test-unit"
-        , "uuid"
-        ]
-    , repo =
-        "https://github.com/nwolverson/purescript-language-server.git"
-    , version =
-        "ae060e1a7f0d47073e99bb23491997d07d034966"
-     }
-
-}
-    
+let additions =
+      { pursuit-lookup =
+        { dependencies = [ "argonaut", "affjax", "argonaut-codecs", "prelude" ]
+        , repo = "https://github.com/nwolverson/purescript-pursuit-lookup.git"
+        , version = "44283e54c8e7d033a714ee4d20d1dbfd0e2fd8d4"
+        }
+      , psc-ide = upstream.psc-ide // { version = "b9b1d0320204927cafefcf24b105ec03d0ae256b" }
+      , language-server =
+        { dependencies =
+          [ "aff-promise"
+          , "console"
+          , "effect"
+          , "errors"
+          , "foreign-generic"
+          , "node-child-process"
+          , "node-fs-aff"
+          , "node-process"
+          , "psc-ide"
+          , "psci-support"
+          , "stringutils"
+          , "test-unit"
+          , "uuid"
+          ]
+        , repo = "https://github.com/nwolverson/purescript-language-server.git"
+        , version = "f39340192dbbcbbd50effe69e88e269486794ed2"
+        }
+      }
 
 in  upstream // overrides // additions
