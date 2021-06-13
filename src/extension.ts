@@ -21,7 +21,6 @@ export function activate() {
             }}
         }
     const output = window.createOutputChannel("IDE PureScript");
-    
     // Options to control the language client
     const clientOptions = (folder: WorkspaceFolder): LanguageClientOptions => ({
         // Register only for PureScript documents in the given root folder
@@ -61,7 +60,7 @@ export function activate() {
         "getAvailableModules",
         "search",
         "fixTypo",
-        "organiseImports"
+        "sortImports"
     ].map(x => `purescript.${x}`);
 
     const getWorkspaceFolder = (doc: TextDocument) => {
