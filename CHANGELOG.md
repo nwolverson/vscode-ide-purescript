@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.25.0
+
+* Updates from `purescript-language-server` version `0.15.2`
+
+- The code action with kind `source.organizeImports` is now the action which applies all compiler suggestions
+  for unused imports, `source.sortImports` is added (previously "Organize imports") to align with the changes for JS/TS
+  languages in vscode 1.57. This can be used with `editor.codeActionsOnSave` or key-bound with `editor.action.sourceAction`.
+- Show a warning dialog (with build option) on start if we get an externs out of date error
+- Remove deprecated editor mode/polling purs ide config (Removed in 0.13.8)
+
+* Updates from `purescript-language-server` version `0.15.1`
+
+- Add `flake.nix` and `shell.nix` to the list of files that indicate a PS project may be present #136, #137 (@ursi)
+- Change the way the `purty` formatter is spawned to make it faster
+- Don't fix implicit prelude in all (import) suggestions. #108
+- Add auto build of opened files #125 (@wclr)
+- Build with PureScript 0.14.x, CI udpates
+
+# 0.24.0
+
+* Updates from `purescript-language-server` version `0.15.0`
+
+- Add support for importing conflicting identifiers #118 (@i-am-the-slime)
+- Parse build output from both stdout/stderr (required for PureScript 0.14.0). #111
+- Prioritize "Organise Imports" action lower than others #113
+
+## 0.19.1-0.23.3
+
+* See `purescript-language-server` changelog to `0.14.4"`
+
 ## 0.19.0
 
 * Updates from `purescript-language-server` version `0.11.0`:
