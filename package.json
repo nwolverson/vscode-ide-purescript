@@ -95,7 +95,7 @@
             }
         ],
         "configuration": {
-            "title": "PureScript configuration",
+            "title": "PureScript",
             "properties": {
                 "purescript.pursExe": {
                     "type": "string",
@@ -152,6 +152,12 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Enable purs IDE server fast rebuild",
+                    "scope": "resource"
+                },
+                "purescript.buildOpenedFiles": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "**EXPERIMENTAL** Enable purs IDE server fast rebuild of opened files. This includes both newly opened tabs and those present at startup.",
                     "scope": "resource"
                 },
                 "purescript.censorWarnings": {
