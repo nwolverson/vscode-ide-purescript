@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.25.1
+
+* Updates from `purescript-language-server` version `0.15.4`
+
+- Auto build of opened files is now behind a setting `purescript.buildOpenedFiles` and defaulted to `false`, this should be 
+  considered experimental for the time being. There are 2 issues which become more likely to be triggered by this feature,
+  firstly rebuilding (even unchanged) files can cause downstream modules to require rebuilding in an incremental build ([issue](https://github.com/purescript/purescript/issues/4066)) and secondly there are reports that fast-rebuilding a file during a full/incremental build can cause corrupt output.
+
+- Formatting provider selection: Now `purescript.formatter` can be set to `purty` (the previous formatter and still the default),
+  `purs-tidy` or `pose`. Requires these tools to be already installed
+
+- Internal changes that could avoid a case of the language server crashing abruptly
+
 ## 0.25.0
 
 * Updates from `purescript-language-server` version `0.15.2`
