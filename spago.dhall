@@ -7,6 +7,7 @@ You can edit this file as you like.
   [ "aff"
   , "aff-promise"
   , "arrays"
+  , "console"
   , "effect"
   , "either"
   , "foldable-traversable"
