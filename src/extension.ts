@@ -1,13 +1,14 @@
 import { commands, TextDocument, window, workspace, WorkspaceFolder } from 'vscode';
 import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind, WorkspaceFoldersRequest } from 'vscode-languageclient';
-import { setMiddleware, middlewareHack } from './middleware';
+import { setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd, diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd } from './notifications';
+import { setMiddleware, middleware } from './middleware';
 type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
 
 const clients: Map<string, LanguageClient> = new Map();
 const commandCode: Map<string, ExtensionCommands> = new Map();
 
 export function activate() {
-    const activatePS = require('./bundle').main;
+    const activatePS = require('./bundle').main({ diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd });
 
     const module = require.resolve('purescript-language-server');
     const opts = { module, transport: TransportKind.ipc };
@@ -43,7 +44,7 @@ export function activate() {
         initializationOptions: {
             executeCommandProvider: false
         },
-        middleware: middlewareHack
+        middleware
     });
 
     let commandNames: string[] = [
@@ -162,7 +163,7 @@ export function activate() {
             output.appendLine("More than one folder in workspace, open a PureScript file to start language server");
         }
     }
-    return { setMiddleware }
+    return { setMiddleware, setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd }
 }
 export function deactivate(): Thenable<void> {
 	let promises: Thenable<void>[] = [];

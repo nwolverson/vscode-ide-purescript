@@ -2,7 +2,7 @@ import { Middleware } from "vscode-languageclient";
 
 let _middleware: Middleware = {}
 
-export const middlewareHack: Middleware = {
+export const middleware: Middleware = {
   didOpen(this, data, next) {
     return _middleware.didOpen ? _middleware.didOpen(data, next) : next(data);
   },
