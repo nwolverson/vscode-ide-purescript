@@ -35,10 +35,10 @@ main = mkEffectFn2 initialise
     cmdA s f = Tuple ("purescript." <> s) $ mkEffectFn1 f
     cmd s f = cmdA s (\_ -> f)
     initialise notifications client = do
-      onNotification0 client "textDocument/diagnosticsBegin" $ showStatus Building
-      onNotification0 client "textDocument/diagnosticsEnd" $ showStatus BuildSuccess
-      onNotification0 client "textDocument/cleanBegin" $ showStatus Cleaning
-      onNotification0 client "textDocument/cleanEnd" $ showStatus CleanSuccess
+      onNotification0 client "textDocument/diagnosticsBegin" $ showStatus Building *> notifications.diagnosticsBegin
+      onNotification0 client "textDocument/diagnosticsEnd" $ showStatus BuildSuccess *> notifications.diagnosticsEnd
+      onNotification0 client "textDocument/cleanBegin" $ showStatus Cleaning *> notifications.cleanBegin
+      onNotification0 client "textDocument/cleanEnd" $ showStatus CleanSuccess *> notifications.cleanEnd
 
       pure $ Object.fromFoldable
         [ cmd "addExplicitImport" $ addIdentImport client
