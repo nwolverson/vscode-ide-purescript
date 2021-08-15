@@ -1,5 +1,6 @@
 import { commands, TextDocument, window, workspace, WorkspaceFolder } from 'vscode';
 import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind, WorkspaceFoldersRequest } from 'vscode-languageclient';
+import { setMiddleware, middlewareHack } from './middleware';
 type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
 
 const clients: Map<string, LanguageClient> = new Map();
@@ -41,7 +42,8 @@ export function activate() {
         },
         initializationOptions: {
             executeCommandProvider: false
-        }
+        },
+        middleware: middlewareHack
     });
 
     let commandNames: string[] = [
@@ -160,6 +162,7 @@ export function activate() {
             output.appendLine("More than one folder in workspace, open a PureScript file to start language server");
         }
     }
+    return { setMiddleware }
 }
 export function deactivate(): Thenable<void> {
 	let promises: Thenable<void>[] = [];
