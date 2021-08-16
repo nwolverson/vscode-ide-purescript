@@ -8,7 +8,7 @@ const clients: Map<string, LanguageClient> = new Map();
 const commandCode: Map<string, ExtensionCommands> = new Map();
 
 export function activate() {
-    const activatePS = require('./bundle').main({ diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd });
+    const activatePS = require('./bundle').main;
 
     const module = require.resolve('purescript-language-server');
     const opts = { module, transport: TransportKind.ipc };
@@ -112,7 +112,7 @@ export function activate() {
             
                 client.onReady().then(async () => {
                     output.appendLine("Activated lc for "+ folder.uri.toString());
-                    const cmds: ExtensionCommands = activatePS(client);
+                    const cmds: ExtensionCommands = activatePS({ diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd }, client);
                     const cmdNames = await commands.getCommands();
                     commandCode.set(folder.uri.toString(), cmds);
                     Promise.all(Object.keys(cmds).map(async cmd => {
