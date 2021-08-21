@@ -173,6 +173,43 @@ In some cases your build process and VS Code may be hitting different purs versi
 
 Check the "Output" pane, at the very top after the Language Server starts it will list out the purs binary being used, you can check it's the one you expect. 
 
+## API for downstream extensions
+
+VSCode makes it possible for extensions to expose methods to other extensions for cross-extension interaction. The following methods are exposed by `ide-purescript`.
+
+```typescript
+{
+    // set middleware for the language client. for an example of
+    // how to use VSCode language client middleware, see
+    // https://code.visualstudio.com/api/language-extensions/embedded-languages
+    // the full middleware API is documented at
+    // https://github.com/microsoft/vscode-languageserver-node/blob/main/client/src/common/client.ts
+    setMiddleware: (m: Middleware) => void;
+    // a callback of type () => void that is called when diagnostics begin
+    // diagnostics are triggered whenever compilation of one or several files begins,
+    // ie via a save event or by calling the `purescript.build` command
+    setDiagnosticsBegin: (f: EffectUnit) => void;
+    // a callback of type () => void that is called when diagnostics end
+    setDiagnosticsEnd: (f: EffectUnit) => void;
+    // a callback of type () => void that is called when cleaning a project begins
+    // cleaning is triggered by calling the `purescript.clean` command
+    setCleanBegin: (f: EffectUnit) => void;
+    // a callback of type () => void that is called when cleaning a project ends
+    setCleanEnd: (f: EffectUnit) => void;
+}
+```
+
+To call these methods from your own extension, do something like:
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+	const ext = vscode.extensions.getExtension('nwolverson.ide-purescript');
+	const importedApi = ext.exports;
+	importedApi.setDiagnosticsBegin(() => { console.log('Did I just hear diagnostics begin?'); });
+  // some other stuff
+}
+```
+
 ## Development
 
 To develop (rather than use) this extension, see [the instructions](https://github.com/nwolverson/purescript-language-server/blob/master/README.md#development) in `purescript-language-server`.
