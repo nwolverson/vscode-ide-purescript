@@ -1,7 +1,7 @@
 import { commands, TextDocument, window, workspace, WorkspaceFolder } from 'vscode';
 import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind, WorkspaceFoldersRequest } from 'vscode-languageclient';
 import { setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd, diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd } from './notifications';
-import { setMiddleware, middleware } from './middleware';
+import { registerMiddleware, unregisterMiddleware, middleware } from './middleware';
 type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
 
 const clients: Map<string, LanguageClient> = new Map();
@@ -165,7 +165,7 @@ export function activate() {
             output.appendLine("It looks like you've started VS Code without specifying a folder, ie from a language extension development environment. Open a PureScript file to start language server.");
         }
     }
-    return { setMiddleware, setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd }
+    return { registerMiddleware, unregisterMiddleware, setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd }
 }
 export function deactivate(): Thenable<void> {
 	let promises: Thenable<void>[] = [];
