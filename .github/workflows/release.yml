@@ -25,6 +25,9 @@ jobs:
       - name: Build source
         run: npm run-script build
 
+      - name: Test
+        run: npm test
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
