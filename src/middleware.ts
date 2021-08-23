@@ -1,6 +1,6 @@
 import { Middleware } from "vscode-languageclient";
 
-let _middlewareStore: Record<string, Middleware> = {}
+let _middlewareStore: Array<Middleware> = []
 
 type FnKeys<O> = { [K in keyof O]: O[K] extends Function ? true : never }
 export const middleware: Middleware = {};
@@ -52,7 +52,7 @@ Object.keys(keys).forEach((key) => {
   middleware[key] = (...params) => {
     const next = params.pop();
 
-    const mws = Object.values(_middlewareStore)
+    const mws = _middlewareStore
       .filter((mw) => !!mw[key])
 
     const run = mws.reduceRight((nxtFn, mw) => {
@@ -63,10 +63,10 @@ Object.keys(keys).forEach((key) => {
   };
 });
 
-export const registerMiddleware = (s: string, m: Middleware) => {
-  _middlewareStore[s] = m;
+export const registerMiddleware = (m: Middleware) => {
+  _middlewareStore.push(m);
 }
 
-export const unregisterMiddleware = (s: string) => {
-  delete _middlewareStore[s];
+export const unregisterMiddleware = (m: Middleware) => {
+  _middlewareStore = _middlewareStore.filter(i => i !== m);
 }

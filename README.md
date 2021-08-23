@@ -184,9 +184,9 @@ VSCode makes it possible for extensions to expose methods to other extensions fo
     // https://code.visualstudio.com/api/language-extensions/embedded-languages
     // the full middleware API is documented at
     // https://github.com/microsoft/vscode-languageserver-node/blob/main/client/src/common/client.ts
-    registerMiddleware: (name: string, m: Middleware) => void;
+    registerMiddleware: (m: Middleware) => void;
     // remove a given middleware, using the same string used to register it
-    unregisterMiddleware: (name: string) => void;
+    unregisterMiddleware: (m: Middleware) => void;
     // a callback of type () => void that is called when diagnostics begin
     // diagnostics are triggered whenever compilation of one or several files begins,
     // ie via a save event or by calling the `purescript.build` command
