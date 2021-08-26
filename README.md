@@ -33,6 +33,14 @@ build command, or via an external tool - but if you do build externally, you sho
 
 You can configure building with `pulp` (optionally with `psc-package`) or `spago` by following the configuration steps below, after which you should also `Restart/Reconnect purs IDE server`.
 
+#### Version support policy
+
+PureScript compiler version support is as follows:
+
+* The current minor version of the compiler is supported at all patch versions (e.g. 0.14.xx)
+* The previous minor version of the compiler is supported at the latest patch version (e.g. 0.13.8) for new functionality, and where possible all patch versions for existing functionality
+* Any older compiler versions are not officially supported - they may continue to work and will not be intentionally broken, but no particular effort will be made for continued support in the face of API changes
+
 ### With Spago (default)
 
 `PureScript: Build` command will build your project using the command line `spago build --purs-args --json-errors`.
