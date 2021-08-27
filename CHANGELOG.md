@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.25.2
+
+- Adds an API for downstream extensions that want to interact with `ide-purescript.` More information can be found in README.md.
+
 ## 0.25.1
 
 * Updates from `purescript-language-server` version `0.15.4`

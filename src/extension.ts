@@ -1,5 +1,7 @@
 import { commands, TextDocument, window, workspace, WorkspaceFolder } from 'vscode';
 import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind, WorkspaceFoldersRequest } from 'vscode-languageclient';
+import { setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd, diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd } from './notifications';
+import { registerMiddleware, unregisterMiddleware, middleware } from './middleware';
 type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
 
 const clients: Map<string, LanguageClient> = new Map();
@@ -41,7 +43,8 @@ export function activate() {
         },
         initializationOptions: {
             executeCommandProvider: false
-        }
+        },
+        middleware
     });
 
     let commandNames: string[] = [
@@ -70,7 +73,7 @@ export function activate() {
                 return wf;
             }
         }
-        if (workspace.workspaceFolders.length > 0) {
+        if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
             return workspace.workspaceFolders[0];
         }
         return null;
@@ -109,7 +112,7 @@ export function activate() {
             
                 client.onReady().then(async () => {
                     output.appendLine("Activated lc for "+ folder.uri.toString());
-                    const cmds: ExtensionCommands = activatePS(client);
+                    const cmds: ExtensionCommands = activatePS({ diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd }, client);
                     const cmdNames = await commands.getCommands();
                     commandCode.set(folder.uri.toString(), cmds);
                     Promise.all(Object.keys(cmds).map(async cmd => {
@@ -152,14 +155,17 @@ export function activate() {
         }
     });
     if (clients.size == 0) {
-        if (workspace.workspaceFolders.length == 1) {
+        if (workspace.workspaceFolders && workspace.workspaceFolders.length == 1) {
             output.appendLine("Only one folder in workspace, starting language server");
             // The extension must be activated because there are Purs files in there
             addClient(workspace.workspaceFolders[0]);
-        } else if (workspace.workspaceFolders.length > 1) {
+        } else if (workspace.workspaceFolders && workspace.workspaceFolders.length > 1) {
             output.appendLine("More than one folder in workspace, open a PureScript file to start language server");
+        } else if (!workspace.workspaceFolders) {
+            output.appendLine("It looks like you've started VS Code without specifying a folder, ie from a language extension development environment. Open a PureScript file to start language server.");
         }
     }
+    return { registerMiddleware, unregisterMiddleware, setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd }
 }
 export function deactivate(): Thenable<void> {
 	let promises: Thenable<void>[] = [];
