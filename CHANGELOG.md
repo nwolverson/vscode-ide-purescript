@@ -1,24 +1,32 @@
 # Changelog
 
-## Unreleased
+## 0.25.2
 
 * Adds an API for downstream extensions that want to interact with `ide-purescript.` More information can be found in README.md.
 
-* Updates from `purescript-language-server` version ?
+* Updates from `purescript-language-server` version `0.15.5`:
+
+  - Add `purescript.fullBuildOnSave` setting which performs a full build via the configured build command instead of a IDE-server fast rebuild
+    when files are saved. Disabled by default, may have bad interaction with "save all" type functionality, configuration may be subject to change
+    in future.
+
+  - Introduced CST-parser for some identifier lexing, fixing issues with identifiers (specifically operators) starting with `.` in particular (#146, https://github.com/nwolverson/vscode-ide-purescript/issues/184)
+
+  - Fix #149 - autocomplete doesn't work when lines start with an "import" substring
 
 
 ## 0.25.1
 
-* Updates from `purescript-language-server` version `0.15.4`
+* Updates from `purescript-language-server` version `0.15.4`:
 
-- Auto build of opened files is now behind a setting `purescript.buildOpenedFiles` and defaulted to `false`, this should be 
-  considered experimental for the time being. There are 2 issues which become more likely to be triggered by this feature,
-  firstly rebuilding (even unchanged) files can cause downstream modules to require rebuilding in an incremental build ([issue](https://github.com/purescript/purescript/issues/4066)) and secondly there are reports that fast-rebuilding a file during a full/incremental build can cause corrupt output.
+  - Auto build of opened files is now behind a setting `purescript.buildOpenedFiles` and defaulted to `false`, this should be 
+    considered experimental for the time being. There are 2 issues which become more likely to be triggered by this feature,
+    firstly rebuilding (even unchanged) files can cause downstream modules to require rebuilding in an incremental build ([issue](https://github.com/purescript/purescript/issues/4066)) and secondly there are reports that fast-rebuilding a file during a full/incremental build can cause corrupt output.
 
-- Formatting provider selection: Now `purescript.formatter` can be set to `purty` (the previous formatter and still the default),
-  `purs-tidy` or `pose`. Requires these tools to be already installed
+  - Formatting provider selection: Now `purescript.formatter` can be set to `purty` (the previous formatter and still the default),
+    `purs-tidy` or `pose`. Requires these tools to be already installed
 
-- Internal changes that could avoid a case of the language server crashing abruptly
+  - Internal changes that could avoid a case of the language server crashing abruptly
 
 ## 0.25.0
 
