@@ -1,4 +1,4 @@
-import { LanguageClient, ExecuteCommandRequest } from 'vscode-languageclient';
+import { LanguageClient, ExecuteCommandRequest } from 'vscode-languageclient/node';
 
 export const sendCommandImpl = (client: LanguageClient) => (command: string) => (args?: any[]) => 
     (errCb: (err: Error) => () => {}) => <T>(cb: (arg: T) => () => {}) => () => 

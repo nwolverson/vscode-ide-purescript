@@ -1,5 +1,5 @@
 import { commands, TextDocument, window, workspace, WorkspaceFolder } from 'vscode';
-import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind, WorkspaceFoldersRequest } from 'vscode-languageclient';
+import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind } from 'vscode-languageclient/node';
 import { setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd, diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd } from './notifications';
 import { registerMiddleware, unregisterMiddleware, middleware } from './middleware';
 type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
@@ -108,7 +108,6 @@ export function activate() {
             try {
                 output.appendLine("Launching new language client for " + folder.uri.toString());
                 const client = new LanguageClient('purescript', 'IDE PureScript', serverOptions, clientOptions(folder));
-                client.registerProposedFeatures();
             
                 client.onReady().then(async () => {
                     output.appendLine("Activated lc for "+ folder.uri.toString());
