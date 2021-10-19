@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.25.3
+
+* Updates from `purescript-language-server` version `0.15.8` 
+
+  - Default `purescript.addSpagoSources` true (already true in vscode default for some time).
+
+  - Report incomplete results properly (fixes #144)
+
+  - Indicate imported module on qualifier suggestions
+
+  - Use new proposed suggestion API to give module/type info
+
+    (at least in vscode for now)
+
+  - Provide folding ranges for declarations
+
+  - Only suggest to import constructor when type has same name (@i-am-the-slime)
+
+  - Support qualifiers in import/typo codeactions as per suggestions. Fix #143
+
+* Updates from `purescript-language-server` version `0.15.7` 
+
+  - Show build error output when no JSON found. Fix #150
+
+* Updates from `purescript-language-server` version `0.15.6` 
+
+- Filter completion suggestions based on already imported identifiers.
+
+  If a given identifier is imported, whether by an explicit or open import, only that same import should be suggested for that identifier.
+
+  For example, if `length` is imported from `Data.Array`, a completion of `le` will suggest `length` from `Data.Array` but not `Data.String`; it will still however suggest `left` or `lengthOf`.
+
+  Known issues:
+    - Due to technical limitations data constructors are not filtered in this way
+    - Depending on the `purescript.autocompleteLimit` setting, if the already imported identifier would not be in a longer list of suggestions,
+    then no filtering of the other options will occur.
+
+
 ## 0.25.2
 
 * Adds an API for downstream extensions that want to interact with `ide-purescript.` More information can be found in README.md.
