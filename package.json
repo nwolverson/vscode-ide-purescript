@@ -20,7 +20,6 @@
     "engines": {
         "vscode": "^1.51.0"
     },
-    
     "categories": [
         "Other"
     ],
@@ -319,7 +318,7 @@
         "vscode-languageclient": "^8.0.0-next.2"
     },
     "dependencies": {
-        "purescript-language-server": "^0.15.5",
+        "purescript-language-server": "^0.15.8",
         "striptags": "^3.1.1",
         "vscode-uri": "^2.1.2",
         "xhr2": "^0.1.4"
