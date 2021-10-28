@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.25.3
+## 0.25.4
 
 * Updates from `purescript-language-server` version `0.15.8` 
 
@@ -37,6 +37,9 @@
     - Depending on the `purescript.autocompleteLimit` setting, if the already imported identifier would not be in a longer list of suggestions,
     then no filtering of the other options will occur.
 
+## 0.25.3
+
+* Bad release version
 
 ## 0.25.2
 
