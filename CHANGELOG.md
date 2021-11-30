@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.25.6
+
+* Updates from `purescript-language-server` version `0.16.1`
+
+    - Fix formatting provider issue with multi-byte characters leading to mangled results
+
+    - Fix code lenses stripping data constructor exports (#165) and add code lenses to toggle data constructor exports on/off. Tweak the text of these.
+
+    - (Internal) Bundling changes to use esbuild
+
+    - Filter code action by requested kind (#154) (possible but likely negligable minor performance improvement, possibility some language client might behave differently)
+
+    - Initial goto-defintion for local symbols
+
+      - This provides goto-definition only (so not finding references, for example) for some locally bound identifiers based on the parsed CST
+
+      - Navigate to e.g. arguments of top-level declarations, let bindings and arguments to let-bound functions, bindings in do blocks
+
+      - Known issues/future thoughts:
+        - Goto-defn for top level declarations is still provided by `purs ide` typings, even though we could enable navigation to some more private declarations where type info is not available
+
+        - Let block scoping is not technically correct as the scope boundaries created by pattern bindings are not respected
+
+        - Some binders may be missing, eg record puns 
+
+## 0.25.5
+
+* Updates from `purescript-language-server` version `0.16.0`
+
+  - Code lenses added:
+
+    - Add declaration type signature code lens (Idea/initial implementation @i-am-the-slime, rewritten to source data differently)
+
+      - Enabled via config: `purescript.declarationTypeCodeLens`
+
+    - Add export management code lenses (@i-am-the-slime)
+      - This features both code lenses on individual declarations, to add/remove from exports appropriately, and a module-level code lens
+        to enable explicit exports if the module has implicit ones.
+
+      - Enabled via config: `purescript.exportsCodeLense`
+
+  - Other changes:
+
+    - (Internal) CST parsing shared between multiple features, currently executed on document change
+
+    - Add progress report on full build / server start
+
 ## 0.25.4
 
 * Updates from `purescript-language-server` version `0.15.8` 
