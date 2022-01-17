@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.25.7
+
+* Updates from `purescript-language-server` version `0.16.2`
+
 ## 0.25.6
 
 * Updates from `purescript-language-server` version `0.16.1`
