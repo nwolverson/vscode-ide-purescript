@@ -7,8 +7,6 @@ You can edit this file as you like.
   [ "aff"
   , "aff-promise"
   , "arrays"
-  , "console"
-  , "debug"
   , "effect"
   , "either"
   , "foldable-traversable"
