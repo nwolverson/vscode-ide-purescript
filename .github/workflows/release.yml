@@ -42,8 +42,7 @@ jobs:
         with:
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: |
-            {{ steps.packageExtension.outputs.vsixPath }}
+          files: ${{ steps.packageExtension.outputs.vsixPath }}
       # Publish to VS Marketplace
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v1
