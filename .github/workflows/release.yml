@@ -27,14 +27,33 @@ jobs:
 
       - name: Test
         run: npm test
-
+      
+      # Create the extension via below in a dry run
+      - name: Package Extension
+        id: packageExtension
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: stub
+          dryRun: true
+      # upload built extension to new release
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
-          prerelease: false
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            {{ steps.packageExtension.outputs.vsixPath }}
+      # Publish to VS Marketplace
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+          extensionFile: ${{ steps.packageExtension.outputs.vsixPath }}
+          registryUrl: https://marketplace.visualstudio.com
+      # Publish to OpenVSX registry
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+          extensionFile: ${{ steps.packageExtension.outputs.vsixPath }}
