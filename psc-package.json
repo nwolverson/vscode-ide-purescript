@@ -1,9 +1,0 @@
-{
-    "name": "vscode-ide-purescript",
-    "set": "ide-20180815-2",
-    "source": "https://github.com/nwolverson/spacchetti.git",
-    "depends": [
-        "language-server",
-        "pursuit-lookup"
-    ]
-}

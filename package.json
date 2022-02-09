@@ -332,9 +332,5 @@
         "striptags": "^3.1.1",
         "vscode-uri": "^2.1.2",
         "xhr2": "^0.1.4"
-    },
-    "optionalDependencies": {
-        "purescript": "0.14.5",
-        "spago": "^0.20.3"
     }
 }

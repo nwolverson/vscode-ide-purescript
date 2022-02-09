@@ -8,3 +8,5 @@ node_modules/
 /.psc-package/
 .spago/
 .psc-ide-port
+*.vsix
+*.swp
