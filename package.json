@@ -32,8 +32,7 @@
         "workspaceContains:src/**/*.purs",
         "workspaceContains:spago.dhall"
     ],
-    "//main": "./dist/client.js",
-    "main": "out/src/extension.js",
+    "main": "./dist/client.js",
     "contributes": {
         "commands": [
             {
