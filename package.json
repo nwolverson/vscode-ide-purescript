@@ -321,7 +321,7 @@
     "devDependencies": {
         "@types/jest": "^27.4.0",
         "@types/node": "^17.0.17",
-        "@types/vscode": "^1.64.0",
+        "@types/vscode": "^1.63.0",
         "esbuild": "^0.14.21",
         "jest": "^27.5.1",
         "mkdirp": "^1.0.4",
