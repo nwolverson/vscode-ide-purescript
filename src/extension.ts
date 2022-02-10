@@ -9,7 +9,8 @@ const clients: Map<string, LanguageClient> = new Map();
 const commandCode: Map<string, ExtensionCommands> = new Map();
 
 export function activate(context: ExtensionContext) {
-    const activatePS = require('./bundle').main;
+    const activatePS = require('../../output/Main').main;
+    // const activatePS = require('./bundle.js').main;
 
     // const module = require.resolve('purescript-language-server');
     

@@ -310,7 +310,7 @@
         "prep": "mkdirp out/src dist",
         "tsc:ffi": "tsc -p src/VSCode/",
         "tsc:extension": "tsc -p ./",
-        "purs:build": "spago bundle-module --to out/src/bundle.js",
+        "purs:build": "spago build",
         "bundle:client": "esbuild out/src/extension.js --bundle --outfile=dist/client.js --external:vscode --format=cjs --platform=node",
         "bundle:server": "esbuild purescript-language-server --bundle --outfile=dist/server.js  --format=cjs --platform=node",
         "test": "jest"

@@ -19,7 +19,6 @@ You can edit this file as you like.
   , "psc-ide"
   , "psci-support"
   , "pursuit-lookup"
-  , "strings"
   , "transformers"
   , "tuples"
   ]

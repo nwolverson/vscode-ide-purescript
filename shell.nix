@@ -15,6 +15,6 @@ pkgs.mkShell {
     easy-ps.purs-0_14_5
     easy-ps.spago
     easy-ps.psa
-
+    easy-ps.dhall-simple
   ];
 }
