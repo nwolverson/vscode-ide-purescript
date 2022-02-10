@@ -13,7 +13,7 @@ export function activate(context: ExtensionContext) {
 
     // const module = require.resolve('purescript-language-server');
     
-    const module = path.join(context.extensionPath, 'out', 'server.js');
+    const module = path.join(context.extensionPath, 'dist', 'server.js');
     
     const opts = { module, transport: TransportKind.ipc };
     const serverOptions: ServerOptions =
