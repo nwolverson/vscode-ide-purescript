@@ -19,7 +19,7 @@ searchPursuit = launchAffAndRaise do
     void $ showQuickPickItems items
 
     where
-    item (PursuitSearchResult { text, package, info: PursuitSearchInfo { mod, title }  }) = do
+    item (PursuitSearchResult { text, info: PursuitSearchInfo { mod, title }  }) = do
         processed <- stripTags text
         pure $
             { description: fromMaybe "" mod
