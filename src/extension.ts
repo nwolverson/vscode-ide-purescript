@@ -10,10 +10,9 @@ const commandCode: Map<string, ExtensionCommands> = new Map();
 
 export function activate(context: ExtensionContext) {
     const activatePS = require('../../output/Main').main;
-    // const activatePS = require('./bundle.js').main;
 
     // const module = require.resolve('purescript-language-server');
-    
+
     const module = path.join(context.extensionPath, 'dist', 'server.js');
     
     const opts = { module, transport: TransportKind.ipc };
@@ -43,8 +42,8 @@ export function activate(context: ExtensionContext) {
         outputChannel: output,
         revealOutputChannelOn: RevealOutputChannelOn.Never,
         errorHandler: { 
-            error: (e,m,c) => { console.error(e,m,c); return ErrorAction.Continue  },
-            closed: () => CloseAction.DoNotRestart
+            error: (e,m,c) => { console.error(e,m,c); return { action: ErrorAction.Continue }  },
+            closed: () => ({ action: CloseAction.DoNotRestart })
         },
         initializationOptions: {
             executeCommandProvider: false
