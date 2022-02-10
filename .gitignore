@@ -11,3 +11,4 @@ node_modules/
 *.vsix
 *.swp
 dist/
+src/VSCode/*.js
