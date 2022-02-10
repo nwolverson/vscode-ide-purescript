@@ -10,3 +10,4 @@ node_modules/
 .psc-ide-port
 *.vsix
 *.swp
+dist/

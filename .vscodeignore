@@ -11,3 +11,7 @@ psc-package.json
 jest.config.js
 *.dhall
 *.nix
+
+# Testing
+out/
+node_modules/

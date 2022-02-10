@@ -32,7 +32,7 @@
         "workspaceContains:src/**/*.purs",
         "workspaceContains:spago.dhall"
     ],
-    "main": "./out/src/extension",
+    "main": "./dist/client.js",
     "contributes": {
         "commands": [
             {
@@ -305,12 +305,14 @@
         ]
     },
     "scripts": {
-        "vscode:prepublish": "npm run -s build",
-        "build": "npm-run-all tsc:* psc:*",
+        "vscode:prepublish": "run-s prep tsc:* purs:* 'bundle:* -- --minify'",
+        "build": "npm-run-all prep tsc:* purs:* 'bundle:* -- --sourcemap'",
+        "prep": "mkdirp out/src dist",
         "tsc:ffi": "tsc -p src/VSCode/",
         "tsc:extension": "tsc -p ./",
-        "psc:src": "mkdirp out/src",
-        "psc:build": "spago bundle-module --to out/src/bundle.js",
+        "purs:build": "spago bundle-module --to out/src/bundle.js",
+        "bundle:client": "esbuild out/src/extension.js --bundle --outfile=dist/client.js --external:vscode --format=cjs --platform=node",
+        "bundle:server": "esbuild purescript-language-server --bundle --outfile=dist/server.js  --format=cjs --platform=node",
         "test": "jest"
     },
     "extensionDependencies": [
@@ -320,6 +322,7 @@
         "@types/jest": "^27.0.1",
         "@types/node": "^14.17.18",
         "@types/vscode": "^1.60.0",
+        "esbuild": "^0.14.21",
         "jest": "^27.0.6",
         "mkdirp": "^1.0.4",
         "npm-run-all": "^4.1.5",

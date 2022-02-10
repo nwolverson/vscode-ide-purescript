@@ -1,16 +1,20 @@
-import { commands, TextDocument, window, workspace, WorkspaceFolder } from 'vscode';
+import { commands, ExtensionContext, TextDocument, window, workspace, WorkspaceFolder } from 'vscode';
 import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind } from 'vscode-languageclient/node';
 import { setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd, diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd } from './notifications';
 import { registerMiddleware, unregisterMiddleware, middleware } from './middleware';
+import * as path from 'path';
 type ExtensionCommands = {[cmd: string]: (args: any[]) => void };
 
 const clients: Map<string, LanguageClient> = new Map();
 const commandCode: Map<string, ExtensionCommands> = new Map();
 
-export function activate() {
+export function activate(context: ExtensionContext) {
     const activatePS = require('./bundle').main;
 
-    const module = require.resolve('purescript-language-server');
+    // const module = require.resolve('purescript-language-server');
+    
+    const module = path.join(context.extensionPath, 'out', 'server.js');
+    
     const opts = { module, transport: TransportKind.ipc };
     const serverOptions: ServerOptions =
         {
