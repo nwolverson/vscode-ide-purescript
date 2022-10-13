@@ -151,7 +151,7 @@
                 "purescript.fastRebuild": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Enable purs IDE server fast rebuild",
+                    "description": "Enable purs IDE server fast rebuild (rebuilding single files on saving them)",
                     "scope": "resource"
                 },
                 "purescript.buildOpenedFiles": {
@@ -226,6 +226,12 @@
                     "description": "Whether to perform a full build on save with the configured build command (rather than IDE server fast rebuild). This is not generally recommended because it is slow, but it does mean that dependent modules are rebuilt as necessary.",
                     "scope": "resource"
                 },
+                "purescript.fullBuildOnSaveProgress": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to show progress for full build on save (if enabled)",
+                    "scope": "resource"
+                },
                 "purescript.pscIdelogLevel": {
                     "type": "string",
                     "default": "",
@@ -257,6 +263,30 @@
                         "type": "string"
                     },
                     "description": "List of codegen targets to pass to the compiler for rebuild. e.g. js, corefn. If not specified (rather than empty array) this will not be passed and the compiler will default to js. Requires 0.12.1+"
+                },
+                "purescript.foreignExt": {
+                    "scope": "resource",
+                    "type": "string",
+                    "default": "js",
+                    "description": "Extension for foreign files"
+                },
+                "purescript.diagnosticsOnType": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "**EXPERIMENTAL** Enable rebuilding modules for diagnostics automatically on typing. This may provide quicker feedback on errors, but could interfere with other functionality."
+                },
+                "purescript.diagnosticsOnTypeDebounce": {
+                    "scope": "resource",
+                    "type": "integer",
+                    "default": 100,
+                    "description": "**EXPERIMENTAL**"
+                },
+                "purescript.diagnosticsOnOpen": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "**EXPERIMENTAL** Enable diagnostics on file open, as per diagnostics on type"
                 },
                 "purescript.formatter": {
                     "scope": "resource",
