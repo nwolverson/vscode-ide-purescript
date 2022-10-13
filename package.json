@@ -273,7 +273,7 @@
                         "Use purs-tidy. Must be installed - [instructions](https://github.com/natefaubion/purescript-tidy)",
                         "Use pose (prettier plugin). Must be installed - [instructions](https://pose.rowtype.yoga/)"
                     ],
-                    "default": "purty",
+                    "default": "purs-tidy",
                     "description": "Tool to use to for formatting. Must be installed and on PATH (or npm installed with addNpmPath set)"
                 },
                 "purescript.declarationTypeCodeLens": {
