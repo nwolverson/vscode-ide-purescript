@@ -29,15 +29,19 @@ export function activate(context: ExtensionContext) {
     const output = window.createOutputChannel("IDE PureScript");
     // Options to control the language client
     const clientOptions = (folder: WorkspaceFolder): LanguageClientOptions => ({
-        // Register only for PureScript documents in the given root folder
+        // Register for PureScript and JavaScript documents in the given root folder
         documentSelector: [
             { scheme: 'file', language: 'purescript', pattern: `${folder.uri.fsPath}/**/*` },
+            { scheme: 'file', language: 'javascript', pattern: `${folder.uri.fsPath}/**/*` },
             ...folder.index === 0 ? [ { scheme: 'untitled', language: 'purescript' } ] : []
         ],
         workspaceFolder: folder,
         synchronize: {
             configurationSection: 'purescript',
-            fileEvents: workspace.createFileSystemWatcher('**/*.purs')
+            fileEvents:
+                [ workspace.createFileSystemWatcher('**/*.purs')
+                , workspace.createFileSystemWatcher('**/*.js')
+                ]
         },
         outputChannel: output,
         revealOutputChannelOn: RevealOutputChannelOn.Never,
@@ -134,7 +138,7 @@ export function activate(context: ExtensionContext) {
     }
 
     function didOpenTextDocument(document: TextDocument): void {
-        if (document.languageId !== 'purescript' || document.uri.scheme !== 'file') {
+        if ((! ['purescript', 'javascript'].includes(document.languageId)) || document.uri.scheme !== 'file') {
             return;
         }
 
