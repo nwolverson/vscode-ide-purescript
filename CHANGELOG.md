@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.26.0
+
+* Set default formatter to `purs-tidy`
+
+* Add configuration for diagnostics on type (see below)
+
+* Updates from `purescript-language-server` version `0.17.0`
+  - Diagnostics on type courtesy of @wclr.
+    - Work ongoing on this area, in particular compiler changes, but I've been running with this for probably months now and it's pretty cool even now.
+  - Rebuilding on FFI file change (#181, @aranchelk)
+    - This requires that the LSP client sends file changes for `.js` files now
+  - Default formatter is now none, formatter options have changed  (#180, @andys8)
+  - Detect new-style spago workspaces (#188, @f-f)
+  - Update the textDocumentSync capability to spec v3 (#182, @dariooddenino)
+  - Bundling changes (esmodules/build setup related, could potentially break something)
+
+## 0.25.12
+
+
 ## 0.25.7
 
 * Updates from `purescript-language-server` version `0.16.2`
