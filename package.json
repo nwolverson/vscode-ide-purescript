@@ -335,8 +335,8 @@
         ]
     },
     "scripts": {
-        "vscode:prepublish": "run-s prep tsc:* purs:* 'bundle:* -- --minify'",
-        "build": "run-s prep tsc:* purs:* 'bundle:* -- --sourcemap'",
+        "vscode:prepublish": "run-s prep tsc:* purs:* \"bundle:* -- --minify\"",
+        "build": "run-s prep tsc:* purs:* \"bundle:* -- --sourcemap\"",
         "prep": "mkdirp out/src dist",
         "tsc:ffi": "tsc -p src/VSCode/",
         "tsc:extension": "tsc -p ./",
