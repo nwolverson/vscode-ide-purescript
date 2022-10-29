@@ -337,13 +337,15 @@
     "scripts": {
         "vscode:prepublish": "run-s prep tsc:* purs:* \"bundle:* -- --minify\"",
         "build": "run-s prep tsc:* purs:* \"bundle:* -- --sourcemap\"",
+        "dev": "run-s prep tsc:* purs:* 'bundle:client -- --sourcemap'",
         "prep": "mkdirp out/src dist",
         "tsc:ffi": "tsc -p src/VSCode/",
         "tsc:extension": "tsc -p ./",
         "purs:build": "spago build",
         "bundle:client": "esbuild out/src/extension.js --bundle --outfile=dist/client.js --external:vscode --format=cjs --platform=node",
         "bundle:server": "esbuild purescript-language-server --bundle --outfile=dist/server.js  --format=cjs --platform=node",
-        "test": "jest"
+        "test": "jest",
+        "link_server": "rm -f dist/server.js && cd dist && ln -s ../../purescript-language-server/server.js server.js"
     },
     "extensionDependencies": [
         "nwolverson.language-purescript"
