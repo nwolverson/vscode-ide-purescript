@@ -1,4 +1,4 @@
-import { commands, ExtensionContext, TextDocument, window, workspace, WorkspaceFolder } from 'vscode';
+import { commands, ExtensionContext, FileType, OutputChannel, TextDocument, Uri, window, workspace, WorkspaceFolder } from 'vscode';
 import { CloseAction, ErrorAction, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, RevealOutputChannelOn, ServerOptions, TransportKind } from 'vscode-languageclient/node';
 import { setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd, diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd } from './notifications';
 import { registerMiddleware, unregisterMiddleware, middleware } from './middleware';
@@ -30,20 +30,24 @@ export function activate(context: ExtensionContext) {
   }
   const output = window.createOutputChannel("IDE PureScript");
   // Options to control the language client
-  const clientOptions = (folder: WorkspaceFolder): LanguageClientOptions => ({
+  const clientOptions = (folder: Uri): LanguageClientOptions => ({
+
     // Register for PureScript and JavaScript documents in the given root folder
     documentSelector: [
-      { scheme: 'file', language: 'purescript', pattern: `${folder.uri.fsPath}/**/*` },
-      { scheme: 'file', language: 'javascript', pattern: `${folder.uri.fsPath}/**/*` },
-      ...folder.index === 0 ? [{ scheme: 'untitled', language: 'purescript' }] : []
+      { scheme: 'file', language: 'purescript', pattern: `${folder.fsPath}/**/*` },
+      { scheme: 'file', language: 'javascript', pattern: `${folder.fsPath}/**/*` },
     ],
-    workspaceFolder: folder,
+    workspaceFolder: {
+      uri: folder,
+      name: "",
+      index: 0
+    },
     synchronize: {
       configurationSection: 'purescript',
-      fileEvents:
-        [workspace.createFileSystemWatcher('**/*.purs')
-          , workspace.createFileSystemWatcher('**/*.js')
-        ]
+      fileEvents: [
+        workspace.createFileSystemWatcher('**/*.purs'),
+        workspace.createFileSystemWatcher('**/*.js'),
+      ]
     },
     outputChannel: output,
     revealOutputChannelOn: RevealOutputChannelOn.Never,
@@ -76,24 +80,18 @@ export function activate(context: ExtensionContext) {
     "sortImports"
   ].map(x => `purescript.${x}`);
 
-  const getWorkspaceFolder = (doc: TextDocument) => {
+  const getProjectRootForDocument = (doc: TextDocument) => {
     if (doc.uri.scheme === 'file') {
-      const wf = workspace.getWorkspaceFolder(doc.uri);
-      if (wf) {
-        return wf;
-      }
-    }
-    if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
-      return workspace.workspaceFolders[0];
+      return getProjectRoot(output, doc.uri)
     }
     return null;
   }
 
   commandNames.forEach(command => {
-    commands.registerTextEditorCommand(command, (ed, edit, ...args) => {
-      const wf = getWorkspaceFolder(ed.document);
-      if (!wf) { return; }
-      const lc = clients.get(wf.uri.toString());
+    commands.registerTextEditorCommand(command, async (ed, edit, ...args) => {
+      const projectRoot = await getProjectRootForDocument(ed.document);
+      if (!projectRoot) { return; }
+      const lc = clients.get(projectRoot.fsPath);
       if (!lc) {
         output.appendLine("Didn't find language client for " + ed.document.uri);
         return;
@@ -102,10 +100,10 @@ export function activate(context: ExtensionContext) {
     });
   })
 
-  const extensionCmd = (cmdName: string) => (ed, edit, ...args) => {
-    const wf = getWorkspaceFolder(ed.document);
-    if (!wf) { return; }
-    const cmds = commandCode.get(wf.uri.toString());
+  const extensionCmd = (cmdName: string) => async (ed, edit, ...args) => {
+    const projectRoot = await getProjectRootForDocument(ed.document);
+    if (!projectRoot) { return; }
+    const cmds = commandCode.get(projectRoot.fsPath);
     if (!cmds) {
       output.appendLine("Didn't find language client for " + ed.document.uri);
       return;
@@ -113,17 +111,19 @@ export function activate(context: ExtensionContext) {
     cmds[cmdName](args);
   }
 
-  function addClient(folder: WorkspaceFolder) {
-    if (!clients.has(folder.uri.toString())) {
+  async function addClient(folder: Uri) {
+    output.appendLine(`Add client for ${folder.fsPath}`);
+
+    if (!clients.has(folder.fsPath)) {
       try {
-        output.appendLine("Launching new language client for " + folder.uri.toString());
+        output.appendLine("Launching new language client for " + folder.fsPath);
         const client = new LanguageClient('purescript', 'IDE PureScript', serverOptions, clientOptions(folder));
 
         client.onReady().then(async () => {
-          output.appendLine("Activated lc for " + folder.uri.toString());
+          output.appendLine("Activated lc for " + folder.fsPath);
           const cmds: ExtensionCommands = activatePS({ diagnosticsBegin, diagnosticsEnd, cleanBegin, cleanEnd }, client);
           const cmdNames = await commands.getCommands();
-          commandCode.set(folder.uri.toString(), cmds);
+          commandCode.set(folder.fsPath, cmds);
           Promise.all(Object.keys(cmds).map(async cmd => {
             if (cmdNames.indexOf(cmd) === -1) {
               commands.registerTextEditorCommand(cmd, extensionCmd(cmd));
@@ -132,19 +132,19 @@ export function activate(context: ExtensionContext) {
         }).catch(err => output.appendLine(err));
 
         client.start();
-        clients.set(folder.uri.toString(), client);
+        clients.set(folder.fsPath, client);
       } catch (e) {
         output.appendLine(e);
       }
     }
   }
 
-  function didOpenTextDocument(document: TextDocument): void {
+  async function didOpenTextDocument(document: TextDocument) {
     if ((!['purescript', 'javascript'].includes(document.languageId)) || document.uri.scheme !== 'file') {
       return;
     }
 
-    const folder = workspace.getWorkspaceFolder(document.uri);
+    const folder = await getProjectRootForDocument(document)
     if (!folder) {
       output.appendLine("Didn't find workspace folder for " + document.uri);
       return;
@@ -156,30 +156,72 @@ export function activate(context: ExtensionContext) {
   workspace.textDocuments.forEach(didOpenTextDocument);
   workspace.onDidChangeWorkspaceFolders((event) => {
     for (const folder of event.removed) {
-      const client = clients.get(folder.uri.toString());
+      const client = clients.get(folder.uri.fsPath);
       if (client) {
-        clients.delete(folder.uri.toString());
+        clients.delete(folder.uri.fsPath);
         client.stop();
       }
     }
   });
+
   if (clients.size == 0) {
-    if (workspace.workspaceFolders && workspace.workspaceFolders.length == 1) {
-      output.appendLine("Only one folder in workspace, starting language server");
-      // The extension must be activated because there are Purs files in there
-      addClient(workspace.workspaceFolders[0]);
-    } else if (workspace.workspaceFolders && workspace.workspaceFolders.length > 1) {
-      output.appendLine("More than one folder in workspace, open a PureScript file to start language server");
-    } else if (!workspace.workspaceFolders) {
-      output.appendLine("It looks like you've started VS Code without specifying a folder, ie from a language extension development environment. Open a PureScript file to start language server.");
-    }
+    output.appendLine("Open a PureScript file to start language server.");
   }
   return { registerMiddleware, unregisterMiddleware, setDiagnosticsBegin, setDiagnosticsEnd, setCleanBegin, setCleanEnd }
 }
+
+
 export function deactivate(): Thenable<void> {
   let promises: Thenable<void>[] = [];
   for (let client of Array.from(clients.values())) {
     promises.push(client.stop());
   }
   return Promise.all(promises).then(() => undefined);
+}
+
+
+async function getProjectRoot(output: OutputChannel, fileUri: Uri) {
+  const root = await getProjectRootRec(fileUri);
+  if (root) {
+    output.appendLine("Found project root at " + root)
+    return root
+  } else {
+    output.appendLine("No project root found. Defaulting to workspace root.")
+    return workspace.getWorkspaceFolder(fileUri).uri
+  }
+}
+
+async function getProjectRootRec(currentUri: Uri): Promise<Uri | null> {
+  // Abort if we are in a node_modules or .spago folder
+  switch (true) {
+    case currentUri.fsPath.includes(".spago"):
+    case currentUri.fsPath.includes("node_modules"):
+      return null
+  }
+
+  // Get dir of file
+  const dir = path.dirname(currentUri.fsPath)
+
+  // Create uri for dir 
+  const uri = Uri.file(dir)
+  const files = await workspace.fs.readDirectory(uri);
+
+  // Iterate over files looking for spago
+  for (const [file, fileType] of files) {
+    switch (file) {
+      case "spago.dhall":
+      case "spago.yml":
+      case "spago.yaml":
+        return uri
+    }
+  }
+
+  // Use workspace root as abort condition
+  const workspaceFolder = workspace.getWorkspaceFolder(currentUri)
+  if (dir === workspaceFolder.uri.fsPath) {
+    return null
+  } else {
+    // If none found, try with next parent folder
+    return getProjectRootRec(uri)
+  }
 }
