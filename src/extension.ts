@@ -81,7 +81,7 @@ export function activate(context: ExtensionContext) {
   ].map(x => `purescript.${x}`);
 
   const getProjectRootForDocument = (doc: TextDocument) => {
-    if (doc.uri.scheme === 'file') {
+    if (doc.uri.scheme === 'file' && doc.uri.fsPath.endsWith('.purs')) {
       return getProjectRoot(output, doc.uri)
     }
     return null;
