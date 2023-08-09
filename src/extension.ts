@@ -80,11 +80,11 @@ export function activate(context: ExtensionContext) {
     "sortImports"
   ].map(x => `purescript.${x}`);
 
-  const getProjectRootForDocument = (doc: TextDocument) => {
-    if (doc.uri.scheme === 'file' && doc.uri.fsPath.endsWith('.purs')) {
+  const getProjectRootForDocument = async (doc: TextDocument): Promise<Uri | null> => {
+    if (doc.languageId === 'purescript' && doc.uri.scheme === 'file') {
       return getProjectRoot(output, doc.uri)
     }
-    return null;
+    return null
   }
 
   commandNames.forEach(command => {
@@ -140,10 +140,6 @@ export function activate(context: ExtensionContext) {
   }
 
   async function didOpenTextDocument(document: TextDocument) {
-    if ((!['purescript', 'javascript'].includes(document.languageId)) || document.uri.scheme !== 'file') {
-      return;
-    }
-
     const folder = await getProjectRootForDocument(document)
     if (!folder) {
       output.appendLine("Didn't find workspace folder for " + document.uri);
@@ -192,11 +188,16 @@ async function getProjectRoot(output: OutputChannel, fileUri: Uri) {
 }
 
 async function getProjectRootRec(currentUri: Uri): Promise<Uri | null> {
-  // Abort if we are in a node_modules or .spago folder
+  // Continue with parent dir if file is in a node_modules or .spago folder
   switch (true) {
-    case currentUri.fsPath.includes(".spago"):
-    case currentUri.fsPath.includes("node_modules"):
-      return null
+    case currentUri.fsPath.includes(".spago"): {
+      const parent = path.dirname(currentUri.fsPath.split(".spago")[0])
+      return getProjectRootRec(Uri.file(parent))
+    }
+    case currentUri.fsPath.includes("node_modules"): {
+      const parent = path.dirname(currentUri.fsPath.split("node_modules")[0])
+      return getProjectRootRec(Uri.file(parent))
+    }
   }
 
   // Get dir of file
