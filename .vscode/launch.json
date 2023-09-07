@@ -11,7 +11,10 @@
 			"stopOnEntry": false,
 			"sourceMaps": true,
 			"outFiles": ["${workspaceRoot}/out/src"],
-			"preLaunchTask": "dev"
+			"preLaunchTask": "dev",
+			"env": {
+				"PATH": "${env:HOME}/.local/bin:${env:PATH}"
+			}
 		}
 		,
 		{

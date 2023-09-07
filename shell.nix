@@ -1,20 +1,32 @@
-{ pkgs ? import <nixpkgs> { } }:
 let
-  easy-ps = import
-    (pkgs.fetchFromGitHub {
-      owner = "justinwoo";
-      repo = "easy-purescript-nix";
-      rev = "cbcb53725c430de4e69f652d69c1677e17c6bcec";
-      sha256 = "155f8vischacl8108ibgs51kj3r7yq1690y4yb4nnqmnjww41k9b";
-    }) {
-    inherit pkgs;
+  pinnedNixHash = "b7fc729117a70d0df9e9adfc624662148e32ca0a";
+  pinnedNix =
+    builtins.fetchGit {
+      name = "nixpkgs-pinned";
+      url = "https://github.com/NixOS/nixpkgs.git";
+      rev = "${pinnedNixHash}";
+    };
+
+  nixpkgs =
+    import pinnedNix {
   };
+
+  easy-ps = import
+    (nixpkgs.pkgs.fetchFromGitHub {
+      ## Temporarily on Fabrizio's fork to get spago-next
+      owner = "f-f";
+      repo = "easy-purescript-nix";
+      rev = "2e62b746859e396e541bdd63dbd10b2f231027d4";
+      sha256 = "sha256-qQpWKE40wKkxb4y2+z0n4lF/OFrCsEU3Gwiugl3H+xc=";
+    }) { pkgs = nixpkgs; };
+
+
 in
-pkgs.mkShell {
+nixpkgs.mkShell {
   buildInputs = [
-    easy-ps.purs-0_15_2
+    easy-ps.purs-0_15_9-2
     easy-ps.spago
     easy-ps.psa
-    easy-ps.dhall-simple
+
   ];
 }
