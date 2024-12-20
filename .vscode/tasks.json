@@ -11,7 +11,7 @@
 	"tasks": [
 		{
 			"label": "dev",
-			"command": "npm",
+			"command": "nix-shell",
 			"type": "shell",
 			"presentation": {
 				"echo": true,
@@ -22,8 +22,8 @@
 				"clear": false
 			},
 			"args": [
-				"run",
-				"dev"
+				"--command",
+				"npm run dev"
 			],
 			"isBackground": false,
 		},
